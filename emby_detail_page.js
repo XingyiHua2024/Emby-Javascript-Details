@@ -3,7 +3,7 @@
 (function () {
     "use strict";
     const show_pages = ["Movie", "Series", "Episode", "Season"];
-    var item, OS_current
+    var item, OS_current, actorMoreMovies;
     OS_current = getOS();
     // monitor dom changements
     document.addEventListener("viewbeforeshow", function (e) {
@@ -34,39 +34,13 @@
         const is_OS_phone = ((OS_current === 'iphone') || (OS_current === 'android'));
 
         if (OS_current === 'windows') {
-            //let playBtns = document.getElementById("ExternalPlayersBtns");
-            //if (playBtns) {
-            //    playBtns.remove();
-            //}
-            let mainDetailButtons = document.querySelector("div[is='emby-scroller']:not(.hide) .mainDetailButtons");
-            let buttonhtml = `
-                <div id="ExternalPlayersBtns" class="detailButtons flex align-items-flex-start flex-wrap-wrap">
-                    <button id="embyCopyUrl" type="button" class="detailButton emby-button emby-button-backdropfilter raised-backdropfilter detailButton-primary" title="copyFolder">
-                        <div class="detailButton-content">
-                            <i class="md-icon detailButton-icon button-icon button-icon-left icon-Copy">　</i>
-                            <span class="button-text">复制地址</span>
-                        </div>
-                    </button>
-                </div>
-            `;
-            mainDetailButtons.insertAdjacentHTML('afterend', buttonhtml);
-            // Add hover effect using CSS
-            const buttonStyle = document.createElement('style');
-            buttonStyle.innerHTML = `
-                #embyCopyUrl:hover {
-                    background-color: #e6e6e6; /* Change background color on hover */
-                    color: #333; /* Change text color on hover */
-                }
-            `;
-            document.head.appendChild(buttonStyle);
-            document.querySelector("div[is='emby-scroller']:not(.hide) #embyCopyUrl").onclick = embyCopyUrl;
-            // Add icons
-            document.querySelector("div[is='emby-scroller']:not(.hide) .icon-Copy").style.cssText += 'background: url(https://fastly.jsdelivr.net/gh/bpking1/embyExternalUrl@0.0.5/embyWebAddExternalUrl/icons/icon-Copy.webp) no-repeat; background-size: 100% 100%; font-size: 1.4em';
+            button_init();
         }
 
         if (!is_OS_phone) {
             previewInject();
         }
+
         actorMoreInject();
     }
 
@@ -78,6 +52,33 @@
             }
         }
         return false;
+    }
+
+    async function button_init() {
+        const mainDetailButtons = document.querySelector("div[is='emby-scroller']:not(.hide) .mainDetailButtons");
+        const buttonhtml = `
+                <div id="ExternalPlayersBtns" class="detailButtons flex align-items-flex-start flex-wrap-wrap">
+                    <button id="embyCopyUrl" type="button" class="detailButton emby-button emby-button-backdropfilter raised-backdropfilter detailButton-primary" title="copyFolder">
+                        <div class="detailButton-content">
+                            <i class="md-icon detailButton-icon button-icon button-icon-left icon-Copy">　</i>
+                            <span class="button-text">复制地址</span>
+                        </div>
+                    </button>
+                </div>
+            `;
+        mainDetailButtons.insertAdjacentHTML('afterend', buttonhtml);
+        // Add hover effect using CSS
+        const buttonStyle = document.createElement('style');
+        buttonStyle.innerHTML = `
+                #embyCopyUrl:hover {
+                    background-color: #e6e6e6; /* Change background color on hover */
+                    color: #333; /* Change text color on hover */
+                }
+            `;
+        document.head.appendChild(buttonStyle);
+        document.querySelector("div[is='emby-scroller']:not(.hide) #embyCopyUrl").onclick = embyCopyUrl;
+        // Add icons
+        document.querySelector("div[is='emby-scroller']:not(.hide) .icon-Copy").style.cssText += 'background: url(https://fastly.jsdelivr.net/gh/bpking1/embyExternalUrl@0.0.5/embyWebAddExternalUrl/icons/icon-Copy.webp) no-repeat; background-size: 100% 100%; font-size: 1.4em';
     }
 
 
@@ -199,11 +200,11 @@
         const itemContainer = `
             <div class="virtualScrollItem card portraitCard card-horiz portraitCard-horiz" tabindex="0" draggable="true" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
                 <div class="cardBox cardBox-touchzoom cardBox-bottompadded" bis_skin_checked="1">
-                    <button onclick="window.open('${link}', '_blank')" type="button" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-portrait">
+                    <button onclick="window.open('${link}')" type="button" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-portrait">
                         <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
                     </button>
                     <div class="cardText cardText-first cardText-first-padded" bis_skin_checked="1">
-                        <button onclick="window.open('${link}', '_blank')" tabindex="-1" title="${title}" type="button" class="cardMediaInfoItem textActionButton cardTextActionButton emby-button button-link" on-click="location.href='${link}'">${title}</button>
+                        <button onclick="window.open('${link}')" tabindex="-1" title="${title}" type="button" class="cardMediaInfoItem textActionButton cardTextActionButton emby-button button-link" on-click="location.href='${link}'">${title}</button>
                     </div>
                 </div>
             </div>
@@ -260,7 +261,7 @@
    
     async function actorMoreInject() {
         const actorName = getActorName();
-        const actorMoreMovies = await getActorMovies(actorName);
+        actorMoreMovies = await getActorMovies(actorName);
         if (actorMoreMovies.length > 0) {
             const userId = ApiClient._serverInfo.UserId;
             const similarSection = document.querySelectorAll("div[is='emby-scroller']:not(.hide) .similarSection")[0];
@@ -278,7 +279,7 @@
 
     function getActorName() {
         const people = item.People;
-        const actorNames = people.filter(item => item.Type === 'Actor').map(item => item.Name);
+        const actorNames = people.filter(person => person.Type === 'Actor').map(person => person.Name);
         if (actorNames.length > 0) {
             const randomIndex = Math.floor(Math.random() * actorNames.length);
             return actorNames[randomIndex]; // Return a random actor name from the filtered list
