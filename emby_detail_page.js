@@ -176,7 +176,7 @@
                 <h2 class="sectionTitle sectionTitle-cards padded-left padded-left-page padded-right">${text} 其他作品</h2>
                 <div id="myScrollContainer" is="emby-scroller" class="emby-scroller padded-top-focusscale padded-bottom-focusscale padded-left padded-left-page padded-right scrollX hiddenScrollX scrollFrameX" data-mousewheel="false" data-focusscroll="true" data-horizontal="true" bis_skin_checked="1">
 
-                    <div id="myitemsContainer" is="emby-itemscontainer" class="scrollSlider focuscontainer-x itemsContainer focusable moreActorItemsContainer scrollSliderX emby-scrollbuttons-scrollSlider generalItemsContainer virtualItemsContainer virtual-scroller-overflowvisible virtual-scroller" data-focusabletype="nearest" data-virtualscrolllayout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2412px; height: 351px;" data-minoverhang="1" layout="horizontal-grid">
+                    <div id="myitemsContainer" is="emby-itemscontainer" class="scrollSlider focuscontainer-x itemsContainer focusable actorMoreItemsContainer scrollSliderX emby-scrollbuttons-scrollSlider generalItemsContainer virtualItemsContainer virtual-scroller-overflowvisible virtual-scroller" data-focusabletype="nearest" data-virtualscrolllayout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2412px; height: 351px;" data-minoverhang="1" layout="horizontal-grid">
                         ${html}
                     </div>
                 </div>
@@ -186,11 +186,21 @@
         return slider;
     }
 
-    function createItemHtml(itemInfo) {
+    function create_item_container(itemInfo, increment) {
+        let distance;
+        if (OS_current === 'ipad') {
+            distance = 182;
+        } else if (OS_current === 'iphone') {
+            distance = 120;
+        }
+        else {
+            distance = 200;
+        }
         const imgUrl = ApiClient.getImageUrl(itemInfo.Id, { type: "Primary", tag: itemInfo.ImageTags.Primary, maxHeight: 330, maxWidth: 220 });
         const title = itemInfo.Name;
         const link = `http://${window.location.host}/web/index.html#!/item?id=${itemInfo.Id}&serverId=${itemInfo.ServerId}`
-        const itemHtml = `
+        const itemContainer = `
+            <div class="virtualScrollItem card portraitCard card-horiz portraitCard-horiz" tabindex="0" draggable="true" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
                 <div class="cardBox cardBox-touchzoom cardBox-bottompadded" bis_skin_checked="1">
                     <button onclick="window.open('${link}')" type="button" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-portrait">
                         <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
@@ -199,24 +209,10 @@
                         <button onclick="window.open('${link}')" tabindex="-1" title="${title}" type="button" class="cardMediaInfoItem textActionButton cardTextActionButton emby-button button-link" on-click="location.href='${link}'">${title}</button>
                     </div>
                 </div>
+            </div>
         `;
 
-        return itemHtml;
-    }
-
-    function createCardContainer(innerHtml, distance, increment) {
-        const cardContainer = document.createElement('div');
-        cardContainer.classList.add('virtualScrollItem', 'card', 'portraitCard', 'card-horiz', 'portraitCard-horiz');
-        cardContainer.tabIndex = 0;
-        cardContainer.draggable = true;
-        cardContainer.setAttribute('bis_skin_checked', '1');
-        cardContainer.innerHTML = innerHtml;
-
-        // Calculate and set the style
-        const styleValue = `inset: 0px auto auto ${distance * increment}px;`;
-        cardContainer.setAttribute('style', styleValue);
-
-        return cardContainer;
+        return itemContainer;
     }
 
     async function previewInject() {
@@ -263,9 +259,14 @@
             const similarSection = document.querySelectorAll("div[is='emby-scroller']:not(.hide) .similarSection")[0];
             // Create an HTML structure to display all images
             let imgHtml = '';
-            
+            for (let i = 0; i < actorMoreMovies.length; i++) {
+                imgHtml += create_item_container(actorMoreMovies[i], i);
+            };
+
             const slider = create_slider(actorName, imgHtml); // Use backticks (`) for template literals
-            similarSection.insertAdjacentHTML("afterend", slider);
+            const sliderElement = document.createElement('div');
+            sliderElement.innerHTML = slider;
+            similarSection.insertAdjacentElement('afterend', sliderElement);
 
             const backScrollButton = document.getElementById('myBackScrollButton');
             const forwardScrollButton = document.getElementById('myForwardScrollButton');
@@ -281,49 +282,32 @@
             forwardScrollButton.addEventListener('click', () => {
                 scrollContainer.scrollLeft += 500; // Adjust the scroll amount as needed
             });
-
-            let itemContainer;
-            const itemsContainer = document.getElementById('myitemsContainer');
-            for (let i = 0; i < actorMoreMovies.length; i++) {
-                imgHtml = createItemHtml(actorMoreMovies[i]);
-                itemContainer = createCardContainer(imgHtml, 200, i);
-                itemsContainer.appendChild(itemContainer);
-            };
             window.addEventListener('resize', adjustCardOffsets);
             adjustCardOffsets();
-
         }
-
-        function adjustCardOffsets() {
-            const scrollerContainer = document.getElementById('myitemsContainer'); 
-            // Find the first child that contains the portraitCard class
-            let firstChild = null;
-            for (let child of scrollerContainer.children) {
-                if (child.classList.contains('portraitCard')) {
-                    firstChild = child;
-                    break;
-                }
-            }
-
-            if (firstChild) {
-                const cardWidth = firstChild.offsetWidth; // Get width with padding and border
-                debugger
-                const spacing = 0; // Spacing between cards (adjust as needed)
-                const totalCardWidth = cardWidth + spacing;
-                // Set min-width of scrollerContainer
-                scrollerContainer.style.minWidth = `${12 * totalCardWidth}px`;
-
-                for (let child of scrollerContainer.children) {
-                    if (child.classList.contains('portraitCard')) {
-                        child.style.left = `${child.previousElementSibling ? child.previousElementSibling.offsetLeft + totalCardWidth : 0}px`;
-                    }
-                }
-            } else {
-                console.warn("First child is not an embyItemCard element!");
-            }
-        }
-
     }
+
+    function adjustCardOffsets() {
+        const scrollerContainer = document.getElementById('myitemsContainer');
+
+        // Find all children that contain the portraitCard class
+        const portraitCards = scrollerContainer.querySelectorAll('.portraitCard');
+        if (portraitCards.length > 0) {
+            const cardWidth = portraitCards[0].offsetWidth; // Get width of the first card with padding and border
+            const spacing = 0; // Spacing between cards (adjust as needed)
+            const totalCardWidth = cardWidth + spacing;
+
+            // Set min-width of scrollerContainer
+            scrollerContainer.style.minWidth = `${portraitCards.length * totalCardWidth}px`;
+
+            for (let child of portraitCards) {
+                child.style.left = `${child.previousElementSibling ? child.previousElementSibling.offsetLeft + totalCardWidth : 0}px`;
+            }
+        } else {
+            console.warn("No children with the portraitCard class found in scrollerContainer!");
+        }
+    }
+
    
 
     function getActorName() {
@@ -346,12 +330,12 @@
 
             if (actorMoreMovies.Items.length > 0) {
                 let moreItems = Array.from(actorMoreMovies.Items);
+                moreItems = moreItems.filter(moreItem => moreItem.Id != item.Id);
                 const actorMovieNames = moreItems.map(movie => getPartBeforeSpace(movie.Name)); // for future use
                 if (actorMoreMovies.Items.length > 12) {
                     moreItems.sort(() => Math.random() - 0.5);
                     moreItems = moreItems.slice(0, 12);
                 }
-                moreItems = moreItems.filter(moreItem => moreItem.Id != item.Id);
                 return moreItems;
             } else {
                 console.log('Failed to fetch JSON data.');
