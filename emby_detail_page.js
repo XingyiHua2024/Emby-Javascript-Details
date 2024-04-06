@@ -3,7 +3,7 @@
 (function () {
     "use strict";
     const show_pages = ["Movie", "Series", "Episode", "Season"];
-    var item, OS_current, actorMoreMovies;
+    var item, OS_current;
     OS_current = getOS();
     // monitor dom changements
     document.addEventListener("viewbeforeshow", function (e) {
@@ -24,7 +24,7 @@
                     subtree: true,
                 });
             } else {
-                item = e.target.controller.currentItem
+                item = e.target.controller.currentItem;
             }
             
         }
@@ -42,6 +42,7 @@
         }
 
         actorMoreInject();
+
     }
 
 
@@ -150,7 +151,7 @@
 
     function create_banner(text, html) {
         const banner = `
-		    <div class="verticalSection stagephotoSection">
+		    <div class="verticalSection">
 			    <h2 class="sectionTitle sectionTitle-cards padded-left padded-right">${text}</h2>
 			        ${html}
 		    </div>`;
@@ -162,12 +163,12 @@
             <div class="verticalSection verticalSection-cards actorMoreSection emby-scrollbuttons-scroller" bis_skin_checked = "1" >
                 <div is="emby-scrollbuttons" class="emby-scrollbuttons" bis_skin_checked="1">
                     <div class="scrollbuttoncontainer scrollbuttoncontainer-backwards" bis_skin_checked="1">
-                        <button tabindex="-1" type="button" is="paper-icon-button-light" data-ripple="false" data-direction="backwards" class="emby-scrollbuttons-scrollbutton paper-icon-button-light">
+                        <button id="myBackScrollButton" tabindex="-1" type="button" is="paper-icon-button-light" data-ripple="false" data-direction="backwards" class="emby-scrollbuttons-scrollbutton paper-icon-button-light">
                             <i class="md-icon autortl"></i>
                         </button>
                     </div>
                     <div class="scrollbuttoncontainer scrollbuttoncontainer-forwards" bis_skin_checked="1">
-                        <button tabindex="-1" type="button" is="paper-icon-button-light" data-ripple="false" data-direction="forwards" class="emby-scrollbuttons-scrollbutton paper-icon-button-light">
+                        <button id="myForwardScrollButton" tabindex="-1" type="button" is="paper-icon-button-light" data-ripple="false" data-direction="forwards" class="emby-scrollbuttons-scrollbutton paper-icon-button-light">
                             <i class="md-icon autortl"></i>
                         </button>
                     </div>
@@ -175,30 +176,21 @@
                 <h2 class="sectionTitle sectionTitle-cards padded-left padded-left-page padded-right">${text} 其他作品</h2>
                 <div id="myScrollContainer" is="emby-scroller" class="emby-scroller padded-top-focusscale padded-bottom-focusscale padded-left padded-left-page padded-right scrollX hiddenScrollX scrollFrameX" data-mousewheel="false" data-focusscroll="true" data-horizontal="true" bis_skin_checked="1">
 
-                    <div is="emby-itemscontainer" class="scrollSlider focuscontainer-x itemsContainer focusable similarItemsContainer scrollSliderX emby-scrollbuttons-scrollSlider generalItemsContainer virtualItemsContainer virtual-scroller-overflowvisible virtual-scroller" data-focusabletype="nearest" data-virtualscrolllayout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2412px; height: 351px;" data-minoverhang="1" layout="horizontal-grid">
+                    <div id="myitemsContainer" is="emby-itemscontainer" class="scrollSlider focuscontainer-x itemsContainer focusable moreActorItemsContainer scrollSliderX emby-scrollbuttons-scrollSlider generalItemsContainer virtualItemsContainer virtual-scroller-overflowvisible virtual-scroller" data-focusabletype="nearest" data-virtualscrolllayout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2412px; height: 351px;" data-minoverhang="1" layout="horizontal-grid">
                         ${html}
                     </div>
                 </div>
             </div>
         `;
+
         return slider;
     }
 
-    function create_item_container(itemInfo, increment) {
-        let distance;
-        if (OS_current === 'ipad') {
-            distance = 182;
-        } else if (OS_current === 'iphone') {
-            distance = 120;
-        }
-        else {
-            distance = 200;
-        }
+    function createItemHtml(itemInfo) {
         const imgUrl = ApiClient.getImageUrl(itemInfo.Id, { type: "Primary", tag: itemInfo.ImageTags.Primary, maxHeight: 330, maxWidth: 220 });
         const title = itemInfo.Name;
         const link = `http://${window.location.host}/web/index.html#!/item?id=${itemInfo.Id}&serverId=${itemInfo.ServerId}`
-        const itemContainer = `
-            <div class="virtualScrollItem card portraitCard card-horiz portraitCard-horiz" tabindex="0" draggable="true" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
+        const itemHtml = `
                 <div class="cardBox cardBox-touchzoom cardBox-bottompadded" bis_skin_checked="1">
                     <button onclick="window.open('${link}')" type="button" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-portrait">
                         <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
@@ -207,25 +199,29 @@
                         <button onclick="window.open('${link}')" tabindex="-1" title="${title}" type="button" class="cardMediaInfoItem textActionButton cardTextActionButton emby-button button-link" on-click="location.href='${link}'">${title}</button>
                     </div>
                 </div>
-            </div>
         `;
 
-        return itemContainer;
+        return itemHtml;
+    }
+
+    function createCardContainer(innerHtml, distance, increment) {
+        const cardContainer = document.createElement('div');
+        cardContainer.classList.add('virtualScrollItem', 'card', 'portraitCard', 'card-horiz', 'portraitCard-horiz');
+        cardContainer.tabIndex = 0;
+        cardContainer.draggable = true;
+        cardContainer.setAttribute('bis_skin_checked', '1');
+        cardContainer.innerHTML = innerHtml;
+
+        // Calculate and set the style
+        const styleValue = `inset: 0px auto auto ${distance * increment}px;`;
+        cardContainer.setAttribute('style', styleValue);
+
+        return cardContainer;
     }
 
     async function previewInject() {
-        /*
-        let fanartHeight;
-        // Define the CSS styles for .my-fanart-image class
-        
-        if (OS_current === 'ipad') {
-            fanartHeight = 250;
-        } else {
-            fanartHeight = 350;
-        }
-        */
-        let fanartHeight = window.innerHeight * 0.3;
-        let Style = `
+        const fanartHeight = window.innerHeight * 0.3;
+        const Style = `
             .my-fanart-image {
                 display: inline-block;
                 margin: 8px 16px 8px 0;
@@ -245,7 +241,8 @@
         const peopleSection = document.querySelectorAll("div[is='emby-scroller']:not(.hide) .peopleSection")[0];
         if (!peopleSection) return;
 
-        let html = `<div class="imageSection" style="margin: 10px 0 0 97px;">`;
+        const leftMargin = window.innerHeight * 0.077;
+        let html = `<div class="imageSection" style="margin: 0px 0 0 ${leftMargin}px;">`;
         Array.from(new Set(BackdropImageTags)).forEach((img, index) => {
             if (index === 0) return;
             let url = `http://${window.location.host}/emby/Items/${Id}/Images/Backdrop/${index}?tag=${img}`;
@@ -261,19 +258,71 @@
    
     async function actorMoreInject() {
         const actorName = getActorName();
-        actorMoreMovies = await getActorMovies(actorName);
+        const actorMoreMovies = await getActorMovies(actorName);
         if (actorMoreMovies.length > 0) {
-            const userId = ApiClient._serverInfo.UserId;
             const similarSection = document.querySelectorAll("div[is='emby-scroller']:not(.hide) .similarSection")[0];
             // Create an HTML structure to display all images
             let imgHtml = '';
-            for (let i = 0; i < actorMoreMovies.length; i++) {
-                imgHtml += create_item_container(actorMoreMovies[i], i);
-            };
-
+            
             const slider = create_slider(actorName, imgHtml); // Use backticks (`) for template literals
             similarSection.insertAdjacentHTML("afterend", slider);
+
+            const backScrollButton = document.getElementById('myBackScrollButton');
+            const forwardScrollButton = document.getElementById('myForwardScrollButton');
+            const scrollContainer = document.getElementById('myScrollContainer');
+
+            // Smooth scrolling transition
+            scrollContainer.style.scrollBehavior = 'smooth';
+
+            backScrollButton.addEventListener('click', () => {
+                scrollContainer.scrollLeft -= 500; // Adjust the scroll amount as needed
+            });
+
+            forwardScrollButton.addEventListener('click', () => {
+                scrollContainer.scrollLeft += 500; // Adjust the scroll amount as needed
+            });
+
+            let itemContainer;
+            const itemsContainer = document.getElementById('myitemsContainer');
+            for (let i = 0; i < actorMoreMovies.length; i++) {
+                imgHtml = createItemHtml(actorMoreMovies[i]);
+                itemContainer = createCardContainer(imgHtml, 200, i);
+                itemsContainer.appendChild(itemContainer);
+            };
+            window.addEventListener('resize', adjustCardOffsets);
+            adjustCardOffsets();
+
         }
+
+        function adjustCardOffsets() {
+            const scrollerContainer = document.getElementById('myitemsContainer'); 
+            // Find the first child that contains the portraitCard class
+            let firstChild = null;
+            for (let child of scrollerContainer.children) {
+                if (child.classList.contains('portraitCard')) {
+                    firstChild = child;
+                    break;
+                }
+            }
+
+            if (firstChild) {
+                const cardWidth = firstChild.offsetWidth; // Get width with padding and border
+                debugger
+                const spacing = 0; // Spacing between cards (adjust as needed)
+                const totalCardWidth = cardWidth + spacing;
+                // Set min-width of scrollerContainer
+                scrollerContainer.style.minWidth = `${12 * totalCardWidth}px`;
+
+                for (let child of scrollerContainer.children) {
+                    if (child.classList.contains('portraitCard')) {
+                        child.style.left = `${child.previousElementSibling ? child.previousElementSibling.offsetLeft + totalCardWidth : 0}px`;
+                    }
+                }
+            } else {
+                console.warn("First child is not an embyItemCard element!");
+            }
+        }
+
     }
    
 
@@ -290,20 +339,19 @@
 
 
     async function getActorMovies(actorName) {
-        const itemId = item.Id;
         try {
             const search_url = `${ApiClient._serverAddress}/emby/Items?api_key=${ApiClient.accessToken()}&Recursive=true&IncludeItemTypes=Movie&Person=${actorName}`;
             const actorMoreMovies = await fetchJsonData(search_url);
             //const jsonData = JSON.stringify(await ApiClient.getItems(ApiClient.getCurrentUserId(), { 'Recursive': true ,'IncludeItemTypes': 'Movies', 'Person': actorName, 'api_key': ApiClient.accessToken() } ));
 
-
             if (actorMoreMovies.Items.length > 0) {
                 let moreItems = Array.from(actorMoreMovies.Items);
-                if (actorMoreMovies.Items.length > 10) {
+                const actorMovieNames = moreItems.map(movie => getPartBeforeSpace(movie.Name)); // for future use
+                if (actorMoreMovies.Items.length > 12) {
                     moreItems.sort(() => Math.random() - 0.5);
-                    moreItems = moreItems.slice(0, 10);
+                    moreItems = moreItems.slice(0, 12);
                 }
-                moreItems = moreItems.filter(moreItem => moreItem.Id != itemId);
+                moreItems = moreItems.filter(moreItem => moreItem.Id != item.Id);
                 return moreItems;
             } else {
                 console.log('Failed to fetch JSON data.');
@@ -315,6 +363,9 @@
         }
     }
 
+    function getPartBeforeSpace(str) {
+        return str.split(' ')[0];
+    }
 
     function getOS() {
         let u = navigator.userAgent
