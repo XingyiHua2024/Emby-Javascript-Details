@@ -3,7 +3,9 @@
 (function () {
     "use strict";
     const show_pages = ["Movie", "Series", "Episode", "Season"];
-    var item, OS_current;
+    var item, OS_current, fanartDefaultRatio;
+    fanartDefaultRatio = 1; // change default number from 0.5 to 1.5
+
     OS_current = getOS();
     // monitor dom changements
     document.addEventListener("viewbeforeshow", function (e) {
@@ -25,6 +27,7 @@
                 });
             } else {
                 item = e.target.controller.currentItem;
+                debugger
             }
             
         }
@@ -32,15 +35,15 @@
 
     function init() {
         const is_OS_phone = ((OS_current === 'iphone') || (OS_current === 'android'));
-
+        // add button
         if (OS_current === 'windows') {
             button_init();
         }
-
+        // add fanart
         if (!is_OS_phone) {
             previewInject();
         }
-
+        // add more movies from this actor
         actorMoreInject();
 
     }
@@ -150,19 +153,23 @@
 
 
     function create_banner(text, html) {
+        const margin = window.innerWidth * 0.035;
         const banner = `
 		    <div class="verticalSection">
 			    <h2 class="sectionTitle sectionTitle-cards padded-left padded-right">${text}</h2>
+                    <div class="slider-container" style="margin-left: ${margin}px;">
+                        <input type="range" min="0.5" max="${fanartDefaultRatio}" step="0.02" value="1" class="slider" id="mySlider">
+                    </div>
 			        ${html}
 		    </div>`;
         return banner
     }
 
-    function create_slider(text, html) {
+    function createSlider(text, html) {
         const slider = `
             <div class="verticalSection verticalSection-cards actorMoreSection emby-scrollbuttons-scroller" bis_skin_checked = "1" >
                 <div is="emby-scrollbuttons" class="emby-scrollbuttons" bis_skin_checked="1">
-                    <div class="scrollbuttoncontainer scrollbuttoncontainer-backwards" bis_skin_checked="1">
+                    <div class="scrollbuttoncontainer scrollbuttoncontainer-backwards hide" bis_skin_checked="1">
                         <button id="myBackScrollButton" tabindex="-1" type="button" is="paper-icon-button-light" data-ripple="false" data-direction="backwards" class="emby-scrollbuttons-scrollbutton paper-icon-button-light">
                             <i class="md-icon autortl"></i>
                         </button>
@@ -186,7 +193,9 @@
         return slider;
     }
 
-    function create_item_container(itemInfo, increment) {
+
+
+    function createItemContainer(itemInfo, increment) {
         let distance;
         if (OS_current === 'ipad') {
             distance = 182;
@@ -196,17 +205,18 @@
         else {
             distance = 200;
         }
+
         const imgUrl = ApiClient.getImageUrl(itemInfo.Id, { type: "Primary", tag: itemInfo.ImageTags.Primary, maxHeight: 330, maxWidth: 220 });
         const title = itemInfo.Name;
-        const link = `http://${window.location.host}/web/index.html#!/item?id=${itemInfo.Id}&serverId=${itemInfo.ServerId}`
+        const link = `http://${window.location.host}/web/index.html#!/item?id=${itemInfo.Id}&serverId=${itemInfo.ServerId}`;
         const itemContainer = `
-            <div class="virtualScrollItem card portraitCard card-horiz portraitCard-horiz" tabindex="0" draggable="true" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
+            <div class="virtualScrollItem card portraitCard card-horiz portraitCard-horiz" tabindex="0" draggable="false" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
                 <div class="cardBox cardBox-touchzoom cardBox-bottompadded" bis_skin_checked="1">
-                    <button onclick="window.open('${link}')" type="button" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-portrait">
+                    <button onclick="window.open('${link}', '_self')" type="button" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-portrait">
                         <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
                     </button>
                     <div class="cardText cardText-first cardText-first-padded" bis_skin_checked="1">
-                        <button onclick="window.open('${link}')" tabindex="-1" title="${title}" type="button" class="cardMediaInfoItem textActionButton cardTextActionButton emby-button button-link" on-click="location.href='${link}'">${title}</button>
+                        <button onclick="window.open('${link}', '_self')" tabindex="-1" title="${title}" type="button" class="cardMediaInfoItem textActionButton cardTextActionButton emby-button button-link">${title}</button>
                     </div>
                 </div>
             </div>
@@ -215,9 +225,11 @@
         return itemContainer;
     }
 
+ 
+
     async function previewInject() {
-        const fanartHeight = window.innerHeight * 0.3;
-        const Style = `
+        let fanartHeight = window.innerHeight * 0.3;
+        let Style = `
             .my-fanart-image {
                 display: inline-block;
                 margin: 8px 16px 8px 0;
@@ -238,7 +250,7 @@
         if (!peopleSection) return;
 
         const leftMargin = window.innerHeight * 0.077;
-        let html = `<div class="imageSection" style="margin: 0px 0 0 ${leftMargin}px;">`;
+        let html = `<div id="myFanart" class="imageSection" style="margin: 0px 0 0 ${leftMargin}px;">`;
         Array.from(new Set(BackdropImageTags)).forEach((img, index) => {
             if (index === 0) return;
             let url = `http://${window.location.host}/emby/Items/${Id}/Images/Backdrop/${index}?tag=${img}`;
@@ -250,40 +262,60 @@
 
         const banner = create_banner("剧照", html)
         peopleSection.insertAdjacentHTML("afterend", banner);
+
+        // Get the slider element and fanart element
+        const slider = document.getElementById('mySlider');
+        slider.addEventListener('input', function () {
+            const sliderValue = parseFloat(slider.value);
+            const newHeight = fanartHeight * sliderValue;
+            const fanartImages = document.querySelectorAll('.my-fanart-image');
+            fanartImages.forEach(image => {
+                image.style.height = newHeight + 'px';
+            });
+        });
+
     }
    
     async function actorMoreInject() {
         const actorName = getActorName();
-        const actorMoreMovies = await getActorMovies(actorName);
-        if (actorMoreMovies.length > 0) {
-            const similarSection = document.querySelectorAll("div[is='emby-scroller']:not(.hide) .similarSection")[0];
+        const { moreItems, actorMovieNames } = await getActorMovies(actorName);
+        const similarSection = document.querySelectorAll("div[is='emby-scroller']:not(.hide) .similarSection")[0];
+        if (moreItems.length > 0) {
             // Create an HTML structure to display all images
             let imgHtml = '';
-            for (let i = 0; i < actorMoreMovies.length; i++) {
-                imgHtml += create_item_container(actorMoreMovies[i], i);
+            for (let i = 0; i < moreItems.length; i++) {
+                imgHtml += createItemContainer(moreItems[i], i);
             };
-
-            const slider = create_slider(actorName, imgHtml); // Use backticks (`) for template literals
+     
+            const slider = createSlider(actorName, imgHtml);
             const sliderElement = document.createElement('div');
             sliderElement.innerHTML = slider;
             similarSection.insertAdjacentElement('afterend', sliderElement);
 
+            const scrollContainer = document.getElementById('myScrollContainer');
+            // Get all buttons within the container
+            const buttons = scrollContainer.querySelectorAll('button');
+            // Add event listener to each button
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    window.location.reload(); // Refresh the page on button click
+                });
+            });
+
             const backScrollButton = document.getElementById('myBackScrollButton');
             const forwardScrollButton = document.getElementById('myForwardScrollButton');
-            const scrollContainer = document.getElementById('myScrollContainer');
-
             // Smooth scrolling transition
             scrollContainer.style.scrollBehavior = 'smooth';
-
-            backScrollButton.addEventListener('click', () => {
-                scrollContainer.scrollLeft -= 500; // Adjust the scroll amount as needed
-            });
-
+            //backScrollButton.addEventListener('click', () => {
+            //    scrollContainer.scrollLeft -= 500; // Adjust the scroll amount as needed
+            //});
             forwardScrollButton.addEventListener('click', () => {
-                scrollContainer.scrollLeft += 500; // Adjust the scroll amount as needed
+                scrollContainer.scrollLeft += 0.8 * window.innerWidth;; // Adjust the scroll amount as needed
             });
+
+            // adjust item card distance with different window size
             window.addEventListener('resize', adjustCardOffsets);
-            adjustCardOffsets();
+                adjustCardOffsets();
         }
     }
 
@@ -308,6 +340,28 @@
         }
     }
 
+    function adjustCardOffsetsLarge() {
+        const scrollerContainer = document.getElementById('myitemsContainer2');
+
+        // Find all children that contain the portraitCard class
+        const backdropCards = scrollerContainer.querySelectorAll('.backdropCard');
+        if (backdropCards.length > 0) {
+            const cardWidth = backdropCards[0].offsetWidth; // Get width of the first card with padding and border
+            const spacing = 0; // Spacing between cards (adjust as needed)
+            const totalCardWidth = cardWidth + spacing;
+
+            // Set min-width of scrollerContainer
+            scrollerContainer.style.minWidth = `${backdropCards.length * totalCardWidth}px`;
+
+            for (let child of backdropCards) {
+                child.style.left = `${child.previousElementSibling ? child.previousElementSibling.offsetLeft + totalCardWidth : 0}px`;
+            }
+        } else {
+            console.warn("No children with the portraitCard class found in scrollerContainer!");
+        }
+    }
+
+
    
 
     function getActorName() {
@@ -330,13 +384,13 @@
 
             if (actorMoreMovies.Items.length > 0) {
                 let moreItems = Array.from(actorMoreMovies.Items);
+                const actorMovieNames = moreItems.map(movie => getPartBefore(movie.Name, ' ')); // for future use
                 moreItems = moreItems.filter(moreItem => moreItem.Id != item.Id);
-                const actorMovieNames = moreItems.map(movie => getPartBeforeSpace(movie.Name)); // for future use
                 if (actorMoreMovies.Items.length > 12) {
                     moreItems.sort(() => Math.random() - 0.5);
                     moreItems = moreItems.slice(0, 12);
                 }
-                return moreItems;
+                return { moreItems, actorMovieNames};
             } else {
                 console.log('Failed to fetch JSON data.');
                 return null; // Return null or handle the failure case accordingly
@@ -347,8 +401,8 @@
         }
     }
 
-    function getPartBeforeSpace(str) {
-        return str.split(' ')[0];
+    function getPartBefore(str, char) {
+        return str.split(char)[0];
     }
 
     function getOS() {
@@ -369,6 +423,30 @@
             return 'other'
         }
     }
+
+    const request = (url, method = "GET", options = {}) => {
+        method = method ? method.toUpperCase().trim() : "GET";
+        if (!url || !["GET", "HEAD", "POST"].includes(method)) return;
+
+        const { responseType, headers = {} } = options;
+        let requestOptions = { method, headers };
+
+        return new Promise((resolve, reject) => {
+            fetch(url, requestOptions)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return responseType === "json" ? response.json() : response.text(); // Parse response based on responseType
+                })
+                .then(parsedResponse => {
+                    resolve(parsedResponse);
+                })
+                .catch(error => {
+                    reject(error);
+                });
+        });
+    };
 
 
 })();
