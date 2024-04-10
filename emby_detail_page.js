@@ -12,7 +12,7 @@
         if (e.detail.contextPath.startsWith("/item?id=")) {
             if (!e.detail.isRestored) {
                 const mutation = new MutationObserver(async function () {
-                    item = e.target.controller?.currentItem
+                    item = e.target.controller?.currentItem;
                     if (item) {
                         mutation.disconnect();
                         if (showFlag()) {
@@ -27,7 +27,6 @@
                 });
             } else {
                 item = e.target.controller.currentItem;
-                debugger
             }
             
         }
