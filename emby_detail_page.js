@@ -173,7 +173,7 @@
                             <i class="md-icon autortl"></i>
                         </button>
                     </div>
-                    <div class="scrollbuttoncontainer scrollbuttoncontainer-forwards" bis_skin_checked="1">
+                    <div class="scrollbuttoncontainer scrollbuttoncontainer-forwards hide" bis_skin_checked="1">
                         <button id="myForwardScrollButton" tabindex="-1" type="button" is="paper-icon-button-light" data-ripple="false" data-direction="forwards" class="emby-scrollbuttons-scrollbutton paper-icon-button-light">
                             <i class="md-icon autortl"></i>
                         </button>
@@ -182,7 +182,7 @@
                 <h2 class="sectionTitle sectionTitle-cards padded-left padded-left-page padded-right">${text} 其他作品</h2>
                 <div id="myScrollContainer" is="emby-scroller" class="emby-scroller padded-top-focusscale padded-bottom-focusscale padded-left padded-left-page padded-right scrollX hiddenScrollX scrollFrameX" data-mousewheel="false" data-focusscroll="true" data-horizontal="true" bis_skin_checked="1">
 
-                    <div id="myitemsContainer" is="emby-itemscontainer" class="scrollSlider focuscontainer-x itemsContainer focusable actorMoreItemsContainer scrollSliderX emby-scrollbuttons-scrollSlider generalItemsContainer virtualItemsContainer virtual-scroller-overflowvisible virtual-scroller" data-focusabletype="nearest" data-virtualscrolllayout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2412px; height: 351px;" data-minoverhang="1" layout="horizontal-grid">
+                    <div id="myitemsContainer" is="emby-itemscontainer" class="scrollSlider focuscontainer-x itemsContainer focusable actorMoreItemsContainer scrollSliderX emby-scrollbuttons-scrollSlider virtualItemsContainer virtual-scroller-overflowvisible virtual-scroller" data-focusabletype="nearest" data-virtualscrolllayout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2412px; height: 351px;" data-minoverhang="1" layout="horizontal-grid">
                         ${html}
                     </div>
                 </div>
@@ -211,7 +211,7 @@
         const itemContainer = `
             <div class="virtualScrollItem card portraitCard card-horiz portraitCard-horiz" tabindex="0" draggable="false" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
                 <div class="cardBox cardBox-touchzoom cardBox-bottompadded" bis_skin_checked="1">
-                    <button onclick="window.open('${link}', '_self')" type="button" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-portrait">
+                    <button onclick="Emby.Page.showItem('${itemInfo.Id}')" type="button" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-portrait">
                         <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
                     </button>
                     <div class="cardText cardText-first cardText-first-padded" bis_skin_checked="1">
@@ -291,30 +291,30 @@
             sliderElement.innerHTML = slider;
             similarSection.insertAdjacentElement('afterend', sliderElement);
 
-            const scrollContainer = document.getElementById('myScrollContainer');
+            //const scrollContainer = document.getElementById('myScrollContainer');
             // Get all buttons within the container
-            const buttons = scrollContainer.querySelectorAll('button');
+            //const buttons = scrollContainer.querySelectorAll('button');
             // Add event listener to each button
-            buttons.forEach(button => {
-                button.addEventListener('click', () => {
-                    window.location.reload(); // Refresh the page on button click
-                });
-            });
+            //buttons.forEach(button => {
+            //    button.addEventListener('click', () => {
+            //        window.location.reload(); // Refresh the page on button click
+            //    });
+            //});
 
-            const backScrollButton = document.getElementById('myBackScrollButton');
-            const forwardScrollButton = document.getElementById('myForwardScrollButton');
+            //const backScrollButton = document.getElementById('myBackScrollButton');
+            //const forwardScrollButton = document.getElementById('myForwardScrollButton');
             // Smooth scrolling transition
-            scrollContainer.style.scrollBehavior = 'smooth';
+            //scrollContainer.style.scrollBehavior = 'smooth';
             //backScrollButton.addEventListener('click', () => {
             //    scrollContainer.scrollLeft -= 500; // Adjust the scroll amount as needed
             //});
-            forwardScrollButton.addEventListener('click', () => {
-                scrollContainer.scrollLeft += 0.8 * window.innerWidth;; // Adjust the scroll amount as needed
-            });
+            //forwardScrollButton.addEventListener('click', () => {
+            //    scrollContainer.scrollLeft += 0.8 * window.innerWidth;; // Adjust the scroll amount as needed
+            //});
 
             // adjust item card distance with different window size
             window.addEventListener('resize', adjustCardOffsets);
-                adjustCardOffsets();
+        	adjustCardOffsets();
         }
     }
 
