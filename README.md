@@ -13,7 +13,7 @@ Add some features for Emby detail page
 5. 新增Javdb内容，需要自行修改fetchJavDbFlag
 
 ## 部署服务器方法：
-1.在客户端或网页的 `index.html` <body></body> 标签最后，插入以下内容：
+1. 在客户端或网页的 `index.html` <body></body> 标签最后，插入以下内容：
    ```
    <script src="https://kit.fontawesome.com/d82d05d46e.js" crossorigin="anonymous"></script>
    <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/cn2t.js"></script>
