@@ -11,6 +11,7 @@ Add some features for Emby detail page
    - 如有超过12部作品，则随机选择12部展示。
 4. 新增翻译标题和详情功能。需自行添加google API key
 5. 新增Javdb内容，需要自行修改fetchJavDbFlag
+6. 播放本地trailer时，添加影片源信息和跳转功能
 
 ## 部署服务器方法：
 1. 在客户端或网页的 `index.html` <body></body> 标签最后，插入以下内容：
