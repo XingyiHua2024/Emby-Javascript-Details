@@ -11,10 +11,10 @@
             if (!e.detail.isRestored) {
                 const mutation = new MutationObserver(async function () {
                     item = viewnode.controller?.currentItem || viewnode.controller?.videoOsd?.currentItem || viewnode.controller?.currentPlayer?.streamInfo?.item;
-
-                    item && (item.Type === 'Trailer') && insertMoreButton();
-                    mutation.disconnect();
-
+                    if (item) {
+                        (item.Type === 'Trailer') && insertMoreButton();
+                        mutation.disconnect();
+                    }
                 });
                 mutation.observe(document.body, {
                     childList: true,
