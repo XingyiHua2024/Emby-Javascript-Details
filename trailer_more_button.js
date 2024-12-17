@@ -2,18 +2,19 @@
 
 (function () {
     "use strict";
-    var item, viewnode, parentItem, paly_mutation1, paly_mutation2;
+    var item, viewnode, parentItem, paly_mutation1;
+    //var paly_mutation2;
     document.addEventListener("viewbeforeshow", function (e) {    
         paly_mutation1?.disconnect();
-        paly_mutation2?.disconnect(); 
+        //paly_mutation2?.disconnect(); 
         if (e.detail.type === "video-osd") {
             viewnode = e.target;
             if (!e.detail.isRestored) {
                 const mutation = new MutationObserver(async function () {
-                    item = viewnode.controller?.currentItem || viewnode.controller?.videoOsd?.currentItem || viewnode.controller?.currentPlayer?.streamInfo?.item;
+                    item = viewnode.controller?.osdController?.currentItem || viewnode.controller?.currentPlayer?.streamInfo?.item;
                     if (item) {
-                        (item.Type === 'Trailer') && insertMoreButton();
                         mutation.disconnect();
+                        (item.Type === 'Trailer') && insertMoreButton();                  
                     }
                 });
                 mutation.observe(document.body, {
@@ -23,7 +24,7 @@
                 });
             }
             else {
-                item = viewnode.controller?.currentPlayer?.streamInfo?.item;
+                item = viewnode.controller.osdController.currentItem;
             }
      
         }
@@ -32,24 +33,29 @@
 
     async function getParentItem() {
         const userId = await ApiClient.getCurrentUserId();
-        item = await ApiClient.getItem(userId, item.Id);
-        parentItem = await ApiClient.getItem(userId, item.ParentId);
+        if (item.Id) {
+            !item.ParentId && (item = await ApiClient.getItem(userId, item.Id));
+            parentItem = await ApiClient.getItem(userId, item.ParentId);
+        } else {
+            parentItem = await ApiClient.getItem(userId, item.ParentThumbItemId);
+        }
     }
 
     async function insertMoreButton() {
         const bottomSection = viewnode.querySelector('.videoOsdBottom');
         if (!bottomSection) return
-        if (bottomSection.querySelector('#trailerButton')) return
 
         await getParentItem();
 
-        const videoElement = document.querySelector(".htmlVideoPlayerContainer video")
+        let videoElement = document.querySelector(".htmlVideoPlayerContainer video")
+        if (!videoElement) videoElement = document.querySelector(".youtubePlayerContainer iframe")
         videoElement.addEventListener('play', handleStreamInfoChange);
 
-        setTimeout(() => {
-            updateTitle();
-            unhidePeople();
-        }, 500);
+        updateTitle();
+
+        //setTimeout(() => {
+        //    unhidePeople();
+        //}, 500);
 
 
         paly_mutation1 = new MutationObserver(function () {
@@ -64,7 +70,7 @@
             characterData: true,
             subtree: true,
         });
-
+        /*
         paly_mutation2 = new MutationObserver(function () {
             let itemsContainer = viewnode.querySelector('[data-index="2"].videoosd-tab .itemsContainer');
             if (itemsContainer) {
@@ -77,11 +83,19 @@
             characterData: true,
             subtree: true,
         });
+        */
 
     }
 
     function updateTitle() {
-        const titleElements = viewnode.querySelectorAll('.videoOsdBottom .videoOsdParentTitleContainer .videoOsdParentTitle');
+        viewnode.controller.osdController.currentDisplayItem.Name = 'trailer: ' + parentItem.Name;
+        viewnode.controller.osdController.currentDisplayItem.People = parentItem.People;
+        //viewnode.controller.osdController.currentDisplayItem.Id = parentItem.Id;
+        //viewnode.controller.osdController.currentDisplayItem.ImageTags = parentItem.ImageTags;
+        
+        const titleElement = viewnode.querySelectorAll('.videoOsdBottom .videoOsdParentTitleContainer .videoOsdParentTitle')[0];
+        titleElement.textContent = `trailer: ${parentItem.Name}`;
+        /*
         let count = 0;
         const intervalId = setInterval(() => {
             titleElements.forEach(element => {
@@ -93,9 +107,11 @@
             if (count >= 3) {
                 clearInterval(intervalId);
             }
-        }, 500);
+        }, 300);
+        */
     }
 
+    /*
     function unhidePeople() {
         if (parentItem.People.length == 0) return
         const peopleButton = viewnode.querySelector('[data-index="2"].videoosd-tab-button')
@@ -110,16 +126,17 @@
             }
         }, 500);
     }
+    */
 
     function updateAttribute() {
         let count = 0;
         const intervalId = setInterval(() => {
             let card = viewnode.querySelector('[data-index="0"].videoosd-tab .itemsContainer .card .cardOverlayContainer');
             let cardImage = viewnode.querySelector('[data-index="0"].videoosd-tab .itemsContainer .card .cardImageContainer');
-            if (card && card.getAttribute('data-action') == 'none') {
+            if (card && card.getAttribute('data-action') === 'none') {
                 card.setAttribute('data-action', 'link');
             }
-            if (cardImage && cardImage.getAttribute('data-action') == 'none') {
+            if (cardImage && cardImage.getAttribute('data-action') === 'none') {
                 cardImage.setAttribute('data-action', 'link');
             }
             count++;
@@ -130,17 +147,17 @@
     }
 
     async function handleStreamInfoChange() {
-        item = viewnode.controller?.currentItem || viewnode.controller?.videoOsd?.currentItem || viewnode.controller?.currentPlayer?.streamInfo?.item;
+        item = viewnode.controller.osdController.currentItem || viewnode.controller.currentPlayer.streamInfo.item;
         if (item.Type === 'Trailer') { 
             await getParentItem();
-            setTimeout(() => {
-                updateTitle();
-                unhidePeople();
-            }, 500);
+            updateTitle();
+            //setTimeout(() => {
+            //    unhidePeople();
+            //}, 500);
         } else {
             parentItem = item;
             paly_mutation1?.disconnect();
-            paly_mutation2?.disconnect();   
+            //paly_mutation2?.disconnect();   
         }
     }
 
@@ -166,7 +183,7 @@
                 TotalRecordCount: items.length
             })
     }
-
+    /*
     function fetchPeople(query) {
         var itemThis = parentItem
             , serverId = itemThis.ServerId
@@ -183,5 +200,6 @@
                 TotalRecordCount: totalRecordCount
             })
     }
+    */
 
 })();
