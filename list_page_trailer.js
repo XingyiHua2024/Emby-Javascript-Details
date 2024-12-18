@@ -22,7 +22,7 @@
                                     mutation.addedNodes.forEach(node => {
                                         // Check if the added node is a card
                                         if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('virtualScrollItem')) {
-                                            console.log('New card added:', node);
+                                            //console.log('New card added:', node);
                                             // Perform actions on the new card
                                             addTrailer(node);
                                         }
