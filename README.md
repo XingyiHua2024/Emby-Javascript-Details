@@ -20,6 +20,7 @@ Add some features for Emby detail page
    <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/cn2t.js"></script>
    <script type="text/javascript" src="trailer_more_button.js"></script>
    <script type="text/javascript" src="emby_detail_page.js"></script>
+   <script type="text/javascript" src="list_page_trailer.js"></script>
    ```
 2. 将 `XXX.js` 文件下载放在index.html同级目录中，非window记得授权可读。
 
