@@ -51,9 +51,9 @@
     });
 
 
-    function init() {
+    async function init() {
         buttonInit();
-        previewInject();
+        await previewInject();
         modalInject();
 
         actorMoreInject()
@@ -385,7 +385,7 @@
         return itemContainer;
     }
 
-    function previewInject() {
+    async function previewInject() {
 
         //removeExisting('myFanart');
         if ((OS_current === 'iphone') || (OS_current === 'android')) return
@@ -412,20 +412,53 @@
 
         const { BackdropImageTags = [], Id } = item;
         if (BackdropImageTags.length == 0) return;
+	    
         const peopleSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .peopleSection");
         if (!peopleSection) return;
 
-        const leftMargin = window.innerHeight * 0.077;
-        let altIndex = 0;
-        let html = `<div id="myFanart" class="imageSection" style="margin: 0px 0 0 ${leftMargin}px;">`;
-        for (let index = 0; index < BackdropImageTags.length; index++) {
-            if (index > 0 && BackdropImageTags[index] === BackdropImageTags[index - 1]) {
-                continue;
-            } else {
-                let url = `http://${window.location.host}/emby/Items/${Id}/Images/Backdrop/${index}?tag=${BackdropImageTags[index]}`;
-                html += `<img class='my-fanart-image' src="${url}" alt="${altIndex}" />`;
-                altIndex++;
+    	const images = await ApiClient.getItemImageInfos(item.Id);
+        const backdrops = images.filter(image => image.ImageType === "Backdrop");
+
+        const uniqueBackdrops = [];
+        const seenFilenames = new Set();
+
+        backdrops.forEach((backdrop) => {
+            // Check for duplicate filenames
+            if (!seenFilenames.has(backdrop.Filename)) {
+                seenFilenames.add(backdrop.Filename);
+                uniqueBackdrops.push(backdrop);
             }
+        });
+
+        uniqueBackdrops.sort((a, b) => {
+            // Always prioritize the item with ImageIndex = 0
+            if (a.ImageIndex === 0) return -1;
+            if (b.ImageIndex === 0) return 1;
+        
+            // Function to extract the numeric part from the filename
+            const extractNumber = (filename) => {
+                const match = filename.match(/\d+/); // Find the first number in the filename
+                return match ? parseInt(match[0], 10) : 0; // Convert to number or default to 0
+            };
+        
+            const numA = extractNumber(a.Filename);
+            const numB = extractNumber(b.Filename);
+        
+            // Sort based on the extracted number
+            if (numA !== numB) {
+                return numA - numB;
+            }
+        
+            // Fallback to lexicographical order for filenames
+            return a.Filename.localeCompare(b.Filename);
+        });
+
+        const leftMargin = window.innerHeight * 0.077;
+        let html = `<div id="myFanart" class="imageSection" style="margin: 0px 0 0 ${leftMargin}px;">`;
+        for (let index = 0; index < uniqueBackdrops.length; index++) {
+            let tagIndex = uniqueBackdrops[index].ImageIndex;
+            let url = ApiClient.getImageUrl(item.Id, { type: "Backdrop", index: tagIndex, tag: BackdropImageTags[tagIndex] });
+            html += `<img class='my-fanart-image' src="${url}" alt="${index}" loading="lazy" />`;
         }
         html += `</div>`;
         // Apply the styles from Style_ipad to .my-fanart-image class
