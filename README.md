@@ -6,6 +6,7 @@ Add some features for Emby detail page
 2. 展示剧照（不支持手机）。
    - 部分代码来自于： https://github.com/newday-life/emby-front-end-mod/tree/main/fanart_show
    - 感谢作者：https://github.com/newday-life
+   - 用文件名排序
 3. 在“更多类似”下面增加此演员其他作品展示。
    - 如有多个演员，则随机选择其中一个；
    - 如有超过12部作品，则随机选择12部展示。
