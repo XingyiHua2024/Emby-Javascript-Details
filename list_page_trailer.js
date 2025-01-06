@@ -4,27 +4,31 @@
     "use strict";
 
     var paly_mutation;
-    const OS_current = getOS();
-    if (OS_current != 'windows') return;
     document.addEventListener("viewbeforeshow", function (e) {
         paly_mutation?.disconnect(); // Disconnect previous observer if exists
 
         // Filter specific context paths
         if (e.detail.contextPath.startsWith("/list/") ||
             e.detail.contextPath.startsWith("/videos?") ||
-            e.detail.contextPath.startsWith("/tv?")) {
+            e.detail.contextPath.startsWith("/tv?") &&
+            !e.detail.contextPath.includes("type=Person")) {
+
+            applyBackgroundStyle();
+
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints;
+            if (isTouchDevice) return;
 
             const setupObserver = (itemsContainer) => {
                 if (!itemsContainer) return;
 
-                paly_mutation = new MutationObserver((mutationsList) => {
-                    mutationsList.forEach(mutation => {
-                        mutation.addedNodes.forEach(node => {
+                paly_mutation = new MutationObserver(async (mutationsList) => {
+                    for (let mutation of mutationsList) {
+                        for (let node of mutation.addedNodes) {
                             if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('virtualScrollItem')) {
-                                addTrailer(node); // Perform actions on the new card
+                                await addTrailer(node); // Wait for addTrailer to finish before moving on to the next one
                             }
-                        });
-                    });
+                        }
+                    }
                 });
 
                 // Start observing for child additions
@@ -44,17 +48,32 @@
             });
 
             if (!e.detail.isRestored) {
+                //loadCSSFile('./style.css');
                 mutation.observe(document.body, {
                     childList: true,
                     subtree: true, // Observe all descendants for better detection
                 });
             } else {
+                //loadCSSFile('./style.css');
                 const viewnode = e.target;
                 const itemsContainer = viewnode?.querySelector("div[is='emby-scroller']:not(.hide) .virtualItemsContainer");
                 setupObserver(itemsContainer); // Reattach observer for restored views
             }
         }
     });
+
+    function applyBackgroundStyle() {
+        const viewList = document.querySelector('.view-list-list');
+        if (!viewList) return;
+
+        const isAdmin = ApiClient.getCurrentUserId() === adminUserId;
+
+        if (isAdmin) {
+            viewList.classList.add('bg-style');
+        } else {
+            viewList.classList.remove('bg-style');
+        }
+    }
 
 
     async function addTrailer(node) {
@@ -78,6 +97,8 @@
             return;
         }
 
+        imgContainer.classList.add('has-trailer');
+
         // Load YouTube IFrame API
         if (!window.YT) {
             const tag = document.createElement('script');
@@ -97,8 +118,34 @@
 
         let isHovered = false; // Flag to track hover status
 
+        const handleMouseLeave = () => {
+            isHovered = false;
+            imgContainer.classList.add('has-trailer');
+            img.style.filter = ''; // Remove blur effect
+
+            const playerContainer = imgContainer.querySelector(`#player-${itemId}`);
+            if (playerContainer) {
+                const player = window.YT.get(playerContainer.id);
+                if (player) player.destroy();
+                playerContainer.remove();
+            } else {
+                const allVideos = imgContainer.querySelectorAll('video');
+                allVideos.forEach(video => {
+                    video.remove(); // Remove each video element
+                });
+            }
+        };
+
         node.addEventListener('mouseenter', () => {
+            if (isHovered) return; // Prevent duplicate mouseenter logic
             isHovered = true;
+            imgContainer.classList.remove('has-trailer');
+
+            // Add the mouseleave listener only once
+            if (!node.hasMouseLeaveListener) {
+                node.addEventListener('mouseleave', handleMouseLeave);
+                node.hasMouseLeaveListener = true;
+            }
 
             // Check if the trailer is a YouTube URL
             if (trailerUrl.includes('youtube.com') || trailerUrl.includes('youtu.be')) {
@@ -106,7 +153,6 @@
                     ? trailerUrl.replace('watch?v=', 'embed/')
                     : trailerUrl.replace('youtu.be/', 'youtube.com/embed/');
 
-                // Create a container for the YouTube player
                 const playerContainer = document.createElement('div');
                 playerContainer.style.position = 'absolute';
                 playerContainer.style.top = '50%';
@@ -118,7 +164,6 @@
                 playerContainer.id = `player-${itemId}`;
                 imgContainer.appendChild(playerContainer);
 
-                // Initialize the YouTube player
                 const player = new YT.Player(playerContainer.id, {
                     videoId: new URL(embedUrl).pathname.split('/').pop(),
                     playerVars: {
@@ -133,35 +178,15 @@
                         },
                     },
                 });
-
-                node.addEventListener('mouseleave', () => {
-                    isHovered = false;
-                    player.destroy(); // Clean up the player instance
-                    playerContainer.remove(); // Remove the container
-                    img.style.filter = 'none'; // Remove blur effect
-                });
             } else {
-                // Handle local video trailers as before
                 const videoElement = document.createElement('video');
                 videoElement.src = trailerUrl;
                 videoElement.autoplay = true;
                 videoElement.muted = true;
-                videoElement.style.position = 'absolute';
-                videoElement.style.top = '50%';
-                videoElement.style.left = '0';
-                videoElement.style.transform = 'translate(0, -50%)';
-                videoElement.style.width = '100%';
-                videoElement.style.height = 'auto';
-                videoElement.style.zIndex = '3';
-                videoElement.style.pointerEvents = 'none';
+                videoElement.classList.add('video-element');
+
                 imgContainer.appendChild(videoElement);
                 img.style.filter = 'blur(5px)';
-
-                node.addEventListener('mouseleave', () => {
-                    isHovered = false;
-                    videoElement.remove();
-                    img.style.filter = 'none';
-                });
             }
         });
     }
@@ -176,6 +201,7 @@
         return `${ApiClient._serverAddress}/emby/videos/${item.Id}/original.${item.MediaSources[0].Container}?MediaSourceId=${item.MediaSources[0].Id}&api_key=${ApiClient.accessToken()}`;
     }
 
+    /*   
     function getOS() {
         let u = navigator.userAgent
         if (!!u.match(/compatible/i) || u.match(/Windows/i)) {
@@ -194,6 +220,6 @@
             return 'other'
         }
     }
-
+    */
 
 })();
