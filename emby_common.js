@@ -7,10 +7,6 @@ const googleApiKey = '';
 // put your own googleApiKey for translate movie title and movie details
 
 const nameMap = {
-    "橋本ありな": "新ありな",
-    "水川スミレ": "百多えみり",
-    "長谷川みく": "長谷川ミク",
-    "河北彩伽": "河北彩花"
 };
 
 const OS_current = (() => {
