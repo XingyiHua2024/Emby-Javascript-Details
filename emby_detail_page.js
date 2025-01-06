@@ -693,9 +693,6 @@
     async function previewInject() {
         if ((OS_current === 'iphone') || (OS_current === 'android')) return;
 
-        const showJavDbFlag = (item.CustomRating && item.CustomRating === 'JP-18+') || (item.OfficialRating && item.OfficialRating === 'JP-18+');
-        if (!showJavDbFlag) return;
-
         if (item.BackdropImageTags.length === 0) return;
 
         const images = await ApiClient.getItemImageInfos(item.Id);
