@@ -10,6 +10,7 @@ emby_detail_page.js
    2. 在“更多类似”下面增加此演员及导演其他作品展示。
       - 如有多个演员，则随机选择其中一个；
       - 如有超过12部作品，则随机选择12部展示。
+      - ![Screenshot](Screenshot 2025-01-05 234345.png)
    3. 新增翻译标题和详情功能。需自行添加 google API key in emby_common.js
    4. 新增Javdb内容，需要自行修改 javDbFlag
       
