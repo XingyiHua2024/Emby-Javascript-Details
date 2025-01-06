@@ -2,9 +2,9 @@
 Add some features for Emby detail page
 
 ## 功能：
-emby_detail_page.js
+### emby_detail_page.js
    1. 展示剧照（不支持手机）。
-      - 部分代码来自于： https://github.com/newday-life/emby-front-end-mod/tree/main/fanart_show
+      - 部分代码来自于：https://github.com/newday-life/emby-front-end-mod/tree/main/fanart_show
       - 感谢作者：https://github.com/newday-life
       - 用文件名排序
       - ![fanart](images/fanart.png)
@@ -13,23 +13,24 @@ emby_detail_page.js
       - 如有多个演员，则随机选择其中一个；
       - 如有超过12部作品，则随机选择12部展示。
       - ![Screenshot](images/actorMore.png)
-   3. 新增翻译标题和详情功能。需自行添加 google API key in emby_common.js
-   4. 新增Javdb内容
+   3. 翻译标题和详情功能。
+      - 需自行添加 google API key in emby_common.js
+   4. 加载Javdb内容。
       - 需要自行修改 javDbFlag
-      - 结合 MDCx 使用: https://github.com/sqzw-x/mdcx
+      - 结合 MDCx 使用：https://github.com/sqzw-x/mdcx
       
-trailer_more_button.js
+### trailer_more_button.js
    1. 播放本地trailer时，添加影片源信息和跳转功能
       
-list_page.js
+### list_page.js
    1. list页鼠标悬停自动播放本地trailer （newday-life大神承诺推出但是还没推出的功能）
 
-emby_common.js
+### emby_common.js
    1. save common variables/configs
    2. google API key
    3. Emby User ID
 
-style.css
+### style.css
    1. css styles
 
 ## 部署服务器方法：
