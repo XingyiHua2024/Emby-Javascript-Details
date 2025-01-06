@@ -12,7 +12,7 @@ emby_detail_page.js
       - 如有多个演员，则随机选择其中一个；
       - 如有超过12部作品，则随机选择12部展示。
    4. 新增翻译标题和详情功能。需自行添加google API key in emby_common.js
-   5. 新增Javdb内容，需要自行修改javDbFlag in emby_common.js
+   5. 新增Javdb内容，需要自行修改javDbFlag
       
 trailer_more_button.js
    1. 播放本地trailer时，添加影片源信息和跳转功能
