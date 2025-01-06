@@ -710,27 +710,28 @@
         });
 
         uniqueBackdrops.sort((a, b) => {
-            // Always prioritize the item with ImageIndex = 0
-            if (a.ImageIndex === 0) return -1;
-            if (b.ImageIndex === 0) return 1;
-        
-            // Function to extract the numeric part from the filename
-            const extractNumber = (filename) => {
-                const match = filename.match(/\d+/); // Find the first number in the filename
-                return match ? parseInt(match[0], 10) : 0; // Convert to number or default to 0
-            };
-        
-            const numA = extractNumber(a.Filename);
-            const numB = extractNumber(b.Filename);
-        
-            // Sort based on the extracted number
-            if (numA !== numB) {
-                return numA - numB;
-            }
-        
-            // Fallback to lexicographical order for filenames
-            return a.Filename.localeCompare(b.Filename);
-        });
+	    // Always prioritize the item with ImageIndex = 0
+	    if (a.ImageIndex === 0) return -1;
+	    if (b.ImageIndex === 0) return 1;
+	
+	    // Function to extract the numeric part from the filename
+	    const extractNumber = (filename) => {
+	        if (!filename) return 0; // Return 0 if filename is undefined or null
+	        const match = filename.match(/\d+/); // Find the first number in the filename
+	        return match ? parseInt(match[0], 10) : 0; // Convert to number or default to 0
+	    };
+	
+	    const numA = extractNumber(a.Filename);
+	    const numB = extractNumber(b.Filename);
+	
+	    // Sort based on the extracted number
+	    if (numA !== numB) {
+	        return numA - numB;
+	    }
+	
+	    // Fallback to lexicographical order for filenames
+	    return (a.Filename || '').localeCompare(b.Filename || '');
+	});
 
         const peopleSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .peopleSection");
         if (!peopleSection) return;
