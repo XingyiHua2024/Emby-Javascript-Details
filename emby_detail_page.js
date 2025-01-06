@@ -2151,9 +2151,6 @@
 
     function translatePath(linuxPath) {
         const mountMatch = {
-            "/XFiles/": "W:\\XFiles\\",
-            "/mnt/ZDrive/": "Z:\\",
-            "/mnt/YDrive/": "Y:\\"
         };
         // Iterate through the mountMatch dictionary
         for (const [linuxPrefix, windowsPrefix] of Object.entries(mountMatch)) {
