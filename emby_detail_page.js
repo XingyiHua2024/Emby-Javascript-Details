@@ -93,7 +93,7 @@
 
     async function init() {
         javdbTitle();
-        buttonInit();
+        //buttonInit();
 
         await previewInject();
         modalInject();
