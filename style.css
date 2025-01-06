@@ -417,13 +417,6 @@
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3); /* Slightly reduce shadow */
 }
 
-.bg-style {
-    background: linear-gradient(to right top, rgba(0, 0, 0, 0.98), rgba(0, 0, 0, 0.2)), url(https://www.netflav.info/static/bg1.jpg);
-    background-attachment: fixed;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: cover;
-}
 
 @media (max-width: 50em) {
     .swiper-thumbs {
