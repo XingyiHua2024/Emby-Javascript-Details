@@ -7,6 +7,8 @@ emby_detail_page.js
       - 部分代码来自于： https://github.com/newday-life/emby-front-end-mod/tree/main/fanart_show
       - 感谢作者：https://github.com/newday-life
       - 用文件名排序
+      - ![fanart](fanart.png)
+      - ![modal](modal.png)
    2. 在“更多类似”下面增加此演员及导演其他作品展示。
       - 如有多个演员，则随机选择其中一个；
       - 如有超过12部作品，则随机选择12部展示。
