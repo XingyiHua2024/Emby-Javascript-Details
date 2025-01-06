@@ -347,9 +347,9 @@
                         paly_mutation.disconnect();
                         addNewLinks(mediaInfoItem, newLinks);
                         mediaInfoStyle(mediaInfoItem);
-                        timeLength();
-                        tagInsert(mediaInfoItem);
-                        moveTopDown();
+                        //timeLength();
+                        //tagInsert(mediaInfoItem);
+                        //moveTopDown();
                     }
                 }
             });
