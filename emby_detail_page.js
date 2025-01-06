@@ -9,7 +9,7 @@
     const show_pages = ["Movie"];
     /* page item.Type "Person" "Movie" "Series" "Season" "Episode" "BoxSet" so. */
 
-    const javDbFlag = true;
+    const javDbFlag = false;
     // fetch data form Javdb.com and display in detail page. Only support movies that has CustomRating === 'JP-18+' or OfficialRating === 'JP-18+'
 
     const googleTranslateLanguage = 'ja';
