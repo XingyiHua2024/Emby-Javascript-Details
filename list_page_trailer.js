@@ -13,8 +13,6 @@
             e.detail.contextPath.startsWith("/tv?") &&
             !e.detail.contextPath.includes("type=Person")) {
 
-            applyBackgroundStyle();
-
             const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints;
             if (isTouchDevice) return;
 
@@ -61,19 +59,6 @@
             }
         }
     });
-
-    function applyBackgroundStyle() {
-        const viewList = document.querySelector('.view-list-list');
-        if (!viewList) return;
-
-        const isAdmin = ApiClient.getCurrentUserId() === adminUserId;
-
-        if (isAdmin) {
-            viewList.classList.add('bg-style');
-        } else {
-            viewList.classList.remove('bg-style');
-        }
-    }
 
 
     async function addTrailer(node) {
