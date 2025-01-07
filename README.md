@@ -22,6 +22,10 @@ Add some features for Emby detail page
       
 ### trailer_more_button.js
    1. 播放本地trailer时，添加影片源信息和跳转功能
+#### before
+      ![before](images/trailer_before.png)
+#### after
+      ![after](images/trailer_after.png)
       
 ### list_page.js
    1. list页鼠标悬停自动播放本地trailer （newday-life大神承诺推出但是还没推出的功能）
