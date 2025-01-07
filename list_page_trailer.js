@@ -178,7 +178,7 @@
 
 
     function getItemIdFromUrl(url) {
-        const match = url.match(/\/Items\/(\d+)\/Images\//);
+        const match = url.match(/\/Items\/(\d+)\//);
         return match ? match[1] : null; // Return the ID if found, otherwise null
     }
 
