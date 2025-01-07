@@ -43,7 +43,7 @@ Add some features for Emby detail page
 ### style.css
    1. css styles
 
-## 部署服务器方法：
+## 部署服务器方法 1：
 1. 在客户端或网页的 `index.html` <body></body> 标签最后，插入以下内容：
    ```
    <script src="https://kit.fontawesome.com/d82d05d46e.js" crossorigin="anonymous"></script>
@@ -57,6 +57,8 @@ Add some features for Emby detail page
    ```
 2. 将 `XXX.js` 文件下载放在index.html同级目录中，非window记得授权可读。
 
+## 部署服务器方法 2：
+配合Emby自定义JavaScript及Css项目：https://github.com/Shurelol/Emby.CustomCssJS 
    
 
 
