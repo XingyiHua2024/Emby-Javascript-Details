@@ -22,9 +22,9 @@ Add some features for Emby detail page
       
 ### trailer_more_button.js
    1. 播放本地trailer时，添加影片源信息和跳转功能
-#### before
+      before
       ![before](images/trailer_before.png)
-#### after
+      after
       ![after](images/trailer_after.png)
       
 ### list_page.js
