@@ -21,7 +21,9 @@ Add some features for Emby detail page
       - 结合 MDCx 使用：https://github.com/sqzw-x/mdcx
       
 ### trailer_more_button.js
-   1. 播放本地trailer时，添加影片源信息和跳转功能
+
+1. 播放本地trailer时，添加影片源信息和跳转功能
+
 ## Before
 
 ![before](images/trailer_before.png)
