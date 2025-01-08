@@ -672,7 +672,7 @@
             `;
         } else {
             itemContainer = `
-            <div class="card backdropCard card-horiz backdropCard-horiz card-hoverable card-autoactive" tabindex="0" draggable="true">
+            <div class="card backdropCard card-horiz card-hoverable card-autoactive" tabindex="0" draggable="true">
                 <div class="cardBox cardBox-touchzoom cardBox-bottompadded">
                     <button onclick="window.open('${link}', '_blank')" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-backdrop myCardImage">  
                         <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
@@ -2066,6 +2066,7 @@
 
 
     async function translateOnly(text) {
+	if (googleApiKey.length === 0) { return text; }
         const apiUrl = `https://translation.googleapis.com/language/translate/v2?key=${googleApiKey}`;
         let text_jp = googleTranslateLanguage === 'ja' ? OpenCC.Converter({ from: 'cn', to: 'jp' })(text) : text;
         
