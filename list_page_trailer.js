@@ -187,7 +187,7 @@
     }
 
     function getTrailerUrl(item) {
-        return `${ApiClient._serverAddress}/emby/videos/${item.Id}/original.${item.MediaSources[0].Container}?MediaSourceId=${item.MediaSources[0].Id}&api_key=${ApiClient.accessToken()}`;
+        return `${ApiClient._serverAddress}/emby/videos/${item.Id}/original.${item.MediaSources[0].Container}?DeviceId=${ApiClient._deviceId}&MediaSourceId=${item.MediaSources[0].Id}&api_key=${ApiClient.accessToken()}`;
     }
 
     /*   
