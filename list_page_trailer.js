@@ -61,6 +61,7 @@
     });
 
 
+
     async function addTrailer(node) {
         const cardBox = node.querySelector('.cardBox');
         const imgContainer = cardBox?.querySelector('.cardImageContainer');
@@ -69,37 +70,40 @@
         const itemId = getItemIdFromUrl(img.src);
         if (!itemId || itemId.length === 0) return;
 
-        const item = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemId);
+        const item = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemId, {Fields: 'LocalTrailerCount,RemoteTrailers'});
         let trailerUrl;
 
         if (item.LocalTrailerCount > 0) {
             const localTrailers = await ApiClient.getLocalTrailers(ApiClient.getCurrentUserId(), itemId);
-            const trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
+            const trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id, {Fields: 'MediaSources'});
             trailerUrl = getTrailerUrl(trailerItem);
         } else if (item.RemoteTrailers && item.RemoteTrailers.length > 0) {
             trailerUrl = item.RemoteTrailers[0].Url;
+
+            // Load YouTube IFrame API
+            if (!window.YT) {
+                const tag = document.createElement('script');
+                tag.src = "https://www.youtube.com/iframe_api";
+                const firstScriptTag = document.getElementsByTagName('script')[0];
+                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+            }
+
+            // Wait for API to load
+            await new Promise((resolve) => {
+                const checkYT = () => {
+                    if (window.YT && window.YT.Player) resolve();
+                    else setTimeout(checkYT, 50);
+                };
+                checkYT();
+            });
+
         } else {
             return;
         }
 
         imgContainer.classList.add('has-trailer');
 
-        // Load YouTube IFrame API
-        if (!window.YT) {
-            const tag = document.createElement('script');
-            tag.src = "https://www.youtube.com/iframe_api";
-            const firstScriptTag = document.getElementsByTagName('script')[0];
-            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-        }
-
-        // Wait for API to load
-        await new Promise((resolve) => {
-            const checkYT = () => {
-                if (window.YT && window.YT.Player) resolve();
-                else setTimeout(checkYT, 50);
-            };
-            checkYT();
-        });
+        
 
         let isHovered = false; // Flag to track hover status
 
@@ -133,7 +137,7 @@
             }
 
             // Check if the trailer is a YouTube URL
-            if (trailerUrl.includes('youtube.com') || trailerUrl.includes('youtu.be')) {
+            if (item.LocalTrailerCount == 0 && trailerUrl.includes('youtube.com') || trailerUrl.includes('youtu.be')) {
                 const embedUrl = trailerUrl.includes('watch')
                     ? trailerUrl.replace('watch?v=', 'embed/')
                     : trailerUrl.replace('youtu.be/', 'youtube.com/embed/');
@@ -175,7 +179,6 @@
             }
         });
     }
-
 
     function getItemIdFromUrl(url) {
         const match = url.match(/\/Items\/(\d+)\//);
