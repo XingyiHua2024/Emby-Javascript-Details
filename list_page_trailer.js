@@ -70,12 +70,12 @@
         const itemId = getItemIdFromUrl(img.src);
         if (!itemId || itemId.length === 0) return;
 
-        const item = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemId, {Fields: 'LocalTrailerCount,RemoteTrailers'});
+        const item = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemId);
         let trailerUrl;
 
         if (item.LocalTrailerCount > 0) {
             const localTrailers = await ApiClient.getLocalTrailers(ApiClient.getCurrentUserId(), itemId);
-            const trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id, {Fields: 'MediaSources'});
+            const trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
             //trailerUrl = getTrailerUrl(trailerItem);
             trailerUrl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
         } else if (item.RemoteTrailers && item.RemoteTrailers.length > 0) {
