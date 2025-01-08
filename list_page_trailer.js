@@ -80,24 +80,24 @@
             trailerUrl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
         } else if (item.RemoteTrailers && item.RemoteTrailers.length > 0) {
             trailerUrl = item.RemoteTrailers[0].Url;
-
-            // Load YouTube IFrame API
-            if (!window.YT) {
-                const tag = document.createElement('script');
-                tag.src = "https://www.youtube.com/iframe_api";
-                const firstScriptTag = document.getElementsByTagName('script')[0];
-                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-            }
-
-            // Wait for API to load
-            await new Promise((resolve) => {
-                const checkYT = () => {
-                    if (window.YT && window.YT.Player) resolve();
-                    else setTimeout(checkYT, 50);
-                };
-                checkYT();
-            });
-
+            if (trailerUrl.includes('youtube.com') || trailerUrl.includes('youtu.be')) {
+                // Load YouTube IFrame API
+                if (!window.YT) {
+                    const tag = document.createElement('script');
+                    tag.src = "https://www.youtube.com/iframe_api";
+                    const firstScriptTag = document.getElementsByTagName('script')[0];
+                    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                }
+    
+                // Wait for API to load
+                await new Promise((resolve) => {
+                    const checkYT = () => {
+                        if (window.YT && window.YT.Player) resolve();
+                        else setTimeout(checkYT, 50);
+                    };
+                    checkYT();
+                });
+            } else { return; }
         } else {
             return;
         }
