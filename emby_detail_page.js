@@ -538,18 +538,7 @@
         const titleText = isActor ? `${text} 其他作品` : `${text}（导演） 其他作品`;
         const slider = `
             <div class="verticalSection verticalSection-cards actorMoreSection emby-scrollbuttons-scroller" bis_skin_checked = "1" >
-                <div is="emby-scrollbuttons" class="emby-scrollbuttons" bis_skin_checked="1">
-                    <div class="scrollbuttoncontainer scrollbuttoncontainer-backwards hide" bis_skin_checked="1">
-                        <button id="myBackScrollButton" tabindex="-1" type="button" is="paper-icon-button-light" data-ripple="false" data-direction="backwards" class="emby-scrollbuttons-scrollbutton paper-icon-button-light">
-                            <i class="md-icon autortl"></i>
-                        </button>
-                    </div>
-                    <div class="scrollbuttoncontainer scrollbuttoncontainer-forwards hide" bis_skin_checked="1">
-                        <button id="myForwardScrollButton" tabindex="-1" type="button" is="paper-icon-button-light" data-ripple="false" data-direction="forwards" class="emby-scrollbuttons-scrollbutton paper-icon-button-light">
-                            <i class="md-icon autortl"></i>
-                        </button>
-                    </div>
-                </div>
+                
                 <h2 class="sectionTitle sectionTitle-cards padded-left padded-left-page padded-right">${titleText}</h2>
                 <div is="emby-scroller" class="emby-scroller padded-top-focusscale padded-bottom-focusscale padded-left padded-left-page padded-right scrollX hiddenScrollX scrollFrameX" data-mousewheel="false" data-focusscroll="true" data-horizontal="true" bis_skin_checked="1">
 
@@ -568,18 +557,7 @@
         if (item.Type != 'BoxSet') {
             slider = `
             <div class="verticalSection verticalSection-cards section1 emby-scrollbuttons-scroller" bis_skin_checked="1">
-                <div is="emby-scrollbuttons" class="emby-scrollbuttons" bis_skin_checked="1">
-                    <div class="scrollbuttoncontainer scrollbuttoncontainer-backwards hide" bis_skin_checked="1">
-                        <button tabindex="-1" type="button" is="paper-icon-button-light" data-ripple="false" data-direction="backwards" class="emby-scrollbuttons-scrollbutton paper-icon-button-light">
-                            <i class="md-icon autortl"></i>
-                        </button>
-                    </div>
-                    <div class="scrollbuttoncontainer scrollbuttoncontainer-forwards hide" bis_skin_checked="1">
-                        <button tabindex="-1" type="button" is="paper-icon-button-light" data-ripple="false" data-direction="forwards" class="emby-scrollbuttons-scrollbutton paper-icon-button-light">
-                            <i class="md-icon autortl"></i>
-                        </button>
-                    </div>
-                </div>
+                
                 <div class="sectionTitleContainer sectionTitleContainer-cards padded-left padded-left-page padded-right" bis_skin_checked="1">
                     <a onclick="window.open('${linkUrl}', '_blank')" is="emby-sectiontitle" class="noautofocus button-link button-link-color-inherit sectionTitleTextButton sectionTitleTextButton-link sectionTitleTextButton-more emby-button emby-button-backdropfilter">
                         <h2 class="sectionTitle sectionTitle-cards">${text}</h2>
