@@ -48,8 +48,14 @@
         await getParentItem();
 
         let videoElement = document.querySelector(".htmlVideoPlayerContainer video")
-        if (!videoElement) videoElement = document.querySelector(".youtubePlayerContainer iframe")
-        videoElement.addEventListener('play', handleStreamInfoChange);
+        if (!videoElement) videoElement = document.querySelector(".youtubePlayerContainer iframe");
+
+        const isYouTube = videoElement && videoElement.tagName === 'IFRAME' && videoElement.src.includes("youtube.com");
+
+        if (!isYouTube) {
+            // For standard video elements, add play event listener
+            videoElement.addEventListener('play', handleStreamInfoChange);
+        }
 
         updateTitle();
 
@@ -88,27 +94,35 @@
     }
 
     function updateTitle() {
-        viewnode.controller.osdController.currentDisplayItem.Name = 'trailer: ' + parentItem.Name;
-        viewnode.controller.osdController.currentDisplayItem.People = parentItem.People;
-        //viewnode.controller.osdController.currentDisplayItem.Id = parentItem.Id;
-        //viewnode.controller.osdController.currentDisplayItem.ImageTags = parentItem.ImageTags;
-        
-        const titleElement = viewnode.querySelectorAll('.videoOsdBottom .videoOsdParentTitleContainer .videoOsdParentTitle')[0];
-        titleElement.textContent = `trailer: ${parentItem.Name}`;
-        /*
+
         let count = 0;
+
+        // Set an interval to ensure the title remains updated
         const intervalId = setInterval(() => {
-            titleElements.forEach(element => {
-                if (!element.textContent.includes(parentItem.Name)) {
-                    element.textContent = `trailer: ${parentItem.Name}`;
-                }   
-            });
+            updateTitleSigle();
+
             count++;
             if (count >= 3) {
-                clearInterval(intervalId);
+                clearInterval(intervalId); // Clear the interval after 3 iterations
             }
         }, 300);
-        */
+
+    }
+
+    function updateTitleSigle() {
+        const currentItem = viewnode.controller.osdController.currentDisplayItem;
+        currentItem.Name = 'trailer: ' + parentItem.Name;
+        currentItem.People = parentItem.People;
+        //currentItem.Id = parentItem.Id;
+        //currentItem.ImageTags = parentItem.ImageTags;
+
+        const titleElement = viewnode.querySelector('.videoOsdBottom .videoOsdParentTitleContainer .videoOsdParentTitle');
+
+        // Check if the element exists
+        if (titleElement) {
+            // Update the title immediately
+            titleElement.textContent = `trailer: ${parentItem.Name}`;
+        }
     }
 
     /*
@@ -158,6 +172,12 @@
             parentItem = item;
             paly_mutation1?.disconnect();
             //paly_mutation2?.disconnect();   
+        }
+    }
+
+    function handleYouTubeStateChange(event) {
+        if (event.data === YT.PlayerState.PLAYING) {
+            handleStreamInfoChange();
         }
     }
 
