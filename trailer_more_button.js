@@ -4,7 +4,7 @@
     "use strict";
     var item, viewnode, parentItem, paly_mutation1;
     //var paly_mutation2;
-    document.addEventListener("viewbeforeshow", function (e) {    
+    document.addEventListener("viewbeforeshow", function (e) {
         paly_mutation1?.disconnect();
         //paly_mutation2?.disconnect(); 
         if (e.detail.type === "video-osd") {
@@ -12,9 +12,9 @@
             if (!e.detail.isRestored) {
                 const mutation = new MutationObserver(async function () {
                     item = viewnode.controller?.osdController?.currentItem || viewnode.controller?.currentPlayer?.streamInfo?.item;
-                    if (item) {
+                    if (item && document.querySelector(".htmlVideoPlayerContainer video")) {
                         mutation.disconnect();
-                        (item.Type === 'Trailer') && insertMoreButton();                  
+                        (item.Type === 'Trailer') && insertMoreButton();
                     }
                 });
                 mutation.observe(document.body, {
@@ -26,7 +26,7 @@
             else {
                 item = viewnode.controller.osdController.currentItem;
             }
-     
+
         }
     });
 
@@ -48,14 +48,9 @@
         await getParentItem();
 
         let videoElement = document.querySelector(".htmlVideoPlayerContainer video")
-        if (!videoElement) videoElement = document.querySelector(".youtubePlayerContainer iframe");
 
-        const isYouTube = videoElement && videoElement.tagName === 'IFRAME' && videoElement.src.includes("youtube.com");
-
-        if (!isYouTube) {
-            // For standard video elements, add play event listener
-            videoElement.addEventListener('play', handleStreamInfoChange);
-        }
+        //if (!videoElement) videoElement = document.querySelector(".youtubePlayerContainer iframe")
+        videoElement.addEventListener('play', handleStreamInfoChange);
 
         updateTitle();
 
@@ -65,10 +60,10 @@
 
 
         paly_mutation1 = new MutationObserver(function () {
-            let itemsContainer = viewnode.querySelector('[data-index="0"].videoosd-tab .itemsContainer');  
+            let itemsContainer = viewnode.querySelector('[data-index="0"].videoosd-tab .itemsContainer');
             if (itemsContainer) {
                 paly_mutation1.disconnect();
-                itemsContainer.fetchData = fetchItem; 
+                itemsContainer.fetchData = fetchItem;
             }
         });
         paly_mutation1.observe(viewnode.querySelector('[data-index="0"].videoosd-tab'), {
@@ -94,35 +89,35 @@
     }
 
     function updateTitle() {
+        viewnode.controller.osdController.currentDisplayItem.Name = 'trailer: ' + parentItem.Name;
+        viewnode.controller.osdController.currentDisplayItem.People = parentItem.People;
+        //viewnode.controller.osdController.currentDisplayItem.Id = parentItem.Id;
+        //viewnode.controller.osdController.currentDisplayItem.ImageTags = parentItem.ImageTags;
 
+        const titleElements = viewnode.querySelectorAll('.videoOsdBottom .videoOsdParentTitleContainer .videoOsdParentTitle');
+
+        // Check if there are any elements
+        if (titleElements.length > 0) {
+            titleElements.forEach(titleElement => {
+                // Update the title immediately
+                titleElement.textContent = `trailer: ${parentItem.Name}`;
+            });
+        }
+
+        /*
         let count = 0;
-
-        // Set an interval to ensure the title remains updated
         const intervalId = setInterval(() => {
-            updateTitleSigle();
-
+            titleElements.forEach(element => {
+                if (!element.textContent.includes(parentItem.Name)) {
+                    element.textContent = `trailer: ${parentItem.Name}`;
+                }
+            });
             count++;
             if (count >= 3) {
-                clearInterval(intervalId); // Clear the interval after 3 iterations
+                clearInterval(intervalId);
             }
         }, 300);
-
-    }
-
-    function updateTitleSigle() {
-        const currentItem = viewnode.controller.osdController.currentDisplayItem;
-        currentItem.Name = 'trailer: ' + parentItem.Name;
-        currentItem.People = parentItem.People;
-        //currentItem.Id = parentItem.Id;
-        //currentItem.ImageTags = parentItem.ImageTags;
-
-        const titleElement = viewnode.querySelector('.videoOsdBottom .videoOsdParentTitleContainer .videoOsdParentTitle');
-
-        // Check if the element exists
-        if (titleElement) {
-            // Update the title immediately
-            titleElement.textContent = `trailer: ${parentItem.Name}`;
-        }
+        */
     }
 
     /*
@@ -162,7 +157,7 @@
 
     async function handleStreamInfoChange() {
         item = viewnode.controller.osdController.currentItem || viewnode.controller.currentPlayer.streamInfo.item;
-        if (item.Type === 'Trailer') { 
+        if (item.Type === 'Trailer') {
             await getParentItem();
             updateTitle();
             //setTimeout(() => {
@@ -175,13 +170,7 @@
         }
     }
 
-    function handleYouTubeStateChange(event) {
-        if (event.data === YT.PlayerState.PLAYING) {
-            handleStreamInfoChange();
-        }
-    }
-
-    function fetchItem() {  
+    function fetchItem() {
         setTimeout(() => {
             updateAttribute();
         }, 500);
