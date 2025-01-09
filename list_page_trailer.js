@@ -158,7 +158,7 @@
                 playerContainer.style.height = '100%';
                 playerContainer.style.zIndex = '3';
                 playerContainer.id = `player-${itemId}`;
-                cardOverlay.appendChild(playerContainer);
+                imgContainer.appendChild(playerContainer);
 
                 const player = new YT.Player(playerContainer.id, {
                     videoId: new URL(embedUrl).pathname.split('/').pop(),
