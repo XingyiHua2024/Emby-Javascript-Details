@@ -52,7 +52,6 @@ Add some features for Emby detail page
    <script type="text/javascript" src="emby_detail_page.js"></script>
    <script type="text/javascript" src="list_page.js"></script>
    <link rel="stylesheet" href="./style.css">
-   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
    <script type="text/javascript" src="emby_common.js"></script>
    ```
 2. 将 `XXX.js` 文件下载放在index.html同级目录中，非window记得授权可读。
