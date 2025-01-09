@@ -119,7 +119,7 @@
             imgContainer.classList.add('has-trailer');
             img.style.filter = ''; // Remove blur effect
 
-            const playerContainer = cardOverlay.querySelector(`#player-${itemId}`);
+            const playerContainer = imgContainer.querySelector(`#player-${itemId}`);
             if (playerContainer) {
                 const player = window.YT.get(playerContainer.id);
                 if (player) player.destroy();
