@@ -80,6 +80,11 @@
     border-radius: 8px;
     height: 27vh; 
     transition: transform 0.3s ease, filter 0.3s ease;
+    min-height: 180px;
+}
+
+.my-fanart-image-slider {
+    height: 20vh !important;
 }
 
 .my-fanart-image:hover {
@@ -118,10 +123,18 @@
 
 .modal-content {
     margin: auto;
-    max-width: 100%;
-    max-height: 100%;
+    max-width: 70%;
+    max-height: 70%;
     overflow: hidden;
     opacity: 0;
+}
+
+/* Media query for mobile devices (screen width 768px or smaller) */
+@media (max-width: 768px) {
+    .modal-content {
+        max-width: 80%;
+        max-height: 80%;
+    }
 }
 
 .modal-closing .modal-content {
@@ -237,7 +250,7 @@
 
 .modal-caption {
     position: fixed;
-    bottom: 10px; /* Adjust distance from bottom */
+    bottom: 20px; /* Adjust distance from bottom */
     left: 50%;
     transform: translateX(-50%);
     text-align: center;
@@ -246,6 +259,12 @@
     background-color: rgba(0, 0, 0, 0.6); /* Optional background for readability */
     padding: 5px 10px;
     border-radius: 5px;
+}
+
+@media screen and (max-width: 480px) {
+    .modal-caption {
+        bottom: 100px; /* Increased distance for iPhones */
+    }
 }
 
 .video-element {
@@ -417,6 +436,13 @@
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3); /* Slightly reduce shadow */
 }
 
+.bg-style {
+    background: linear-gradient(to right top, rgba(0, 0, 0, 0.98), rgba(0, 0, 0, 0.2)), url(https://assets.nflxext.com/ffe/siteui/vlv3/058eee37-6c24-403a-95bd-7d85d3260ae1/5030300f-ed0c-473a-9795-a5123d1dd81d/US-en-20240422-POP_SIGNUP_TWO_WEEKS-perspective_WEB_0941c399-f3c4-4352-8c6d-0a3281e37aa0_large.jpg);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+}
 
 @media (max-width: 50em) {
     .swiper-thumbs {
