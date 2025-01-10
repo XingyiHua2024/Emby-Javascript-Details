@@ -2,11 +2,10 @@
 
 (function () {
     "use strict";
-    var item, viewnode, parentItem, paly_mutation1, item_mutation;
+    var item, viewnode, parentItem, paly_mutation1;
     //var paly_mutation2;
     document.addEventListener("viewbeforeshow", function (e) {
         paly_mutation1?.disconnect();
-        item_mutation?.disconnect(); 
         if (e.detail.type === "video-osd") {
             viewnode = e.target;
             if (!e.detail.isRestored) {
