@@ -78,31 +78,21 @@
 
     function moveTopDown() {
         const topMain = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .topDetailsMain");
+
         if (topMain) {
+            // Check if already adjusted
+            if (topMain.dataset.movedDown === "true") {
+                return; // Exit if already moved
+            }
+
             const distanceFromTop = topMain.getBoundingClientRect().top + window.scrollY;
             const height = topMain.offsetHeight;
             const moveDownBy = window.innerHeight - height - distanceFromTop;
 
             topMain.style.paddingTop = `${moveDownBy}px`;
-            /*
-            const topDetailsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .topDetailsContainer");
-            
-            // Add double-click event listener
-            topDetailsContainer.addEventListener('dblclick', () => {
 
-                // Set initial paddingTop with transition
-                topMain.style.transition = 'padding-top 0.5s ease';
-                // Parse current paddingTop as a float for comparison
-                const currentPadding = parseFloat(topMain.style.paddingTop) || 0;
-
-                // Toggle between `moveDownBy` and `moveDownBy + height`
-                if (Math.abs(currentPadding - moveDownBy) < 0.1) { // Allow for small floating-point differences
-                    topMain.style.paddingTop = `${moveDownBy + height}px`;
-                } else {
-                    topMain.style.paddingTop = `${moveDownBy}px`;
-                }
-            });
-            */
+            // Mark as adjusted
+            topMain.dataset.movedDown = "true";
         }
     }
 
