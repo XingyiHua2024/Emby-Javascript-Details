@@ -2,17 +2,17 @@
 
 (function () {
     "use strict";
-    var item, viewnode, parentItem, paly_mutation1;
+    var item, viewnode, parentItem, paly_mutation1, item_mutation;
     //var paly_mutation2;
     document.addEventListener("viewbeforeshow", function (e) {
         paly_mutation1?.disconnect();
-        //paly_mutation2?.disconnect(); 
+        item_mutation?.disconnect(); 
         if (e.detail.type === "video-osd") {
             viewnode = e.target;
             if (!e.detail.isRestored) {
                 const mutation = new MutationObserver(async function () {
                     item = viewnode.controller?.osdController?.currentItem || viewnode.controller?.currentPlayer?.streamInfo?.item;
-                    if (item && document.querySelector(".htmlVideoPlayerContainer video")) {
+                    if (item) {
                         mutation.disconnect();
                         (item.Type === 'Trailer') && insertMoreButton();
                     }
@@ -35,7 +35,12 @@
         const userId = await ApiClient.getCurrentUserId();
         if (item.Id) {
             !item.ParentId && (item = await ApiClient.getItem(userId, item.Id));
-            parentItem = await ApiClient.getItem(userId, item.ParentId);
+            if (!item.Name.includes('trailer')) {
+                parentItem = item;
+            } else {
+                parentItem = await ApiClient.getItem(userId, item.ParentId);
+            }
+            
         } else {
             parentItem = await ApiClient.getItem(userId, item.ParentThumbItemId);
         }
@@ -47,10 +52,9 @@
 
         await getParentItem();
 
-        let videoElement = document.querySelector(".htmlVideoPlayerContainer video")
+        let videoElement = document.querySelector(".htmlVideoPlayerContainer video");
 
-        //if (!videoElement) videoElement = document.querySelector(".youtubePlayerContainer iframe")
-        videoElement.addEventListener('play', handleStreamInfoChange);
+        videoElement && videoElement.addEventListener('play', handleStreamInfoChange);
 
         updateTitle();
 
@@ -71,15 +75,17 @@
             characterData: true,
             subtree: true,
         });
+
         /*
-        paly_mutation2 = new MutationObserver(function () {
-            let itemsContainer = viewnode.querySelector('[data-index="2"].videoosd-tab .itemsContainer');
-            if (itemsContainer) {
-                paly_mutation2.disconnect();
-                itemsContainer.fetchData = fetchPeople;
+        item_mutation = new MutationObserver(function () {
+            let newItem = viewnode.controller?.osdController?.currentItem || viewnode.controller?.currentPlayer?.streamInfo?.item;
+            if (newItem && newItem !== item) {
+                item_mutation.disconnect();
+                item = newItem;
+                updateTitle();
             }
         });
-        paly_mutation2.observe(viewnode.querySelector('[data-index="2"].videoosd-tab'), {
+        item_mutation.observe(viewnode, {
             childList: true,
             characterData: true,
             subtree: true,
@@ -94,30 +100,10 @@
         //viewnode.controller.osdController.currentDisplayItem.Id = parentItem.Id;
         //viewnode.controller.osdController.currentDisplayItem.ImageTags = parentItem.ImageTags;
 
-        const titleElements = viewnode.querySelectorAll('.videoOsdBottom .videoOsdParentTitleContainer .videoOsdParentTitle');
-
-        // Check if there are any elements
-        if (titleElements.length > 0) {
-            titleElements.forEach(titleElement => {
-                // Update the title immediately
-                titleElement.textContent = `trailer: ${parentItem.Name}`;
-            });
+        const titleElement = viewnode.querySelectorAll('.videoOsdBottom .videoOsdParentTitleContainer .videoOsdParentTitle')[0];
+        if (titleElement) {
+            titleElement.textContent = `trailer: ${parentItem.Name}`;
         }
-
-        /*
-        let count = 0;
-        const intervalId = setInterval(() => {
-            titleElements.forEach(element => {
-                if (!element.textContent.includes(parentItem.Name)) {
-                    element.textContent = `trailer: ${parentItem.Name}`;
-                }
-            });
-            count++;
-            if (count >= 3) {
-                clearInterval(intervalId);
-            }
-        }, 300);
-        */
     }
 
     /*
