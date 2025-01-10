@@ -3,7 +3,7 @@
 (function () {
     "use strict";
 
-    var paly_mutation;
+    var paly_mutation, adminUserId;
 
 
     document.addEventListener("viewbeforeshow", function (e) {
@@ -14,6 +14,8 @@
             e.detail.contextPath.startsWith("/videos?") ||
             e.detail.contextPath.startsWith("/tv?") &&
             !e.detail.contextPath.includes("type=Person")) {
+
+            applyBackgroundStyle();
 
             const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints;
             if (isTouchDevice) return;
@@ -62,7 +64,31 @@
         }
     });
 
+    async function loadConfig() {
+        const response = await fetch('./config.json');
+        if (!response.ok) {
+            console.error(`Failed to fetch config.json: ${response.status} ${response.statusText}`);
+            return; // Exit the function if the file is not found or another error occurs
+        }
+        const config = await response.json();
+        adminUserId = config.adminUserId;
+    }
 
+    async function applyBackgroundStyle() {
+        
+        const viewList = document.querySelector('.view-list-list');
+        if (!viewList) return;
+
+        await loadConfig();
+
+        const isAdmin = ApiClient.getCurrentUserId() === adminUserId;
+
+        if (isAdmin) {
+            viewList.classList.add('bg-style');
+        } else {
+            viewList.classList.remove('bg-style');
+        }
+    }
 
 
     async function addTrailer(node) {
@@ -203,13 +229,13 @@
         )).MediaSources[0];
 
         if (trailerurl.Protocol == "File") {
-           //videourl = `${ApiClient.serverAddress()}/emby${trailerurl.DirectStreamUrl}`;
+            //videourl = `${ApiClient.serverAddress()}/emby${trailerurl.DirectStreamUrl}`;
             videourl = await ApiClient.getItemDownloadUrl(item.Id, item.MediaSources[0].Id, item.serverId);
+
         } else if (trailerurl.Protocol == "Http") {
             videourl = trailerurl.Path;
         }
         return videourl;
-
     }
 
     /*   
