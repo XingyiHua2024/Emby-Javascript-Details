@@ -3,7 +3,7 @@
 (function () {
     "use strict";
 
-    var paly_mutation, adminUserId;
+    var paly_mutation, adminUserId = '';
 
 
     document.addEventListener("viewbeforeshow", function (e) {
@@ -85,9 +85,7 @@
 
         if (isAdmin) {
             viewList.classList.add('bg-style');
-        } else {
-            viewList.classList.remove('bg-style');
-        }
+        } 
     }
 
 
