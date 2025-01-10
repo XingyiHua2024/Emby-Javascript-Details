@@ -3,7 +3,7 @@ Add some features for Emby detail page
 
 ## 功能：
 ### emby_detail_page.js
-   1. 展示剧照（不支持手机）。
+   1. 展示剧照
       - 部分代码来自于：https://github.com/newday-life/emby-front-end-mod/tree/main/fanart_show
       - 感谢作者：https://github.com/newday-life
       - 用文件名排序
