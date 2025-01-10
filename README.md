@@ -7,7 +7,7 @@ Add some features for Emby detail page
       - 部分代码来自于：https://github.com/newday-life/emby-front-end-mod/tree/main/fanart_show
       - 感谢作者：https://github.com/newday-life
       - 用文件名排序
-      - ![fanart](images/fanart.png)
+      - ![fanart](images/fanart_new.png)
       - ![modal](images/modal.png)
    2. 在“更多类似”下面增加此演员及导演其他作品展示。
       - 如有多个演员，则随机选择其中一个；
@@ -35,7 +35,7 @@ Add some features for Emby detail page
 ### list_page.js
    1. list页鼠标悬停自动播放本地trailer （newday-life大神承诺推出但是还没推出的功能）
 
-### emby_common.js
+### config.json
    1. save common variables/configs
    2. google API key
    3. Emby User ID
@@ -52,7 +52,6 @@ Add some features for Emby detail page
    <script type="text/javascript" src="emby_detail_page.js"></script>
    <script type="text/javascript" src="list_page.js"></script>
    <link rel="stylesheet" href="./style.css">
-   <script type="text/javascript" src="emby_common.js"></script>
    ```
 2. 将 `XXX.js` 文件下载放在index.html同级目录中，非window记得授权可读。
 
