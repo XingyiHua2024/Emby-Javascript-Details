@@ -79,8 +79,8 @@
         if (item.LocalTrailerCount > 0) {
             const localTrailers = await ApiClient.getLocalTrailers(ApiClient.getCurrentUserId(), itemId);
             const trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
-            //trailerUrl = await getTrailerUrl(trailerItem);
-            trailerUrl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
+            trailerUrl = await getTrailerUrl(trailerItem);
+            //trailerUrl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
         } else if (item.RemoteTrailers && item.RemoteTrailers.length > 0) {
             trailerUrl = item.RemoteTrailers[0].Url;
             if (trailerUrl.includes('youtube.com') || trailerUrl.includes('youtu.be')) {
@@ -203,8 +203,8 @@
         )).MediaSources[0];
 
         if (trailerurl.Protocol == "File") {
-            videourl = `${ApiClient.serverAddress()}/emby${trailerurl.DirectStreamUrl}`;
-
+           //videourl = `${ApiClient.serverAddress()}/emby${trailerurl.DirectStreamUrl}`;
+            videourl = await ApiClient.getItemDownloadUrl(item.Id, item.MediaSources[0].Id, item.serverId);
         } else if (trailerurl.Protocol == "Http") {
             videourl = trailerurl.Path;
         }
