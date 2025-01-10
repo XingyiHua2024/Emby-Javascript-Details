@@ -37,8 +37,8 @@ Add some features for Emby detail page
 
 ### config.json
    1. save configs. 必须放在index.html同级目录中
-   2. google API key
-   3. Emby User ID
+   2. google API key （选填。不添加不会触发翻译功能）
+   3. Emby User ID （选填。不添加不会触发JavDb功能）
 
 ### style.css
    1. css styles
