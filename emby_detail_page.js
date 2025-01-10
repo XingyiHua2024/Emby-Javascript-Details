@@ -3,10 +3,8 @@
 (function () {
     "use strict";
 
-    
-
     //config
-    const show_pages = ["Movie"];
+    const show_pages = ["Movie", "Series", "Season", "Episode", "BoxSet"];
     /* page item.Type "Person" "Movie" "Series" "Season" "Episode" "BoxSet" so. */
 
     const javDbFlag = false;
@@ -16,9 +14,13 @@
     // put language to translate from (ja for Japanese) to Chinese. Leave '' to support any language
 
 
-    var item, actorName, directorName, actorMovieNames, viewnode, paly_mutation;
+    var item, actorName, directorName, viewnode, paly_mutation;
 
+    var adminUserId = '', googleApiKey = '', nameMap = {};
     var fetchJavDbFlag = javDbFlag;
+
+    const OS_current = getOS();
+
     // monitor dom changements
     document.addEventListener("viewbeforeshow", function (e) {
         paly_mutation?.disconnect();
@@ -29,14 +31,15 @@
                     item = viewnode.controller?.currentItem;
                     if (item) {
                         mutation.disconnect();
-
-                        fetchJavDbFlag = (ApiClient.getCurrentUserId() === adminUserId) ? javDbFlag : false;
-                        
+                        await loadConfig();
                         if (showFlag()) {
-                            init();
-                        } else if (item.Type == 'BoxSet') {
-                            translateInject();
-                            seriesInject();
+          
+                            if (item.Type === 'BoxSet') {
+                                translateInject();
+                                seriesInject();
+                            } else {
+                                init();
+                            }     
                         }
                     }
                 });
@@ -48,18 +51,30 @@
             } else {
                 viewnode = e.target;
                 item = viewnode.controller.currentItem;
-                if (showFlag()) {
+                if (item && showFlag() && item.Type != 'BoxSet') {
                     actorName = getActorName();
-                    directorName = getDirectorName();
-                    fetchJavDbFlag = (ApiClient.getCurrentUserId() === adminUserId) ? javDbFlag : false;
+                    directorName = getActorName(true);
                     setTimeout(() => {
                         javdbTitle();
                         adjustCardOffsets();
+                        adjustSliderWidth();
                     }, 500);
                 }
             }
         }
     });
+
+    async function loadConfig() {
+        const response = await fetch('./config.json');
+        if (!response.ok) {
+            console.error(`Failed to fetch config.json: ${response.status} ${response.statusText}`);
+            return; // Exit the function if the file is not found or another error occurs
+        }
+        const config = await response.json();
+        adminUserId = config.adminUserId;
+        googleApiKey = config.googleApiKey;
+        nameMap = config.nameMap;
+    }
 
     function moveTopDown() {
         const topMain = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .topDetailsMain");
@@ -99,7 +114,7 @@
         modalInject();
 
         const excludeIds = await actorMoreInject();
-        directorMoreInject(excludeIds);
+        actorMoreInject(true, excludeIds);
 
         translateInject();
         javdbButtonInit();
@@ -286,7 +301,7 @@
             return link;
         }
 
-        if (OS_current == 'iphone') return
+        if (OS_current == 'iphone' || OS_current == 'android') return
 
         const noNumCode = code.replace(/^\d+(?=[A-Za-z])/, '');
 
@@ -335,8 +350,9 @@
             if (mediaInfoItem) {
                 addNewLinks(mediaInfoItem, newLinks);
                 mediaInfoStyle(mediaInfoItem);
-                timeLength();
-                tagInsert(mediaInfoItem);
+                //timeLength();
+                //tagInsert(mediaInfoItem);
+                //moveTopDown();
             }
         } else {
             paly_mutation = new MutationObserver(function () {
@@ -520,17 +536,26 @@
     }
 
 
-    function createBanner(text, html) {
-        const margin = window.innerWidth * 0.035;
-        const banner = `
-		    <div class="verticalSection verticalSection-cards">
-			    <div class="sectionTitleContainer padded-left padded-left-page padded-right sectionTitleContainer-cards focusable" data-focusabletype="nearest">
-                    <h2 class="sectionTitle sectionTitle-cards">
-                        <span>${text}</span>
-                    </h2>
+    function createBanner(text, html, addSlider = false) {
+        let banner;
+
+        if (addSlider) {
+            banner = `
+		    <div class="verticalSection verticalSection-cards emby-scrollbuttons-scroller">
+              
+			    <h2 class="sectionTitle sectionTitle-cards padded-left padded-left-page padded-right">${text}</h2>
+                <div is="emby-scroller" class="emby-scroller padded-top-focusscale padded-bottom-focusscale padded-left padded-left-page padded-right scrollX hiddenScrollX scrollFrameX" data-mousewheel="false" data-focusscroll="true" data-horizontal="true" bis_skin_checked="1">
+			        ${html}
                 </div>
+		    </div>`;
+        } else {
+            banner = `
+		    <div class="verticalSection verticalSection-cards">
+			    <h2 class="sectionTitle sectionTitle-cards padded-left padded-left-page padded-right">${text}</h2>
 			    ${html}
 		    </div>`;
+        }
+        
         return banner
     }
 
@@ -538,7 +563,6 @@
         const titleText = isActor ? `${text} 其他作品` : `${text}（导演） 其他作品`;
         const slider = `
             <div class="verticalSection verticalSection-cards actorMoreSection emby-scrollbuttons-scroller" bis_skin_checked = "1" >
-                
                 <h2 class="sectionTitle sectionTitle-cards padded-left padded-left-page padded-right">${titleText}</h2>
                 <div is="emby-scroller" class="emby-scroller padded-top-focusscale padded-bottom-focusscale padded-left padded-left-page padded-right scrollX hiddenScrollX scrollFrameX" data-mousewheel="false" data-focusscroll="true" data-horizontal="true" bis_skin_checked="1">
 
@@ -556,8 +580,7 @@
         let slider;
         if (item.Type != 'BoxSet') {
             slider = `
-            <div class="verticalSection verticalSection-cards section1 emby-scrollbuttons-scroller" bis_skin_checked="1">
-                
+            <div class="verticalSection verticalSection-cards emby-scrollbuttons-scroller" bis_skin_checked="1">
                 <div class="sectionTitleContainer sectionTitleContainer-cards padded-left padded-left-page padded-right" bis_skin_checked="1">
                     <a onclick="window.open('${linkUrl}', '_blank')" is="emby-sectiontitle" class="noautofocus button-link button-link-color-inherit sectionTitleTextButton sectionTitleTextButton-link sectionTitleTextButton-more emby-button emby-button-backdropfilter">
                         <h2 class="sectionTitle sectionTitle-cards">${text}</h2>
@@ -668,8 +691,13 @@
         return itemContainer;
     }
 
-    async function previewInject() {
-        if ((OS_current === 'iphone') || (OS_current === 'android')) return;
+    async function previewInject(isSlider = false) {
+
+        const showJavDbFlag = (item.CustomRating && item.CustomRating === 'JP-18+') || (item.OfficialRating && item.OfficialRating === 'JP-18+');
+
+        let addSlider = false;
+        if (!showJavDbFlag || 'ontouchstart' in window || navigator.maxTouchPoints || window.innerHeight > window.innerWidth || isSlider) addSlider = true;
+
 
         if (item.BackdropImageTags.length === 0) return;
 
@@ -681,55 +709,70 @@
 
         backdrops.forEach((backdrop) => {
             // Check for duplicate filenames
-            if (!seenFilenames.has(backdrop.Filename)) {
-                seenFilenames.add(backdrop.Filename);
+            if (!seenFilenames.has(backdrop.Path)) {
+                seenFilenames.add(backdrop.Path);
                 uniqueBackdrops.push(backdrop);
             }
         });
 
         uniqueBackdrops.sort((a, b) => {
-	    // Always prioritize the item with ImageIndex = 0
-	    if (a.ImageIndex === 0) return -1;
-	    if (b.ImageIndex === 0) return 1;
-	
-	    // Function to extract the numeric part from the filename
-	    const extractNumber = (filename) => {
-	        if (!filename) return 0; // Return 0 if filename is undefined or null
-	        const match = filename.match(/\d+/); // Find the first number in the filename
-	        return match ? parseInt(match[0], 10) : 0; // Convert to number or default to 0
-	    };
-	
-	    const numA = extractNumber(a.Filename);
-	    const numB = extractNumber(b.Filename);
-	
-	    // Sort based on the extracted number
-	    if (numA !== numB) {
-	        return numA - numB;
-	    }
-	
-	    // Fallback to lexicographical order for filenames
-	    return (a.Filename || '').localeCompare(b.Filename || '');
-	});
+            // Always prioritize the item with ImageIndex = 0
+            if (a.ImageIndex === 0) return -1;
+            if (b.ImageIndex === 0) return 1;
+
+            // Move undefined or null filenames to the end
+            if (!a.Filename && b.Filename) return 1;
+            if (a.Filename && !b.Filename) return -1;
+
+            // Function to extract the numeric part from the filename
+            const extractNumber = (filename) => {
+                if (!filename) return 0; // Return 0 if filename is undefined or null
+                const match = filename.match(/\d+/); // Find the first number in the filename
+                return match ? parseInt(match[0], 10) : 0; // Convert to number or default to 0
+            };
+
+            const numA = extractNumber(a.Filename);
+            const numB = extractNumber(b.Filename);
+
+            // Sort based on the extracted number
+            if (numA !== numB) {
+                return numA - numB;
+            }
+
+            // Fallback to lexicographical order for filenames
+            return (a.Filename || '').localeCompare(b.Filename || '');
+        });
 
         const peopleSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .peopleSection");
         if (!peopleSection) return;
 
         let isCollapsed = uniqueBackdrops.length > 20;
-        let html = `<div id="myFanart" class="imageSection itemsContainer focuscontainer-x padded-left padded-left-page padded-right vertical-wrap" 
+        let html = '';
+        if (addSlider) {
+            html = `<div id="myFanart" is="emby-itemscontainer" class="imageSection itemsContainer virtualItemsContainer focusable focuscontainer-x scrollSlider scrollSliderX emby-scrollbuttons-scrollSlider"  data-focusabletype="nearest" data-virtualscrolllayout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2412px;" data-minoverhang="1" layout="horizontal-grid">`;
+        } else {
+            html = `<div id="myFanart" is="emby-itemscontainer" class="imageSection itemsContainer focuscontainer-x padded-left padded-left-page padded-right vertical-wrap" 
                     style="${isCollapsed ? `max-height: ${0.81 * window.innerHeight + 56}px; overflow: hidden;` : ''}">`;
+        }
+        
 
         for (let index = 0; index < uniqueBackdrops.length; index++) {
             let tagIndex = uniqueBackdrops[index].ImageIndex;
             let filename = uniqueBackdrops[index].Filename; // Get the filename
             let url = ApiClient.getImageUrl(item.Id, { type: "Backdrop", index: tagIndex, tag: item.BackdropImageTags[tagIndex] });
+            let width = uniqueBackdrops[index].Width;
+            let height = uniqueBackdrops[index].Height;
+
+            // Check if width or height is undefined, null, or 0
+            let ratio = (width && height) ? (width / height).toFixed(2) : (16 / 9).toFixed(2);
         
             // Add the filename as a data attribute
-            html += `<img class='my-fanart-image' src="${url}" alt="${index}" loading="lazy" data-filename="${filename}" />`;
+            html += `<img class='my-fanart-image ${addSlider ? 'my-fanart-image-slider' : ''}' src="${url}" alt="${index}" loading="lazy" data-filename="${filename || ''}" data-ratio="${ratio}"/>`;
         }
         html += `</div>`;
 
         // Add the toggle button if images exceed 30
-        if (isCollapsed) {
+        if (isCollapsed && !addSlider) {
             html += `
                 <button id="toggleFanart" style="margin-top: 10px; display: block;">
                     ▼ 显示剧照(共${uniqueBackdrops.length}张) ▼
@@ -737,11 +780,19 @@
             `;
         }
 
-        const banner = createBanner("剧照", html);
+        const banner = createBanner("剧照", html, addSlider);
         peopleSection.insertAdjacentHTML("afterend", banner);
 
-        // Add event listener for the toggle button
-        if (isCollapsed) {
+        if (addSlider) {
+            adjustSliderWidth();
+
+            const actorMoreSections = document.querySelectorAll('.imageSection');
+            if (actorMoreSections.length == 1) {
+                window.addEventListener('resize', function () {
+                    adjustSliderWidth();
+                });
+            }
+        } else if (isCollapsed) {
             const button = viewnode.querySelector("#toggleFanart");
             button.addEventListener("click", () => {
                 const fanartSection = viewnode.querySelector("#myFanart");
@@ -759,9 +810,39 @@
         }
     }
 
+    function adjustSliderWidth() {
+ 
+        const fanartSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .imageSection");
+        if (!fanartSection || !fanartSection.classList.contains('scrollSlider')) return
+
+        const fanartImages = fanartSection.querySelectorAll(".my-fanart-image");
+        if (!fanartImages || fanartImages.length === 0) return;
+
+        
+        const height = Math.max(0.2 * window.innerHeight, 180);
+
+        // Initialize total width
+        let totalWidth = 0;
+
+        // Iterate through each fanart image
+        fanartImages.forEach(image => {
+  
+            // Read the ratio from the dataset or default to 16/9 if not present
+            const ratio = parseFloat(image.dataset.ratio) || (16 / 9);
+
+            // Calculate the width of the current image
+            const imageWidth = height * ratio + 20; // Add 20 as padding
+
+            // Add the image width to the total width
+            totalWidth += imageWidth;
+        });
+
+        // Apply the total width to the fanart section
+        fanartSection.style.minWidth = `${totalWidth}px`;
+    }
+
     function modalInject() {
-        //removeExisting('myModal');
-        if ((OS_current === 'iphone') || (OS_current === 'android')) return
+
         // Detect if the device is touch-enabled
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints;
         var fanartSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .imageSection");
@@ -1163,12 +1244,13 @@
     }
 
 
-    async function actorMoreInject() {
+    async function actorMoreInject(isDirector = false, excludeIds = []) {
+        const name = getActorName(isDirector);
+        isDirector ? (directorName = name) : (actorName = name);
 
-        actorName = getActorName();
-        if (actorName.length > 0) {
-            const moreItems = await getActorMovies();
-            const similarSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .similarSection");
+        if (name.length > 0) {
+            const moreItems = await getActorMovies(name, excludeIds);
+            const aboutSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .aboutSection");
 
 
             if (moreItems.length > 0) {
@@ -1178,11 +1260,12 @@
                     imgHtml += createItemContainer(moreItems[i], i);
                 };
 
-                const slider = createSlider(actorName, imgHtml);
+                const slider = createSlider(name, imgHtml, !isDirector);
                 const sliderElement = document.createElement('div');
-                sliderElement.id = "myActorMoreSlider";
+                const sliderId = isDirector? "myDirectorMoreSlider" : "myActorMoreSlider";
+                sliderElement.id = sliderId;
                 sliderElement.innerHTML = slider;
-                similarSection.insertAdjacentElement('afterend', sliderElement);
+                aboutSection.insertAdjacentElement('beforebegin', sliderElement);
 
                 const actorMoreSections = document.querySelectorAll('.actorMoreItemsContainer');
                 if (actorMoreSections.length == 1) {
@@ -1191,7 +1274,7 @@
                     });
                 }
 
-                adjustCardOffset('#myActorMoreSlider', '.actorMoreItemsContainer', '.virtualScrollItem');
+                adjustCardOffset(`#${sliderId}`, '.actorMoreItemsContainer', '.virtualScrollItem');
 
                 addHoverEffect(sliderElement);
 
@@ -1201,7 +1284,6 @@
         }
         return [];
     }
-
 
     async function addHoverEffect(slider) {
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -1218,7 +1300,8 @@
             if (!localTrailers || localTrailers.length == 0) continue;
 
             const trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
-            const trailerUrl = `${ApiClient._serverAddress}/emby/videos/${trailerItem.Id}/original.${trailerItem.MediaSources[0].Container}?MediaSourceId=${trailerItem.MediaSources[0].Id}&api_key=${ApiClient.accessToken()}`;
+            const trailerUrl = await getTrailerUrl(trailerItem);
+            //const trailerUrl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
 
             const imageContainer = card.querySelector('.cardImageContainer');
             const img = imageContainer.querySelector('.cardImage');
@@ -1260,6 +1343,24 @@
         }
     }
 
+    async function getTrailerUrl(trailerItem) {
+        // return `${ApiClient._serverAddress}/emby/videos/${trailerItem.Id}/original.${trailerItem.MediaSources[0].Container}?DeviceId=${ApiClient._deviceId}&MediaSourceId=${trailerItem.MediaSources[0].Id}&api_key=${ApiClient.accessToken()}`;
+
+        let videourl = '';
+        const trailerurl = (await ApiClient.getPlaybackInfo(trailerItem.Id, {},
+            { "MaxStaticBitrate": 140000000, "MaxStreamingBitrate": 140000000, "MusicStreamingTranscodingBitrate": 192000, "DirectPlayProfiles": [{ "Container": "mp4,m4v", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "mkv", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "flv", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "aac,mp3" }, { "Container": "mov", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "opus", "Type": "Audio" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3" }, { "Container": "mp2,mp3", "Type": "Audio", "AudioCodec": "mp2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac" }, { "Container": "m4a", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "mp4", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "flac", "Type": "Audio" }, { "Container": "webma,webm", "Type": "Audio" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "PCM_S16LE,PCM_S24LE" }, { "Container": "ogg", "Type": "Audio" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis,opus", "VideoCodec": "av1,VP8,VP9" }], "TranscodingProfiles": [{ "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mkv", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "Context": "Static", "MaxAudioChannels": "2", "CopyTimestamps": true }, { "Container": "m4s,ts", "Type": "Video", "AudioCodec": "ac3,mp3,aac", "VideoCodec": "h264,h265,hevc", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true, "ManifestSubtitles": "vtt" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis", "VideoCodec": "vpx", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp4", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264", "Context": "Static", "Protocol": "http" }], "ContainerProfiles": [], "CodecProfiles": [{ "Type": "VideoAudio", "Codec": "aac", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "VideoAudio", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "Video", "Codec": "h264", "Conditions": [{ "Condition": "EqualsAny", "Property": "VideoProfile", "Value": "high|main|baseline|constrained baseline|high 10", "IsRequired": false }, { "Condition": "LessThanEqual", "Property": "VideoLevel", "Value": "62", "IsRequired": false }] }, { "Type": "Video", "Codec": "hevc", "Conditions": [] }], "SubtitleProfiles": [{ "Format": "vtt", "Method": "Hls" }, { "Format": "eia_608", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "eia_708", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "vtt", "Method": "External" }, { "Format": "ass", "Method": "External" }, { "Format": "ssa", "Method": "External" }], "ResponseProfiles": [{ "Type": "Video", "Container": "m4v", "MimeType": "video/mp4" }] }
+        )).MediaSources[0];
+
+        if (trailerurl.Protocol == "File") {
+            //videourl = `${ApiClient.serverAddress()}/emby${trailerurl.DirectStreamUrl}`;
+            videourl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
+
+        } else if (trailerurl.Protocol == "Http") {
+            videourl = trailerurl.Path;
+        }
+        return videourl;
+    }
+
     function createVideoElement(trailerUrl) {
         let videoElement = document.createElement('video');
         videoElement.src = trailerUrl; // Video URL
@@ -1275,40 +1376,6 @@
         return videoElement;
     }
 
-
-    async function directorMoreInject(excludeIds) {
-
-        directorName = getDirectorName();
-        if (directorName.length > 0) {
-            const moreItems = await getActorMovies(directorName, excludeIds);
-            const aboutSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .aboutSection");
-
-
-            if (moreItems.length > 0) {
-                // Create an HTML structure to display all images
-                let imgHtml = '';
-                for (let i = 0; i < moreItems.length; i++) {
-                    imgHtml += createItemContainer(moreItems[i], i);
-                };
-
-                const slider = createSlider(directorName, imgHtml, 0);
-                const sliderElement = document.createElement('div');
-                sliderElement.id = "myDirectorMoreSlider";
-                sliderElement.innerHTML = slider;
-                aboutSection.insertAdjacentElement('beforebegin', sliderElement);
-
-                const actorMoreSections = document.querySelectorAll('.actorMoreItemsContainer');
-                if (actorMoreSections.length == 1) {
-                    window.addEventListener('resize', function () {
-                        adjustCardOffsets();
-                    });
-                }
-                
-                adjustCardOffset('#myDirectorMoreSlider', '.actorMoreItemsContainer', '.virtualScrollItem');
-                addHoverEffect(sliderElement);
-            }
-        }
-    }
 
     async function javdbActorInject(isDirector = false) { 
         const showJavDbFlag = (item.CustomRating && item.CustomRating === 'JP-18+') || (item.OfficialRating && item.OfficialRating === 'JP-18+');
@@ -1364,20 +1431,8 @@
 
     async function filterDbMovies(javDbMovies) {
         let filteredMovies;
-        if (actorMovieNames.length > 0) {
-            filteredMovies = javDbMovies.filter(movie =>
-                !actorMovieNames.some(actorMovieName =>
-                    actorMovieName.includes(movie.Code) || movie.Code.includes(actorMovieName)
-                )
-            );
-        }
-
-        if (filteredMovies.length == 0) {
-            return {};
-        }
-
         filteredMovies = await Promise.all(
-            filteredMovies.map(async (movie) => {
+            javDbMovies.map(async (movie) => {
                 const exists = await checkEmbyExist(movie.Code);
                 return exists ? null : movie;  // Exclude the movie if it exists in Emby
             })
@@ -1418,7 +1473,6 @@
         adjustCardOffset('#myDbDirectorSlider', '.itemsContainer', '.virtualScrollItem');
         adjustCardOffset('#myDbSeriesSlider', '.itemsContainer', '.virtualScrollItem');
     }
-
 
     async function seriesInject() {
         if (!fetchJavDbFlag) return
@@ -1615,18 +1669,12 @@
 
    
 
-    function getActorName() {
+    function getActorName(isDirector = false) {
         const people = item.People;
-        const actorNames = people.filter(person => person.Type === 'Actor').map(person => person.Name);
+        const personType = isDirector? 'Director' : 'Actor';
+        const actorNames = people.filter(person => person.Type === personType).map(person => person.Name);
         return actorNames.length > 0 ? pickRandomLink(actorNames) : '';
     }
-
-    function getDirectorName() {
-        const people = item.People;
-        const directorNames = people.filter(person => person.Type === 'Director').map(person => person.Name);
-        return directorNames.length > 0 ? pickRandomLink(directorNames) : '';
-    }
-
 
     async function getActorMovies(name = actorName, excludeIds = []) {
         const actorMoreMovies = await ApiClient.getItems(
@@ -1642,7 +1690,8 @@
         if (actorMoreMovies.Items.length > 0) {
             let moreItems = Array.from(actorMoreMovies.Items);
             if (name === actorName) {
-                actorMovieNames = moreItems.map(movie => getPartBefore(movie.Name, ' ')); // for future use
+                //const actorMovieNames = moreItems.map(movie => getPartBefore(movie.Name, ' ')); // for future use
+                console.log('no longer needed');
             } else if (excludeIds && excludeIds.length > 0) {
                 moreItems = moreItems.filter(movie => !excludeIds.some(excludeId => movie.Id === excludeId));
             }
@@ -1654,7 +1703,7 @@
             }
             return moreItems;
         } else {
-            return null; // Return null or handle the failure case accordingly
+            return []; // Return null or handle the failure case accordingly
         }
     }
 
@@ -1707,7 +1756,7 @@
         return parts[parts.length - 1];
     }
 
-    /*
+    
     function getOS() {
         let u = navigator.userAgent
         if (!!u.match(/compatible/i) || u.match(/Windows/i)) {
@@ -1726,7 +1775,7 @@
             return 'other'
         }
     }
-    */
+    
 
     const request = (url, method = "GET", options = {}) => {
         method = method ? method.toUpperCase().trim() : "GET";
@@ -1821,7 +1870,7 @@
                 if (javdbActorData.length > 0) {
 
                     const itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
-                    if (itemsContainer && OS_current != 'iphone') {
+                    if (itemsContainer && OS_current != 'iphone' && OS_current != 'android') {
                         const mediaInfoItem = itemsContainer.querySelectorAll('.mediaInfoItem:has(a)')[0];
                         if (mediaInfoItem) {
                             addNewLinks(mediaInfoItem, [createNewLinkElement(`跳转至javdb ${personName}`, 'pink', actorUrl, personName)]);
@@ -1923,7 +1972,7 @@
 
                     if (javdbData) {
                         const itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
-                        if (itemsContainer && OS_current != 'iphone') {
+                        if (itemsContainer && OS_current != 'iphone' && OS_current != 'android') {
                             const mediaInfoItem = itemsContainer.querySelectorAll('.mediaInfoItem:has(a)')[0];
                             if (mediaInfoItem) {
                                 if (item.Type != 'BoxSet') {
@@ -2044,7 +2093,7 @@
 
 
     async function translateOnly(text) {
-	if (googleApiKey.length === 0) { return text; }
+        if (googleApiKey.length === 0) { return text; }
         const apiUrl = `https://translation.googleapis.com/language/translate/v2?key=${googleApiKey}`;
         let text_jp = googleTranslateLanguage === 'ja' ? OpenCC.Converter({ from: 'cn', to: 'jp' })(text) : text;
         
@@ -2128,6 +2177,9 @@
 
     function translatePath(linuxPath) {
         const mountMatch = {
+            "/XFiles/": "W:\\XFiles\\",
+            "/mnt/ZDrive/": "Z:\\",
+            "/mnt/YDrive/": "Y:\\"
         };
         // Iterate through the mountMatch dictionary
         for (const [linuxPrefix, windowsPrefix] of Object.entries(mountMatch)) {
@@ -2140,6 +2192,7 @@
         // Return the original path if no match is found
         return linuxPath;
     }
+
 
 })();
 
