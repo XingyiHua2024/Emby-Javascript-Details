@@ -52,7 +52,7 @@ Add some features for Emby detail page
    <link rel="stylesheet" href="./style.css">
    ```
 2. 将 `XXX.js` 文件下载放在index.html同级目录中，非window记得授权可读。
-3. 讲修改后的 `config.json` 文件放在index.html同级目录中。
+3. 将修改后的 `config.json` 文件放在index.html同级目录中。
 
 ## 部署服务器方法 2：
 配合Emby自定义JavaScript及Css项目：https://github.com/Shurelol/Emby.CustomCssJS 
