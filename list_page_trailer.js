@@ -174,13 +174,7 @@
                     : trailerUrl.replace('youtu.be/', 'youtube.com/embed/');
 
                 const playerContainer = document.createElement('div');
-                playerContainer.style.position = 'absolute';
-                playerContainer.style.top = '50%';
-                playerContainer.style.left = '0';
-                playerContainer.style.transform = 'translate(0, -50%)';
-                playerContainer.style.width = '100%';
-                playerContainer.style.height = '100%';
-                playerContainer.style.zIndex = '3';
+                playerContainer.classList.add('video-element');
                 playerContainer.id = `player-${itemId}`;
                 imgContainer.appendChild(playerContainer);
 
