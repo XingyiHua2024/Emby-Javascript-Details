@@ -16,7 +16,6 @@ Add some features for Emby detail page
    3. 翻译标题和详情功能。
       - 需自行添加 google API key (in config.json)
    4. 加载Javdb内容。
-      - 需要自行修改 javDbFlag
       - Emby User ID 必须匹配 （in config.json）
       - 结合 MDCx 使用：https://github.com/sqzw-x/mdcx
       
@@ -34,6 +33,10 @@ Add some features for Emby detail page
       
 ### list_page.js
    1. list页鼠标悬停自动播放本地trailer （alternative: https://github.com/newday-life/emby-web-mod/tree/main/trailer ）
+
+### actor_page.js
+   1. 加载javdb演员/导演结果
+   2. Emby User ID 必须匹配 (in config.json)
 
 ### config.json
    1. save configs. 必须放在index.html同级目录中
