@@ -5,11 +5,13 @@
     "use strict";
     const OpenCC = require('opencc-js');
 
+    
+
     //config
     const show_pages = ["Movie", "Series", "Season", "BoxSet"];
     /* page item.Type "Person" "Movie" "Series" "Season" "Episode" "BoxSet" so. */
 
-    const javDbFlag = false;
+    const javDbFlag = true;
     // fetch data form Javdb.com and display in detail page. Only support movies that has CustomRating === 'JP-18+' or OfficialRating === 'JP-18+'
 
     const googleTranslateLanguage = 'ja';
@@ -19,21 +21,18 @@
     var item, actorName, directorName, viewnode, paly_mutation;
 
     var adminUserId = '', googleApiKey = '', nameMap = {};
+
     await loadConfig();
-    var fetchJavDbFlag = javDbFlag;
+
+    var fetchJavDbFlag = javDbFlag, isResizeListenerAdded = false;;
 
     const OS_current = getOS();
 
-    const iconSearch = `<svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="16" y1="16" x2="22" y2="22"></line>
-                        </svg>`;
-    const iconTranslate = `<svg class="translation-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="2" y1="12" x2="22" y2="12"></line>
-                                <line x1="12" y1="2" x2="12" y2="22"></line>
-                                <path d="M16 16c-1-2-2-3-4-3s-3 1-4 3"></path>
-                            </svg>`;
+    const iconJavDb = `<svg width="70.5" height="24" viewBox="0 0 326 111" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="166" y="11" width="160" height="93" fill="#2F80ED"></rect>
+                        <path d="M196.781 27.0078H213.41C217.736 27.0078 221.445 27.4089 224.539 28.2109C227.633 29.013 230.44 30.5169 232.961 32.7227C239.521 38.3372 242.801 46.8737 242.801 58.332C242.801 62.1133 242.471 65.5651 241.812 68.6875C241.154 71.8099 240.137 74.6315 238.762 77.1523C237.387 79.6445 235.625 81.8789 233.477 83.8555C231.786 85.3737 229.939 86.5911 227.934 87.5078C225.928 88.4245 223.766 89.069 221.445 89.4414C219.154 89.8138 216.561 90 213.668 90H197.039C194.719 90 192.971 89.6562 191.797 88.9688C190.622 88.2526 189.849 87.2643 189.477 86.0039C189.133 84.7148 188.961 83.0534 188.961 81.0195V34.8281C188.961 32.0781 189.577 30.0872 190.809 28.8555C192.04 27.6237 194.031 27.0078 196.781 27.0078ZM201.723 37.1055V79.8594H211.391C213.51 79.8594 215.172 79.8021 216.375 79.6875C217.578 79.5729 218.824 79.2865 220.113 78.8281C221.402 78.3698 222.52 77.7253 223.465 76.8945C227.733 73.2852 229.867 67.069 229.867 58.2461C229.867 52.0299 228.922 47.375 227.031 44.2812C225.169 41.1875 222.863 39.2253 220.113 38.3945C217.363 37.5352 214.04 37.1055 210.145 37.1055H201.723ZM280.914 90H261.664C258.885 90 256.895 89.3841 255.691 88.1523C254.517 86.8919 253.93 84.901 253.93 82.1797V34.8281C253.93 32.0495 254.531 30.0586 255.734 28.8555C256.966 27.6237 258.943 27.0078 261.664 27.0078H282.074C285.082 27.0078 287.689 27.194 289.895 27.5664C292.1 27.9388 294.077 28.6549 295.824 29.7148C297.314 30.6029 298.632 31.7344 299.777 33.1094C300.923 34.4557 301.797 35.9596 302.398 37.6211C303 39.2539 303.301 40.987 303.301 42.8203C303.301 49.1224 300.15 53.7344 293.848 56.6562C302.126 59.2917 306.266 64.4193 306.266 72.0391C306.266 75.5625 305.363 78.7422 303.559 81.5781C301.754 84.3854 299.319 86.4622 296.254 87.8086C294.335 88.6107 292.129 89.1836 289.637 89.5273C287.145 89.8424 284.237 90 280.914 90ZM279.969 62.0273H266.691V80.418H280.398C289.021 80.418 293.332 77.3099 293.332 71.0938C293.332 67.9141 292.215 65.6081 289.98 64.1758C287.746 62.7435 284.409 62.0273 279.969 62.0273ZM266.691 36.5898V52.875H278.379C281.559 52.875 284.008 52.5742 285.727 51.9727C287.474 51.3711 288.806 50.2253 289.723 48.5352C290.439 47.332 290.797 45.9857 290.797 44.4961C290.797 41.3164 289.665 39.2109 287.402 38.1797C285.139 37.1198 281.688 36.5898 277.047 36.5898H266.691Z" fill="white"></path>
+                        <path d="M47.4375 29.5469V65.5469C47.4375 68.6719 47.2969 71.3281 47.0156 73.5156C46.7656 75.7031 46.1719 77.9219 45.2344 80.1719C43.6719 83.9531 41.0938 86.9062 37.5 89.0312C33.9062 91.125 29.5312 92.1719 24.375 92.1719C19.7188 92.1719 15.8281 91.4375 12.7031 89.9688C9.60938 88.5 7.10938 86.125 5.20312 82.8438C4.20312 81.0938 3.39062 79.0781 2.76562 76.7969C2.14062 74.5156 1.82812 72.3438 1.82812 70.2812C1.82812 68.0938 2.4375 66.4219 3.65625 65.2656C4.875 64.1094 6.4375 63.5312 8.34375 63.5312C10.1875 63.5312 11.5781 64.0625 12.5156 65.125C13.4531 66.1875 14.1719 67.8438 14.6719 70.0938C15.2031 72.5 15.7344 74.4219 16.2656 75.8594C16.7969 77.2969 17.6875 78.5312 18.9375 79.5625C20.1875 80.5938 21.9688 81.1094 24.2812 81.1094C30.4375 81.1094 33.5156 76.5938 33.5156 67.5625V29.5469C33.5156 26.7344 34.125 24.625 35.3438 23.2188C36.5938 21.8125 38.2812 21.1094 40.4062 21.1094C42.5625 21.1094 44.2656 21.8125 45.5156 23.2188C46.7969 24.625 47.4375 26.7344 47.4375 29.5469ZM93.9844 84.9531C90.8906 87.3594 87.8906 89.1719 84.9844 90.3906C82.1094 91.5781 78.875 92.1719 75.2812 92.1719C72 92.1719 69.1094 91.5312 66.6094 90.25C64.1406 88.9375 62.2344 87.1719 60.8906 84.9531C59.5469 82.7344 58.875 80.3281 58.875 77.7344C58.875 74.2344 59.9844 71.25 62.2031 68.7812C64.4219 66.3125 67.4688 64.6562 71.3438 63.8125C72.1562 63.625 74.1719 63.2031 77.3906 62.5469C80.6094 61.8906 83.3594 61.2969 85.6406 60.7656C87.9531 60.2031 90.4531 59.5312 93.1406 58.75C92.9844 55.375 92.2969 52.9062 91.0781 51.3438C89.8906 49.75 87.4062 48.9531 83.625 48.9531C80.375 48.9531 77.9219 49.4062 76.2656 50.3125C74.6406 51.2188 73.2344 52.5781 72.0469 54.3906C70.8906 56.2031 70.0625 57.4062 69.5625 58C69.0938 58.5625 68.0625 58.8438 66.4688 58.8438C65.0312 58.8438 63.7812 58.3906 62.7188 57.4844C61.6875 56.5469 61.1719 55.3594 61.1719 53.9219C61.1719 51.6719 61.9688 49.4844 63.5625 47.3594C65.1562 45.2344 67.6406 43.4844 71.0156 42.1094C74.3906 40.7344 78.5938 40.0469 83.625 40.0469C89.25 40.0469 93.6719 40.7188 96.8906 42.0625C100.109 43.375 102.375 45.4688 103.688 48.3438C105.031 51.2188 105.703 55.0312 105.703 59.7812C105.703 62.7812 105.688 65.3281 105.656 67.4219C105.656 69.5156 105.641 71.8438 105.609 74.4062C105.609 76.8125 106 79.3281 106.781 81.9531C107.594 84.5469 108 86.2188 108 86.9688C108 88.2812 107.375 89.4844 106.125 90.5781C104.906 91.6406 103.516 92.1719 101.953 92.1719C100.641 92.1719 99.3438 91.5625 98.0625 90.3438C96.7812 89.0938 95.4219 87.2969 93.9844 84.9531ZM93.1406 66.4375C91.2656 67.125 88.5312 67.8594 84.9375 68.6406C81.375 69.3906 78.9062 69.9531 77.5312 70.3281C76.1562 70.6719 74.8438 71.375 73.5938 72.4375C72.3438 73.4688 71.7188 74.9219 71.7188 76.7969C71.7188 78.7344 72.4531 80.3906 73.9219 81.7656C75.3906 83.1094 77.3125 83.7812 79.6875 83.7812C82.2188 83.7812 84.5469 83.2344 86.6719 82.1406C88.8281 81.0156 90.4062 79.5781 91.4062 77.8281C92.5625 75.8906 93.1406 72.7031 93.1406 68.2656V66.4375ZM125.344 48.1094L135.703 77.1719L146.859 46.8438C147.734 44.4062 148.594 42.6875 149.438 41.6875C150.281 40.6562 151.562 40.1406 153.281 40.1406C154.906 40.1406 156.281 40.6875 157.406 41.7812C158.562 42.875 159.141 44.1406 159.141 45.5781C159.141 46.1406 159.031 46.7969 158.812 47.5469C158.625 48.2969 158.391 49 158.109 49.6562C157.859 50.3125 157.562 51.0625 157.219 51.9062L144.938 82.375C144.594 83.25 144.141 84.3594 143.578 85.7031C143.047 87.0469 142.438 88.2031 141.75 89.1719C141.094 90.1094 140.266 90.8438 139.266 91.375C138.297 91.9062 137.109 92.1719 135.703 92.1719C133.891 92.1719 132.438 91.7656 131.344 90.9531C130.281 90.1094 129.484 89.2031 128.953 88.2344C128.453 87.2344 127.594 85.2812 126.375 82.375L114.188 52.2344C113.906 51.4844 113.609 50.7344 113.297 49.9844C113.016 49.2344 112.766 48.4688 112.547 47.6875C112.359 46.9062 112.266 46.2344 112.266 45.6719C112.266 44.7969 112.531 43.9375 113.062 43.0938C113.594 42.2188 114.328 41.5156 115.266 40.9844C116.203 40.4219 117.219 40.1406 118.312 40.1406C120.438 40.1406 121.891 40.75 122.672 41.9688C123.484 43.1875 124.375 45.2344 125.344 48.1094Z" fill="currentColor"></path>
+                      </svg>`;
 
     // monitor dom changements
     document.addEventListener("viewbeforeshow", function (e) {
@@ -353,9 +352,9 @@
             if (mediaInfoItem) {
                 addNewLinks(mediaInfoItem, newLinks);
                 mediaInfoStyle(mediaInfoItem);
-                //timeLength();
+                timeLength();
                 //tagInsert(mediaInfoItem);
-                //moveTopDown();
+                moveTopDown();
             }
         } else {
             paly_mutation = new MutationObserver(function () {
@@ -366,9 +365,9 @@
                         paly_mutation.disconnect();
                         addNewLinks(mediaInfoItem, newLinks);
                         mediaInfoStyle(mediaInfoItem);
-                        //timeLength();
+                        timeLength();
                         //tagInsert(mediaInfoItem);
-                        //moveTopDown();
+                        moveTopDown();
                     }
                 }
             });
@@ -426,11 +425,11 @@
         return newLink;
     }
 
-    function createButtonHtml(id, title, icon, text) {
+    function createButtonHtml(id, title, icon, text, includeText = true) {
         return `
             <button id="${id}" is="emby-button" type="button" class="detailButton raised emby-button detailButton-stacked" title="${title}">              
                 <i class="md-icon md-icon-fill button-icon button-icon-left autortl icon-Copy">${icon}</i>
-                <span class="button-text">${text}</span>
+                ${includeText ? `<span class="button-text">${text}</span>` : ''}
             </button>
         `;
     }
@@ -443,7 +442,7 @@
 
         const mainDetailButtons = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .mainDetailButtons");
 
-        const buttonhtml = createButtonHtml('embyCopyUrl', `复制所在文件夹路径: ${itemFolderPath}`, '\uf0c5', '复制路径');
+        const buttonhtml = createButtonHtml('embyCopyUrl', `复制所在文件夹路径: ${itemFolderPath}`, `<span class="material-symbols-outlined">folder_copy</span>`, '复制路径');
         mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml);
         viewnode.querySelector("div[is='emby-scroller']:not(.hide) #embyCopyUrl").onclick = embyCopyUrl;
 
@@ -470,16 +469,16 @@
         if (!showJavDbFlag || !fetchJavDbFlag) return;
 
         const mainDetailButtons = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .mainDetailButtons");
-        const buttonhtml = createButtonHtml('injectJavdb', '加载javdb.com数据', iconSearch, 'javdb');
+        const buttonhtml = createButtonHtml('injectJavdb', '加载javdb.com数据', iconJavDb, '', false);
 
         mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml);
         const javInjectButton = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #injectJavdb");
-        javInjectButton.classList.add('injectJavdb');
+        //javInjectButton.classList.add('injectJavdb');
 
         javInjectButton.addEventListener('click', async () => {
             showToast({
                 text: 'javdb资源=>搜索中。。。',
-                icon: iconSearch
+                icon: `<span class="material-symbols-outlined">mystery</span>`
             });
             javInjectButton.style.color = 'green';
             javInjectButton.classList.add('melt-away');
@@ -730,8 +729,8 @@
             // Function to extract the numeric part from the filename
             const extractNumber = (filename) => {
                 if (!filename) return 0; // Return 0 if filename is undefined or null
-                const match = filename.match(/\d+/); // Find the first number in the filename
-                return match ? parseInt(match[0], 10) : 0; // Convert to number or default to 0
+                const matches = filename.match(/(\d+)/g); // Match all numbers in the filename
+                return matches ? parseInt(matches[matches.length - 1], 10) : 0; // Use the last number
             };
 
             const numA = extractNumber(a.Filename);
@@ -739,7 +738,7 @@
 
             // Sort based on the extracted number
             if (numA !== numB) {
-                return numA - numB;
+                return numA - numB; // Compare numerically
             }
 
             // Fallback to lexicographical order for filenames
@@ -749,7 +748,7 @@
         const peopleSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .peopleSection");
         if (!peopleSection) return;
 
-        let isCollapsed = uniqueBackdrops.length > 20;
+        let isCollapsed = uniqueBackdrops.length > 30;
         let html = '';
         if (addSlider) {
             html = `<div id="myFanart" is="emby-itemscontainer" class="imageSection itemsContainer virtualItemsContainer focusable focuscontainer-x scrollSlider scrollSliderX emby-scrollbuttons-scrollSlider"  data-focusabletype="nearest" data-virtualscrolllayout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2412px;" data-minoverhang="1" layout="horizontal-grid">`;
@@ -979,8 +978,7 @@
                 }, 300);
                 showToast({
                     text: '已到最后',
-                    icon: "&#10095;",
-                    iconStrikeThrough: true
+                    icon: `<span class="material-symbols-outlined">last_page</span>`,
                 })
                 resetImageStyles();
                 return
@@ -1013,8 +1011,7 @@
                 }, 300);
                 showToast({
                     text: '已到最前',
-                    icon: "&#10094;",
-                    iconStrikeThrough: true
+                    icon: `<span class="material-symbols-outlined">first_page</span>`
                 })
                 resetImageStyles();
                 return
@@ -1246,6 +1243,14 @@
         })
     }
 
+    function addResizeListener() {
+        if (!isResizeListenerAdded) {
+            window.addEventListener('resize', function () {
+                adjustCardOffsets();
+            });
+            isResizeListenerAdded = true; // Set the flag to true after adding the listener
+        }
+    }
 
     async function actorMoreInject(isDirector = false, excludeIds = []) {
         const name = getActorName(isDirector);
@@ -1270,12 +1275,7 @@
                 sliderElement.innerHTML = slider;
                 aboutSection.insertAdjacentElement('beforebegin', sliderElement);
 
-                const actorMoreSections = document.querySelectorAll('.actorMoreItemsContainer');
-                if (actorMoreSections.length == 1) {
-                    window.addEventListener('resize', function () {
-                        adjustCardOffsets();
-                    });
-                }
+                addResizeListener();
 
                 adjustCardOffset(`#${sliderId}`, '.actorMoreItemsContainer', '.virtualScrollItem');
 
@@ -1417,7 +1417,7 @@
 
                 showToast({
                     text: `${personTypeText}更多作品=>加载成功`,
-                    icon: "&#10004;",
+                    icon: `<span class="material-symbols-outlined">check_circle</span>`,
                     secondaryText: personName
                 });
 
@@ -1425,7 +1425,7 @@
             }
             showToast({
                 text: `${personTypeText}更多作品=>加载失败`,
-                icon: "&#10006;",
+                icon: `<span class="material-symbols-outlined">search_off</span>`,
                 secondaryText: personName
             });
         }
@@ -1523,7 +1523,7 @@
                     item.Name = javdbSeries;
                     showToast({
                         text: "javdb系列名与本地不匹配",
-                        icon: "&#10006;",
+                        icon: `<span class="material-symbols-outlined">rule</span>`,
                         secondaryText: javdbSeries
                     });
                     //ApiClient.updateItem(item);
@@ -1531,11 +1531,11 @@
             } else if (tagMovies.length >= 4) {
                 const collectionId = await getCollectionId(javdbSeries);
                 if (collectionId.length == 0) {
-                    const newCollectionId = collectionCreate(javdbSeries, tagMovieIdStr);
+                    const newCollectionId = await collectionCreate(javdbSeries, tagMovieIdStr);
                     if (newCollectionId.length > 0) {
                         showToast({
                             text: "合集创建成功",
-                            icon: "&#10004;",
+                            icon: `<span class="material-symbols-outlined">add_notes</span>`,
                             secondaryText: javdbSeries
                         });
                     }    
@@ -1547,7 +1547,7 @@
         if (javDbMovies.length == 0) {
             showToast({
                 text: `javdb系列已全部下载`,
-                icon: "&#10004;"
+                icon: `<span class="material-symbols-outlined">download_done</span>`
             });
             return
         }
@@ -1570,12 +1570,13 @@
         insertSection.insertAdjacentElement('beforebegin', sliderElement2);
         showToast({
             text: "系列更多作品=>加载成功",
-            icon: "&#10004;",
+            icon: `<span class="material-symbols-outlined">check_circle</span>`,
             secondaryText: `系列: ${seriesName}`
         });
 
         if (item.Type != 'BoxSet') {
             adjustCardOffset('#myDbSeriesSlider', '.itemsContainer', '.backdropCard');
+            addResizeListener();
         } else {
             for (let movie of javDbMovies) {
                 let insertItem = await checkEmbyExist(movie.Code);
@@ -1583,7 +1584,7 @@
                     insertItemToCollection(insertItem.Id, item.Id);
                     showToast({
                         text: "新作品加入合集",
-                        icon: "&#xf0c2;",
+                        icon: `<span class="material-symbols-outlined">docs_add_on</span>`,
                         secondaryText: insertItem.Name
                     })
                 }
@@ -1876,7 +1877,7 @@
                     if (itemsContainer && OS_current != 'iphone' && OS_current != 'android') {
                         const mediaInfoItem = itemsContainer.querySelectorAll('.mediaInfoItem:has(a)')[0];
                         if (mediaInfoItem) {
-                            addNewLinks(mediaInfoItem, [createNewLinkElement(`跳转至javdb ${personName}`, 'pink', actorUrl, personName)]);
+                            addNewLinks(mediaInfoItem, [createNewLinkElement(`跳转至javdb ${personName}`, '#ADD8E6', actorUrl, personName)]);
                             mediaInfoStyle(mediaInfoItem);
                         }
                     }
@@ -1979,7 +1980,7 @@
                             const mediaInfoItem = itemsContainer.querySelectorAll('.mediaInfoItem:has(a)')[0];
                             if (mediaInfoItem) {
                                 if (item.Type != 'BoxSet') {
-                                    addNewLinks(mediaInfoItem, [createNewLinkElement(`跳转至javdb ${seriesName}`, 'pink', seriesUrl, seriesName)]);
+                                    addNewLinks(mediaInfoItem, [createNewLinkElement(`跳转至javdb ${seriesName}`, '#ADD8E6', seriesUrl, seriesName)]);
                                 } 
                                 mediaInfoStyle(mediaInfoItem);
                             }
@@ -2072,7 +2073,7 @@
         // Check if the element is found
         if (titleElement) {
             if (containsJapanese(item.Name)) {
-                const buttonhtml = createButtonHtml('myTranslate', '翻译标题', iconTranslate, '翻译标题');
+                const buttonhtml = createButtonHtml('myTranslate', '翻译标题', `<span class="material-symbols-outlined">language</span>`, '翻译标题');
 
                 mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml);
                 const myTranslate = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myTranslate");
@@ -2086,7 +2087,7 @@
 
         if (divElement && item.Type != 'BoxSet') {
             if (containsJapanese(item.Overview)) {
-                const buttonhtml2 = createButtonHtml('myTranslate2', '翻译详情', iconTranslate, '翻译详情');
+                const buttonhtml2 = createButtonHtml('myTranslate2', '翻译详情', `<span class="material-symbols-outlined">language</span>`, '翻译详情');
                 mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml2);
                 const myTranslate2 = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myTranslate2");
                 myTranslate2.onclick = translateJapaneseToChinese2;
@@ -2137,7 +2138,7 @@
             (item.Type != 'BoxSet') && ApiClient.updateItem(item);
             showToast({
                 text: '翻译成功',
-                icon: "&#xf0c2;"
+                icon: `<span class="material-symbols-outlined">fact_check</span>`
             })
 
             const myTranslate = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myTranslate");
@@ -2165,7 +2166,7 @@
             ApiClient.updateItem(item);
             showToast({
                 text: '翻译成功',
-                icon: "&#xf0c2;"
+                icon: `<span class="material-symbols-outlined">fact_check</span>`
             })
             const myTranslate = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myTranslate2");
             myTranslate.style.color = 'green';
