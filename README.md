@@ -52,6 +52,7 @@ Add some features for Emby detail page
    <script type="text/javascript" src="trailer_more_button.js"></script>
    <script type="text/javascript" src="emby_detail_page.js"></script>
    <script type="text/javascript" src="list_page.js"></script>
+   <script type="text/javascript" src="actor_page.js"></script>
    <link rel="stylesheet" href="./style.css">
    ```
 2. 将 `XXX.js` 文件下载放在index.html同级目录中，非window记得授权可读。
