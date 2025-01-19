@@ -45,18 +45,18 @@
     opacity: 1;
     transition: color 0.3s, transform 0.3s, box-shadow 0.3s, filter 0.3s;
 }
-
+    /*
 .noUncensored:hover .button-text,
 .noUncensored:hover .button-icon {
     color: grey !important;
 }
+*/
 
-/*
 .noUncensored .button-text,
 .noUncensored .button-icon {
     color: grey !important;
 }
-*/
+
 
 
 .melt-away {
@@ -277,6 +277,7 @@
     transition: opacity 0.5s ease; /* Smooth transition for opacity */
 }
 
+
 .copy-link {
     color: lightblue; /* Set the link color */
     cursor: pointer;
@@ -334,20 +335,7 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); /* Adjusted box-shadow on hover for emphasis */
 }
 
-/* Media query for resizing pageButton and related elements */
-@media (max-aspect-ratio: 1/1) {
-    .pageButton,
-    .pageNumber,
-    #checkBoxNextPage,
-    label[for="checkBoxNextPage"],
-    #pageInput-actorPage { /* Include the input box */
-        font-size: 60%; /* Halve the font size for all relevant elements */
-    }
 
-    #pageInput-actorPage {
-        padding: 3px; /* Adjust padding for smaller font size */
-    }
-}
 
 #pageInput-actorPage::-webkit-inner-spin-button,
 #pageInput-actorPage::-webkit-outer-spin-button {
@@ -369,30 +357,46 @@
     line-height: inherit; /* Ensure consistent line height */
 }
 
-
-/* Style for the checkbox (#checkBoxNextPage) */
-#checkBoxNextPage {
-    width: 25px; /* Make the checkbox larger */
-    height: 25px; /* Make the checkbox larger */
-    background: rgb(255 255 255 / 15%); /* Blurred background */
-    backdrop-filter: blur(5px); /* Blurred background */
-    border-radius: 10%; /* Make the checkbox round */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Add box shadow */
+/* Style for the dropdown menu */
+#filterDropdown {
+    width: auto; /* Adjust width based on content */
+    backdrop-filter: blur(5px); /* Blurred background effect */
+    color: white;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
     margin-left: 20px; /* Add left margin for spacing */
-    padding: 5px; /* Add padding for spacing inside the checkbox */
-    cursor: pointer; /* Show pointer cursor on hover */
+    font-family: inherit; /* Use inherited font */
+    padding: 6px 16px;
+    font-weight: inherit;
+    line-height: inherit; /* Ensure consistent line height */
+    border: none;
 }
 
-#checkBoxNextPage:checked {
-    background-color: rgba(255, 0, 150, 0.3); /* Solid color */
+/* Hover effect for dropdown menu */
+#filterDropdown:hover {
+    background: rgb(255 255 255 / 85%);
+    color: black; /* Change text color on hover */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); /* Enhanced shadow effect */
 }
 
-#checkBoxNextPage + label {
-    margin-left: 5px; /* Add left margin for spacing between checkbox and label */
+/* Focus effect for dropdown menu */
+#filterDropdown:focus {
+    outline: none; /* Remove default focus outline */
+    box-shadow: 0 0 4px 2px rgba(255, 255, 255, 0.8); /* Add custom focus effect */
 }
 
-#checkBoxNextPage:hover {
-    background-color: white; /* Change background color on hover */
+/* Dropdown menu items */
+#filterDropdown option {
+    font-family: inherit; /* Match font family of the box */
+    color: black; /* Black font color for the dropdown menu */
+    background: white; /* White background for the menu items */
+    border: none;
+    padding: 5px;
+    font-weight: inherit;
+}
+
+/* Dropdown menu hover effect */
+#filterDropdown option:hover {
+    background: rgb(200, 200, 200); /* Light gray background on hover */
 }
 
 .myCardImage {
@@ -449,4 +453,5 @@
         display: none !important;
     }
 }
+
 
