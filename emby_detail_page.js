@@ -1,2204 +1,2256 @@
-(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-// emby detail page
+(function () {
+    function r(e, n, t) {
+        // Helper function to resolve module dependencies
+        function o(i, f) {
+            // Check if the module has already been loaded
+            if (!n[i]) {
+                // If the module is not loaded, check if it exists in the `e` object
+                if (!e[i]) {
+                    // If the module is not found, try using a global `require` function if available
+                    var c = typeof require === "function" && require;
+                    if (!f && c) return c(i, true); // Attempt to load the module using `require`
+                    if (u) return u(i, true); // Attempt to use the alternative loader `u`
 
-(async function () {
-    "use strict";
-    const OpenCC = require('opencc-js');
-
-    
-
-    //config
-    const show_pages = ["Movie", "Series", "Season", "BoxSet"];
-    /* page item.Type "Person" "Movie" "Series" "Season" "Episode" "BoxSet" so. */
-
-    const javDbFlag = true;
-    // fetch data form Javdb.com and display in detail page. Only support movies that has CustomRating === 'JP-18+' or OfficialRating === 'JP-18+'
-
-    const googleTranslateLanguage = 'ja';
-    // put language to translate from (ja for Japanese) to Chinese. Leave '' to support any language
-
-
-    var item, actorName, directorName, viewnode, paly_mutation;
-
-    var adminUserId = '', googleApiKey = '', nameMap = {};
-
-    await loadConfig();
-
-    var fetchJavDbFlag = javDbFlag, isResizeListenerAdded = false;;
-
-    const OS_current = getOS();
-
-    const iconJavDb = `<svg width="70.5" height="24" viewBox="0 0 326 111" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="166" y="11" width="160" height="93" fill="#2F80ED"></rect>
-                        <path d="M196.781 27.0078H213.41C217.736 27.0078 221.445 27.4089 224.539 28.2109C227.633 29.013 230.44 30.5169 232.961 32.7227C239.521 38.3372 242.801 46.8737 242.801 58.332C242.801 62.1133 242.471 65.5651 241.812 68.6875C241.154 71.8099 240.137 74.6315 238.762 77.1523C237.387 79.6445 235.625 81.8789 233.477 83.8555C231.786 85.3737 229.939 86.5911 227.934 87.5078C225.928 88.4245 223.766 89.069 221.445 89.4414C219.154 89.8138 216.561 90 213.668 90H197.039C194.719 90 192.971 89.6562 191.797 88.9688C190.622 88.2526 189.849 87.2643 189.477 86.0039C189.133 84.7148 188.961 83.0534 188.961 81.0195V34.8281C188.961 32.0781 189.577 30.0872 190.809 28.8555C192.04 27.6237 194.031 27.0078 196.781 27.0078ZM201.723 37.1055V79.8594H211.391C213.51 79.8594 215.172 79.8021 216.375 79.6875C217.578 79.5729 218.824 79.2865 220.113 78.8281C221.402 78.3698 222.52 77.7253 223.465 76.8945C227.733 73.2852 229.867 67.069 229.867 58.2461C229.867 52.0299 228.922 47.375 227.031 44.2812C225.169 41.1875 222.863 39.2253 220.113 38.3945C217.363 37.5352 214.04 37.1055 210.145 37.1055H201.723ZM280.914 90H261.664C258.885 90 256.895 89.3841 255.691 88.1523C254.517 86.8919 253.93 84.901 253.93 82.1797V34.8281C253.93 32.0495 254.531 30.0586 255.734 28.8555C256.966 27.6237 258.943 27.0078 261.664 27.0078H282.074C285.082 27.0078 287.689 27.194 289.895 27.5664C292.1 27.9388 294.077 28.6549 295.824 29.7148C297.314 30.6029 298.632 31.7344 299.777 33.1094C300.923 34.4557 301.797 35.9596 302.398 37.6211C303 39.2539 303.301 40.987 303.301 42.8203C303.301 49.1224 300.15 53.7344 293.848 56.6562C302.126 59.2917 306.266 64.4193 306.266 72.0391C306.266 75.5625 305.363 78.7422 303.559 81.5781C301.754 84.3854 299.319 86.4622 296.254 87.8086C294.335 88.6107 292.129 89.1836 289.637 89.5273C287.145 89.8424 284.237 90 280.914 90ZM279.969 62.0273H266.691V80.418H280.398C289.021 80.418 293.332 77.3099 293.332 71.0938C293.332 67.9141 292.215 65.6081 289.98 64.1758C287.746 62.7435 284.409 62.0273 279.969 62.0273ZM266.691 36.5898V52.875H278.379C281.559 52.875 284.008 52.5742 285.727 51.9727C287.474 51.3711 288.806 50.2253 289.723 48.5352C290.439 47.332 290.797 45.9857 290.797 44.4961C290.797 41.3164 289.665 39.2109 287.402 38.1797C285.139 37.1198 281.688 36.5898 277.047 36.5898H266.691Z" fill="white"></path>
-                        <path d="M47.4375 29.5469V65.5469C47.4375 68.6719 47.2969 71.3281 47.0156 73.5156C46.7656 75.7031 46.1719 77.9219 45.2344 80.1719C43.6719 83.9531 41.0938 86.9062 37.5 89.0312C33.9062 91.125 29.5312 92.1719 24.375 92.1719C19.7188 92.1719 15.8281 91.4375 12.7031 89.9688C9.60938 88.5 7.10938 86.125 5.20312 82.8438C4.20312 81.0938 3.39062 79.0781 2.76562 76.7969C2.14062 74.5156 1.82812 72.3438 1.82812 70.2812C1.82812 68.0938 2.4375 66.4219 3.65625 65.2656C4.875 64.1094 6.4375 63.5312 8.34375 63.5312C10.1875 63.5312 11.5781 64.0625 12.5156 65.125C13.4531 66.1875 14.1719 67.8438 14.6719 70.0938C15.2031 72.5 15.7344 74.4219 16.2656 75.8594C16.7969 77.2969 17.6875 78.5312 18.9375 79.5625C20.1875 80.5938 21.9688 81.1094 24.2812 81.1094C30.4375 81.1094 33.5156 76.5938 33.5156 67.5625V29.5469C33.5156 26.7344 34.125 24.625 35.3438 23.2188C36.5938 21.8125 38.2812 21.1094 40.4062 21.1094C42.5625 21.1094 44.2656 21.8125 45.5156 23.2188C46.7969 24.625 47.4375 26.7344 47.4375 29.5469ZM93.9844 84.9531C90.8906 87.3594 87.8906 89.1719 84.9844 90.3906C82.1094 91.5781 78.875 92.1719 75.2812 92.1719C72 92.1719 69.1094 91.5312 66.6094 90.25C64.1406 88.9375 62.2344 87.1719 60.8906 84.9531C59.5469 82.7344 58.875 80.3281 58.875 77.7344C58.875 74.2344 59.9844 71.25 62.2031 68.7812C64.4219 66.3125 67.4688 64.6562 71.3438 63.8125C72.1562 63.625 74.1719 63.2031 77.3906 62.5469C80.6094 61.8906 83.3594 61.2969 85.6406 60.7656C87.9531 60.2031 90.4531 59.5312 93.1406 58.75C92.9844 55.375 92.2969 52.9062 91.0781 51.3438C89.8906 49.75 87.4062 48.9531 83.625 48.9531C80.375 48.9531 77.9219 49.4062 76.2656 50.3125C74.6406 51.2188 73.2344 52.5781 72.0469 54.3906C70.8906 56.2031 70.0625 57.4062 69.5625 58C69.0938 58.5625 68.0625 58.8438 66.4688 58.8438C65.0312 58.8438 63.7812 58.3906 62.7188 57.4844C61.6875 56.5469 61.1719 55.3594 61.1719 53.9219C61.1719 51.6719 61.9688 49.4844 63.5625 47.3594C65.1562 45.2344 67.6406 43.4844 71.0156 42.1094C74.3906 40.7344 78.5938 40.0469 83.625 40.0469C89.25 40.0469 93.6719 40.7188 96.8906 42.0625C100.109 43.375 102.375 45.4688 103.688 48.3438C105.031 51.2188 105.703 55.0312 105.703 59.7812C105.703 62.7812 105.688 65.3281 105.656 67.4219C105.656 69.5156 105.641 71.8438 105.609 74.4062C105.609 76.8125 106 79.3281 106.781 81.9531C107.594 84.5469 108 86.2188 108 86.9688C108 88.2812 107.375 89.4844 106.125 90.5781C104.906 91.6406 103.516 92.1719 101.953 92.1719C100.641 92.1719 99.3438 91.5625 98.0625 90.3438C96.7812 89.0938 95.4219 87.2969 93.9844 84.9531ZM93.1406 66.4375C91.2656 67.125 88.5312 67.8594 84.9375 68.6406C81.375 69.3906 78.9062 69.9531 77.5312 70.3281C76.1562 70.6719 74.8438 71.375 73.5938 72.4375C72.3438 73.4688 71.7188 74.9219 71.7188 76.7969C71.7188 78.7344 72.4531 80.3906 73.9219 81.7656C75.3906 83.1094 77.3125 83.7812 79.6875 83.7812C82.2188 83.7812 84.5469 83.2344 86.6719 82.1406C88.8281 81.0156 90.4062 79.5781 91.4062 77.8281C92.5625 75.8906 93.1406 72.7031 93.1406 68.2656V66.4375ZM125.344 48.1094L135.703 77.1719L146.859 46.8438C147.734 44.4062 148.594 42.6875 149.438 41.6875C150.281 40.6562 151.562 40.1406 153.281 40.1406C154.906 40.1406 156.281 40.6875 157.406 41.7812C158.562 42.875 159.141 44.1406 159.141 45.5781C159.141 46.1406 159.031 46.7969 158.812 47.5469C158.625 48.2969 158.391 49 158.109 49.6562C157.859 50.3125 157.562 51.0625 157.219 51.9062L144.938 82.375C144.594 83.25 144.141 84.3594 143.578 85.7031C143.047 87.0469 142.438 88.2031 141.75 89.1719C141.094 90.1094 140.266 90.8438 139.266 91.375C138.297 91.9062 137.109 92.1719 135.703 92.1719C133.891 92.1719 132.438 91.7656 131.344 90.9531C130.281 90.1094 129.484 89.2031 128.953 88.2344C128.453 87.2344 127.594 85.2812 126.375 82.375L114.188 52.2344C113.906 51.4844 113.609 50.7344 113.297 49.9844C113.016 49.2344 112.766 48.4688 112.547 47.6875C112.359 46.9062 112.266 46.2344 112.266 45.6719C112.266 44.7969 112.531 43.9375 113.062 43.0938C113.594 42.2188 114.328 41.5156 115.266 40.9844C116.203 40.4219 117.219 40.1406 118.312 40.1406C120.438 40.1406 121.891 40.75 122.672 41.9688C123.484 43.1875 124.375 45.2344 125.344 48.1094Z" fill="currentColor"></path>
-                      </svg>`;
-
-    // monitor dom changements
-    document.addEventListener("viewbeforeshow", function (e) {
-        paly_mutation?.disconnect();
-        if (e.detail.contextPath.startsWith("/item?id=")) {
-            if (!e.detail.isRestored) {
-                const mutation = new MutationObserver(async function () {
-                    viewnode = e.target;
-                    item = viewnode.controller?.currentItem;
-                    if (item) {
-                        mutation.disconnect();
-                        if (showFlag()) {
-          
-                            if (item.Type === 'BoxSet') {
-                                translateInject();
-                                seriesInject();
-                            } else {
-                                init();
-                            }     
-                        }
-                    }
-                });
-                mutation.observe(document.body, {
-                    childList: true,
-                    characterData: true,
-                    subtree: true,
-                });
-            } else {
-                viewnode = e.target;
-                item = viewnode.controller.currentItem;
-                if (item && showFlag() && item.Type != 'BoxSet') {
-                    actorName = getActorName();
-                    directorName = getActorName(true);
-                    setTimeout(() => {
-                        javdbTitle();
-                        adjustCardOffsets();
-                        adjustSliderWidth();
-                    }, 500);
-                }
-            }
-        }
-    });
-
-    async function loadConfig() {
-        const response = await fetch('./config.json');
-        if (!response.ok) {
-            console.error(`Failed to fetch config.json: ${response.status} ${response.statusText}`);
-            return; // Exit the function if the file is not found or another error occurs
-        }
-        const config = await response.json();
-        adminUserId = config.adminUserId;
-        googleApiKey = config.googleApiKey;
-        nameMap = config.nameMap;
-    }
-
-    function moveTopDown() {
-        const topMain = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .topDetailsMain");
-
-        if (topMain) {
-            // Check if already adjusted
-            if (topMain.dataset.movedDown === "true") {
-                return; // Exit if already moved
-            }
-
-            const distanceFromTop = topMain.getBoundingClientRect().top + window.scrollY;
-            const height = topMain.offsetHeight;
-            const moveDownBy = window.innerHeight - height - distanceFromTop;
-
-            topMain.style.paddingTop = `${moveDownBy}px`;
-
-            // Mark as adjusted
-            topMain.dataset.movedDown = "true";
-        }
-    }
-
-    async function init() {
-        javdbTitle();
-        //buttonInit();
-
-        await previewInject();
-        modalInject();
-
-        const excludeIds = await actorMoreInject();
-        actorMoreInject(true, excludeIds);
-
-        translateInject();
-        javdbButtonInit();
-    }
-
-
-    function showFlag() {
-        for (let show_page of show_pages) {
-            if (item.Type == show_page) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function timeLength() {
-        // Select all visible div elements with the class "mediaInfoItem" inside a specific container
-        const mediaInfoItems = viewnode.querySelectorAll("div[is='emby-scroller']:not(.hide) .mediaInfoItem");
-
-        // Regular expressions to match "xxh xxm", "xxh", and "xxm"
-        const timeRegexWithHoursAndMinutes = /\b(\d{1,2})h\s*(\d{1,2})m\b/;
-        const timeRegexHoursOnly = /\b(\d{1,2})h\b/;
-        const timeRegexMinutesOnly = /\b(\d{1,2})m\b/;
-
-        // Loop through the elements to find the one that matches any of the regex patterns
-        mediaInfoItems.forEach((mediaItem) => {
-            if (mediaItem.querySelector('a')) {
-                // Skip this mediaItem and continue to the next
-                return;
-            }
-
-            const trimmedText = mediaItem.textContent.trim();
-
-            if (trimmedText === 'JP-18+') {
-                mediaItem.style.fontWeight = 'bold';
-                mediaItem.style.fontFamily = "'Georgia', serif";
-            } else if (timeRegexWithHoursAndMinutes.test(trimmedText)) {
-                const match = trimmedText.match(timeRegexWithHoursAndMinutes);
-                const hours = match[1];
-                const minutes = match[2];
-
-                // Change the text to the desired format with hours and minutes
-                mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时${minutes}分  •`;
-                //mediaItem.classList.add('mediaInfoItem-border');
-
-            } else if (timeRegexHoursOnly.test(trimmedText)) {
-                const match = trimmedText.match(timeRegexHoursOnly);
-                const hours = match[1];
-
-                // Change the text to the desired format with only hours
-                mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时  •`;
-                //mediaItem.classList.add('mediaInfoItem-border');
-
-            } else if (timeRegexMinutesOnly.test(trimmedText)) {
-                const match = trimmedText.match(timeRegexMinutesOnly);
-                const minutes = match[1];
-
-                // Change the text to the desired format with only minutes
-                mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${minutes}分  •`;
-                //mediaItem.classList.add('mediaInfoItem-border');
-            } else if (['endsAt', 'mediaInfoCriticRating'].some(className => mediaItem.classList.contains(className))) {
-                mediaItem.style.display = 'none';
-            } else if (/^\d{4}$/.test(trimmedText)) {
-                let resolutionLabel;
-
-                if (item.Height >= 4096) {
-                    resolutionLabel = "8K";
-                } else if (item.Height >= 2048) {
-                    resolutionLabel = "4K";
-                } else if (item.Height >= 1440) {
-                    resolutionLabel = "2K";
-                } else if (item.Height >= 1080) {
-                    resolutionLabel = "FHD";
-                } else if (item.Height >= 720) {
-                    resolutionLabel = "HD";
-                } else {
-                    resolutionLabel = item.Height + 'p'; // Default to the height in 'p'
+                    // If the module cannot be found, throw an error
+                    var a = new Error("Cannot find module '" + i + "'");
+                    a.code = "MODULE_NOT_FOUND";
+                    throw a;
                 }
 
-                mediaItem.textContent = resolutionLabel;
+                // Create a new module object and store it in `n`
+                var p = (n[i] = { exports: {} });
 
-                // Apply some font styling to the mediaItem element
-                mediaItem.style.fontFamily = "'Georgia', serif";  // Nicer font family
-                mediaItem.style.fontWeight = "bold";                 // Bold text
-
-                mediaItem.classList.add('mediaInfoItem-border');
-
-                let nextSibling = mediaItem.nextElementSibling; // Get the next sibling element
-
-                if (nextSibling && nextSibling.nextElementSibling) {
-                    // Insert mediaItem after its next sibling
-                    mediaItem.parentNode.insertBefore(mediaItem, nextSibling.nextElementSibling);
-                } else {
-                    // If there's no further sibling, append mediaItem to the end
-                    mediaItem.parentNode.appendChild(mediaItem);
-                }
-
-            } else if (mediaItem.classList.contains('starRatingContainer')) {
-
-                // Extract the rating number
-                let match = trimmedText.match(/\d+(\.\d+)?/);
-                if (match) {
-                    let rating = parseFloat(match[0]);
-
-                    // Adjust the rating if it's greater than 5
-                    if (rating > 5) {
-                        rating = rating / 2;
-                    }
-
-                    // Ensure the number of stars does not exceed 5
-                    let fullStars = Math.min(Math.floor(rating), 5);
-
-                    // Generate the stars with reduced space
-                    let starsHTML = '';
-                    for (let i = 0; i < fullStars; i++) {
-                        // Apply negative margin-right only to stars that are not the last one
-                        let margin = (i < fullStars - 1) ? '-5px' : '0';
-                        starsHTML += `<i class="md-icon md-icon-fill starIcon" style="margin-right: ${margin};"></i>`;
-                    }
-
-                    // Replace the content with the new format
-                    mediaItem.innerHTML = `<span style="font-weight: bold;">评分</span>:${starsHTML} ${rating}分  •`;
-                } else {
-                    console.warn('No valid rating number found in the mediaItem.');
-                }
+                // Execute the module's code and populate its `exports` property
+                e[i][0].call(
+                    p.exports,
+                    function (r) {
+                        var n = e[i][1][r];
+                        return o(n || r); // Recursively resolve dependencies
+                    },
+                    p,
+                    p.exports,
+                    r,
+                    e,
+                    n,
+                    t
+                );
             }
-        });
+            return n[i].exports; // Return the module's exports
+        }
+
+        // Define a fallback `require` function
+        var u = typeof require === "function" && require;
+
+        // Initialize the modules by calling the loader for each module in the array `t`
+        for (var i = 0; i < t.length; i++) {
+            o(t[i]);
+        }
+
+        return o;
     }
 
-    function tagInsert(mediaInfoItem) {
-        const tagItems = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .itemTags");
-        const tagClones = tagItems.cloneNode(true);
-        // Remove the existing classes
-        tagClones.className = 'mediaInfoItem';
-        tagClones.style.marginTop = '';
-        tagClones.style.marginBottom = '';
-
-
-        // Set the desired inline styles
-        //tagClones.style.whiteSpace = 'normal';
-        mediaInfoItem.insertAdjacentElement('afterend', tagClones);
-        mediaInfoStyle(tagClones);
-    }
-
-    function javdbTitle() {
-        const showJavDbFlag = (item.CustomRating && item.CustomRating === 'JP-18+') || (item.OfficialRating && item.OfficialRating === 'JP-18+');
-        if (!showJavDbFlag || !fetchJavDbFlag || item.Type == 'BoxSet') return
-
-        const titleElement = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .itemName-primary");
-        const titleText = titleElement.textContent;
-        const code = getPartBefore(titleText, ' ');
-
-
-        // Create the copy element with the copy-to-clipboard functionality
-        const link = createCopyElement(code, '复制番号');
-
-        // Replace the code part in the title with the hyperlink
-        const remainingText = titleText.slice(code.length) + ' ';
-
-        // Clear the current content and append the new content
-        titleElement.innerHTML = ''; // Clear current content
-        titleElement.appendChild(link);
-        titleElement.appendChild(document.createTextNode(remainingText));
-
-        function createCopyElement(text, title) {
-            const link = document.createElement("a");
-            link.textContent = text;
-            link.title = title;
-
-            // Add the CSS class to the link element
-            link.classList.add('copy-link');
-
-            // Add event listener to copy text to clipboard
-            link.addEventListener('click', (event) => {
-                event.preventDefault(); // Prevent the default link behavior
-                copyTextToClipboard(text); // Copy the text to clipboard
-                showToast({
-                    text: "番号复制成功",
-                    icon: "\uf0c5",
-                    secondaryText: code
-                });
-            });
-
-            return link;
-        }
-
-        if (OS_current == 'iphone' || OS_current == 'android') return
-
-        const noNumCode = code.replace(/^\d+(?=[A-Za-z])/, '');
-
-        const newLinks = [];
-
-        newLinks.push(createNewLinkElement('搜索 javdb.com', 'pink', `https://javdb.com/search?q=${code}&f=all`, 'javdb'));
-        newLinks.push(createNewLinkElement('搜索 javbus.com', 'red', `https://www.javbus.com/${code}`, 'javbus'));
-        newLinks.push(createNewLinkElement('搜索 javlibrary.com', 'rgb(191, 96, 166)', `https://www.javlibrary.com/cn/vl_searchbyid.php?keyword=${code}`, 'javlibrary'));
-
-
-        if (item.Genres.includes("无码")) {
-            if (/^n\d{4}$/.test(code)) {
-                newLinks.push(createNewLinkElement('搜索 tokyohot', 'red', 'https://my.tokyo-hot.com/product/?q=' + code.toLowerCase() + '&x=0&y=0', 'tokyohot'));
-            } else if (/^\d+-\d+$/.test(code)) {
-                newLinks.push(createNewLinkElement('搜索 caribbean', 'green', 'https://www.caribbeancom.com/moviepages/' + code.toLowerCase() + '/index.html', 'caribbean'));
-            } else if (/^\d+_\d+$/.test(code)) {
-                newLinks.push(createNewLinkElement('搜索 1pondo', 'rgb(230, 95, 167)', 'https://www.1pondo.tv/movies/' + code.toLowerCase() + '/', '1pondo'));
-            } else if (code.toLowerCase().includes('heyzo')) {
-                const extractBetweenTildes = str => str ? (str.match(/～(.*?)～/) || [str, str])[1] : null;
-                const originalTitle = getPartAfter(item.OriginalTitle, ' ');
-                const heyzoTitle = extractBetweenTildes(originalTitle);
-                newLinks.push(createNewLinkElement('搜索 heyzo', 'pink', 'https://m.heyzo.com/search/' + heyzoTitle + '/1.html', 'heyzo'));
-            } else {
-                newLinks.push(createNewLinkElement('搜索 ave', 'red', 'https://www.aventertainments.com/search_Products.aspx?languageID=1&dept_id=29&keyword=' + code + '&searchby=keyword', 'ave'));
-            }
-
-        } else if (item.Genres.includes("VR")) {
-            newLinks.push(createNewLinkElement('搜索 dmm.co.jp', 'red', 'https://www.dmm.co.jp/digital/videoa/-/list/search/=/device=vr/?searchstr=' + code.toLowerCase().replace("-", "00"), 'dmm'));
-            const modifyCode = (noNumCode.startsWith("DSVR") && /^\D+-\d{1,3}$/.test(code)) ? "3" + code : code;
-            newLinks.push(createNewLinkElement('搜索 jvrlibrary.com', 'lightyellow', `https://jvrlibrary.com/jvr?id=` + modifyCode, 'jvrlibrary'));
-        } else {
-            newLinks.push(createNewLinkElement('搜索 7mmtv.sx', 'rgb(225, 125, 190)', `https://7mmtv.sx/zh/searchform_search/all/index.html?search_keyword=${code}&search_type=searchall&op=search`, '7mmtv'));
-            newLinks.push(createNewLinkElement('搜索 dmm.co.jp', 'red', 'https://www.dmm.co.jp/mono/-/search/=/searchstr=' + code.toLowerCase() + '/', 'dmm'));
-            newLinks.push(createNewLinkElement('搜索 javsubtitled.com', 'rgb(149, 221, 49)', 'https://javsubtitled.com/zh/search?keywords=' + code, 'javsubtitled'));
-        }
-
-        if (!viewnode.querySelector("div[is='emby-scroller']:not(.hide) .btnPlayTrailer:not(.hide)")) {
-            newLinks.push(createNewLinkElement('搜索 javtrailers', 'red', 'https://javtrailers.com/search/' + noNumCode, 'javtrailers'));
-        }
-
-        newLinks.push(createNewLinkElement('搜索 subtitlecat.com', 'rgb(255, 191, 54)', `https://www.subtitlecat.com/index.php?search=` + noNumCode, 'subtitlecat'));
-
-        let itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
-        if (itemsContainer) {
-            let mediaInfoItem = itemsContainer.querySelector('.mediaInfoItem[style="white-space:normal;"]');
-            if (mediaInfoItem) {
-                addNewLinks(mediaInfoItem, newLinks);
-                mediaInfoStyle(mediaInfoItem);
-                timeLength();
-                //tagInsert(mediaInfoItem);
-                moveTopDown();
-            }
-        } else {
-            paly_mutation = new MutationObserver(function () {
-                let itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
-                if (itemsContainer) {
-                    let mediaInfoItem = itemsContainer.querySelector('.mediaInfoItem[style="white-space:normal;"]');
-                    if (mediaInfoItem) {
-                        paly_mutation.disconnect();
-                        addNewLinks(mediaInfoItem, newLinks);
-                        mediaInfoStyle(mediaInfoItem);
-                        timeLength();
-                        //tagInsert(mediaInfoItem);
-                        moveTopDown();
-                    }
-                }
-            });
-            paly_mutation.observe(viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer"), {
-                childList: true,
-                characterData: true,
-                subtree: true,
-            });
-        }
-    }
-
-    function mediaInfoStyle(mediaInfoItem) {
-        // Apply the CSS class to the mediaInfoItem
-        mediaInfoItem.classList.add('media-info-item');
-        mediaInfoItem.style.whiteSpace = 'normal';
-
-        // Remove commas before <a> tags
-        mediaInfoItem.innerHTML = mediaInfoItem.innerHTML.replace(/,\s*(?=<a)/g, '');
-
-        // Select all <a> elements inside the selected mediaInfoItem
-        let links = mediaInfoItem.querySelectorAll('a');
-
-        // Remove any trailing commas from the <a> text
-        links.forEach(link => {
-            link.textContent = link.textContent.replace(/,$/, '');
-            link.classList.remove('button-link', 'button-link-fontweight-inherit', 'nobackdropfilter');
-            if (link.style.fontWeight === 'inherit') {
-                link.style.fontWeight = '';
-            }
-            //link.removeAttribute('style');
-        });
-    }
-
-
-    function addNewLinks(mediaInfoItem, newLinks) {
-        if (item.Type == 'BoxSet') return;
-        newLinks.forEach((link, index) => {
-            mediaInfoItem.appendChild(document.createTextNode(', '));
-            mediaInfoItem.appendChild(link);
-        });
-    }
-
-    function createNewLinkElement(title, color, url, text) {
-        if (item.Type == 'BoxSet') return null;
-        const newLink = document.createElement('a');
-        //newLink.className = 'button-link button-link-color-inherit emby-button';
-        newLink.className = 'button-link-color-inherit emby-button';
-        newLink.style.fontWeight = 'inherit';
-        newLink.classList.add('code-link');
-        newLink.target = '_blank';
-        newLink.title = title;
-        newLink.style.color = color;
-        newLink.href = url;
-        newLink.textContent = text;
-        return newLink;
-    }
-
-    function createButtonHtml(id, title, icon, text, includeText = true) {
-        return `
-            <button id="${id}" is="emby-button" type="button" class="detailButton raised emby-button detailButton-stacked" title="${title}">              
-                <i class="md-icon md-icon-fill button-icon button-icon-left autortl icon-Copy">${icon}</i>
-                ${includeText ? `<span class="button-text">${text}</span>` : ''}
-            </button>
-        `;
-    }
-
-    function buttonInit() {
-        //removeExisting('embyCopyUrl');
-        if (OS_current != 'windows') return;
-        const itemPath = translatePath(item.Path);
-        const itemFolderPath = itemPath.substring(0, itemPath.lastIndexOf('\\'));
-
-        const mainDetailButtons = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .mainDetailButtons");
-
-        const buttonhtml = createButtonHtml('embyCopyUrl', `复制所在文件夹路径: ${itemFolderPath}`, `<span class="material-symbols-outlined">folder_copy</span>`, '复制路径');
-        mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml);
-        viewnode.querySelector("div[is='emby-scroller']:not(.hide) #embyCopyUrl").onclick = embyCopyUrl;
-
-        async function embyCopyUrl() {
-            const itemPath = translatePath(item.Path);
-            const folderPath = itemPath.substring(0, itemPath.lastIndexOf('\\'));
-            copyTextToClipboard(folderPath);
-            const buttonTextElement = this.querySelector('.button-text');
-            const originalColor = buttonTextElement.style.color;
-            buttonTextElement.style.color = 'green';
-            setTimeout(() => {
-                buttonTextElement.style.color = originalColor;
-            }, 1000);
-            showToast({
-                text: "路径复制成功",
-                icon: "\uf0c5",
-                secondaryText: itemFolderPath
-            });
-        }
-    }
-
-    function javdbButtonInit() {
-        const showJavDbFlag = (item.CustomRating && item.CustomRating === 'JP-18+') || (item.OfficialRating && item.OfficialRating === 'JP-18+');
-        if (!showJavDbFlag || !fetchJavDbFlag) return;
-
-        const mainDetailButtons = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .mainDetailButtons");
-        const buttonhtml = createButtonHtml('injectJavdb', '加载javdb.com数据', iconJavDb, '', false);
-
-        mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml);
-        const javInjectButton = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #injectJavdb");
-        //javInjectButton.classList.add('injectJavdb');
-
-        javInjectButton.addEventListener('click', async () => {
-            showToast({
-                text: 'javdb资源=>搜索中。。。',
-                icon: `<span class="material-symbols-outlined">mystery</span>`
-            });
-            javInjectButton.style.color = 'green';
-            javInjectButton.classList.add('melt-away');
-            setTimeout(() => {
-                javInjectButton.style.display = 'none';
-            }, 1000);
-
-            await javdbActorInject();
-            await javdbActorInject(true);
-            seriesInject();
-        });
-    }
-
-    // Function to fetch JSON data from a URL
-    /*
-    async function fetchJsonData(url) {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const jsonData = await response.json();
-            return jsonData;
-        } catch (error) {
-            console.error('Error fetching JSON data:', error);
-            return null;
-        }
-    }
-    */
-
-
-    // Function to copy text to clipboard
-    function copyTextToClipboard(text) {
-        // Create a temporary textarea element
-        let textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.setAttribute('readonly', '');
-        textarea.style.position = 'absolute';
-        textarea.style.left = '-9999px'; // Move the textarea off-screen
-
-        // Append the textarea to the body
-        document.body.appendChild(textarea);
-
-        // Select and copy the text
-        textarea.select();
-        let success = document.execCommand('copy');
-
-        // Clean up: remove the textarea from the DOM
-        document.body.removeChild(textarea);
-
-        // Handle success or failure
-        if (success) {
-            console.log(`Copied to clipboard: ${text}`);
-        } else {
-            console.error('Failed to copy to clipboard');
-        }
-    }
-
-
-    function createBanner(text, html, addSlider = false) {
-        let banner;
-
-        if (addSlider) {
-            banner = `
-		    <div class="verticalSection verticalSection-cards emby-scrollbuttons-scroller">
-              
-			    <h2 class="sectionTitle sectionTitle-cards padded-left padded-left-page padded-right">${text}</h2>
-                <div is="emby-scroller" class="emby-scroller padded-top-focusscale padded-bottom-focusscale padded-left padded-left-page padded-right scrollX hiddenScrollX scrollFrameX" data-mousewheel="false" data-focusscroll="true" data-horizontal="true" bis_skin_checked="1">
-			        ${html}
-                </div>
-		    </div>`;
-        } else {
-            banner = `
-		    <div class="verticalSection verticalSection-cards">
-			    <h2 class="sectionTitle sectionTitle-cards padded-left padded-left-page padded-right">${text}</h2>
-			    ${html}
-		    </div>`;
-        }
-        
-        return banner
-    }
-
-    function createSlider(text, html, isActor = 1) {
-        const titleText = isActor ? `${text} 其他作品` : `${text}（导演） 其他作品`;
-        const slider = `
-            <div class="verticalSection verticalSection-cards actorMoreSection emby-scrollbuttons-scroller" bis_skin_checked = "1" >
-                <h2 class="sectionTitle sectionTitle-cards padded-left padded-left-page padded-right">${titleText}</h2>
-                <div is="emby-scroller" class="emby-scroller padded-top-focusscale padded-bottom-focusscale padded-left padded-left-page padded-right scrollX hiddenScrollX scrollFrameX" data-mousewheel="false" data-focusscroll="true" data-horizontal="true" bis_skin_checked="1">
-
-                    <div is="emby-itemscontainer" class="scrollSlider focuscontainer-x itemsContainer focusable actorMoreItemsContainer scrollSliderX emby-scrollbuttons-scrollSlider virtualItemsContainer virtual-scroller-overflowvisible virtual-scroller" data-focusabletype="nearest" data-virtualscrolllayout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2412px; height: 351px;" data-minoverhang="1" layout="horizontal-grid">
-                        ${html}
-                    </div>
-                </div>
-            </div>
-        `;
-
-        return slider;
-    }
-
-    function createSliderLarge(text, html, linkUrl) {
-        let slider;
-        if (item.Type != 'BoxSet') {
-            slider = `
-            <div class="verticalSection verticalSection-cards emby-scrollbuttons-scroller" bis_skin_checked="1">
-                <div class="sectionTitleContainer sectionTitleContainer-cards padded-left padded-left-page padded-right" bis_skin_checked="1">
-                    <a onclick="window.open('${linkUrl}', '_blank')" is="emby-sectiontitle" class="noautofocus button-link button-link-color-inherit sectionTitleTextButton sectionTitleTextButton-link sectionTitleTextButton-more emby-button emby-button-backdropfilter">
-                        <h2 class="sectionTitle sectionTitle-cards">${text}</h2>
-                        <i class="md-icon sectionTitleMoreIcon secondaryText"></i>
-                    </a>
-                </div>
-                <div is="emby-scroller" data-mousewheel="false" data-focusscroll="true" class="padded-top-focusscale padded-bottom-focusscale padded-left padded-left-page padded-right emby-scroller scrollX hiddenScrollX scrollFrameX" bis_skin_checked="1">
-                    <div is="emby-itemscontainer" data-focusabletype="nearest" class="focusable focuscontainer-x itemsContainer scrollSlider scrollSliderX emby-scrollbuttons-scrollSlider virtualItemsContainer virtual-scroller-overflowvisible virtual-scroller" data-virtualscrolllayout="horizontal-grid" data-minoverhang="1" layout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2400px; height: 265px;">
-                       ${html}
-                    </div>
-                </div>
-            </div>
-            `;
-        } else {
-            slider = `
-                <div class="linked-Movie-section verticalSection verticalSection-cards">
-                    <div class="sectionTitleContainer padded-left padded-left-page padded-right sectionTitleContainer-cards focusable" data-focusabletype="nearest">
-                        <a onclick="window.open('${linkUrl}', '_blank')" is="emby-sectiontitle" class="noautofocus button-link button-link-color-inherit sectionTitleTextButton sectionTitleTextButton-link sectionTitleTextButton-more emby-button emby-button-backdropfilter">
-                            <h2 class="sectionTitle sectionTitle-cards sectionTitleText-withseeall">${text}</h2>
-                            <i class="md-icon sectionTitleMoreIcon secondaryText"></i>
-                        </a>
-                    </div>
-                    <div is="emby-itemscontainer" class="itemsContainer focuscontainer-x padded-left padded-left-page padded-right vertical-wrap">
-                        ${html}
-                    </div>
-                </div>
-            `;
-        }
-
-        return slider
-    }
-
-    function createItemContainer(itemInfo, increment) {
-        let distance, imgUrl, typeWord;
-        if ('ontouchstart' in window || navigator.maxTouchPoints > 0 || ApiClient.getCurrentUserId() != adminUserId) {
-            distance = OS_current === 'ipad' ? 182 : OS_current === 'iphone' ? 120 : 200;
-            imgUrl = ApiClient.getImageUrl(itemInfo.Id, { type: "Primary", tag: itemInfo.ImageTags.Primary, maxHeight: 330, maxWidth: 220 });
-            typeWord = 'portrait';
-
-        } else {
-            distance = OS_current === 'ipad' ? 260 : OS_current === 'iphone' ? 300 : 350;
-            imgUrl = ApiClient.getImageUrl(itemInfo.Id, { type: "Thumb", tag: itemInfo.ImageTags.Thumb, maxHeight: 360, maxWidth: 640 });
-            typeWord = 'backdrop';
-        }
-
-        let code = itemInfo.ProductionYear;
-        let name = itemInfo.Name;
-
-        const itemContainer = `
-            <div data-id="${itemInfo.Id}" class="virtualScrollItem card ${typeWord}Card card-horiz ${typeWord}Card-horiz card-hoverable card-autoactive" tabindex="0" draggable="false" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
-                <div class="cardBox cardBox-touchzoom cardBox-bottompadded" bis_skin_checked="1">
-                    <button onclick="Emby.Page.showItem('${itemInfo.Id}')" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-${typeWord} myCardImage">
-                        <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
-                    </button>
-                    <div class="cardText cardText-first cardText-first-padded" bis_skin_checked="1">
-                        <span title="${name}">${name}</span>
-                    </div>
-                    <div class="cardText cardText-secondary" bis_skin_checked="1">
-                        ${code}
-                    </div>
-                </div>
-            </div>
-        `;
-
-        return itemContainer;
-    }
-
-    function createItemContainerLarge(itemInfo, increment) {
-        let distance = OS_current === 'ipad' ? 260 : OS_current === 'iphone' ? 300 : 350;
-        const imgUrl = itemInfo.ImgSrc;
-        const title = `${itemInfo.Code} ${itemInfo.Name}`;
-        const link = `https://javdb.com${itemInfo.Link}?locale=zh`;
-        const score = itemInfo.Score;
-        const time = itemInfo.Time;
-        let itemContainer;
-        if (item.Type != 'BoxSet') {
-            itemContainer = `
-            <div class="virtualScrollItem card backdropCard card-horiz backdropCard-horiz card-hoverable card-autoactive" tabindex="0" draggable="true" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
-                <div class="cardBox cardBox-touchzoom cardBox-bottompadded" bis_skin_checked="1">
-                    <button onclick="window.open('${link}', '_blank')" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-backdrop myCardImage">
-                        <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
-                    </button>
-                    <div class="cardText cardText-first cardText-first-padded" bis_skin_checked="1">
-                        <span title="${title}">${title}</span>
-                    </div>
-                    <div class="cardText cardText-secondary" bis_skin_checked="1">${time} || 评分：${score}
-                    </div>
-                </div>
-            </div>
-            `;
-        } else {
-            itemContainer = `
-            <div class="card backdropCard card-horiz card-hoverable card-autoactive" tabindex="0" draggable="true">
-                <div class="cardBox cardBox-touchzoom cardBox-bottompadded">
-                    <button onclick="window.open('${link}', '_blank')" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-backdrop myCardImage">  
-                        <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
-                    </button>
-                    <div class="cardText cardText-first cardText-first-padded">
-                        <span title="${title}">${title}</span>
-                    </div>
-                    <div class="cardText cardText-secondary">
-                        ${time} || 评分：${score}
-                    </div>
-                </div>
-            </div>
-            `;
-        }
-        return itemContainer;
-    }
-
-    async function previewInject(isSlider = false) {
-
-        const showJavDbFlag = (item.CustomRating && item.CustomRating === 'JP-18+') || (item.OfficialRating && item.OfficialRating === 'JP-18+');
-
-        let addSlider = false;
-        if (!showJavDbFlag || 'ontouchstart' in window || navigator.maxTouchPoints || window.innerHeight > window.innerWidth || isSlider) addSlider = true;
-
-
-        if (item.BackdropImageTags.length === 0) return;
-
-        const images = await ApiClient.getItemImageInfos(item.Id);
-        const backdrops = images.filter(image => image.ImageType === "Backdrop");
-
-        const uniqueBackdrops = [];
-        const seenFilenames = new Set();
-
-        backdrops.forEach((backdrop) => {
-            // Check for duplicate filenames
-            if (!seenFilenames.has(backdrop.Path)) {
-                seenFilenames.add(backdrop.Path);
-                uniqueBackdrops.push(backdrop);
-            }
-        });
-
-        uniqueBackdrops.sort((a, b) => {
-            // Always prioritize the item with ImageIndex = 0
-            if (a.ImageIndex === 0) return -1;
-            if (b.ImageIndex === 0) return 1;
-
-            // Move undefined or null filenames to the end
-            if (!a.Filename && b.Filename) return 1;
-            if (a.Filename && !b.Filename) return -1;
-
-            // Function to extract the numeric part from the filename
-            const extractNumber = (filename) => {
-                if (!filename) return 0; // Return 0 if filename is undefined or null
-                const matches = filename.match(/(\d+)/g); // Match all numbers in the filename
-                return matches ? parseInt(matches[matches.length - 1], 10) : 0; // Use the last number
-            };
-
-            const numA = extractNumber(a.Filename);
-            const numB = extractNumber(b.Filename);
-
-            // Sort based on the extracted number
-            if (numA !== numB) {
-                return numA - numB; // Compare numerically
-            }
-
-            // Fallback to lexicographical order for filenames
-            return (a.Filename || '').localeCompare(b.Filename || '');
-        });
-
-        const peopleSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .peopleSection");
-        if (!peopleSection) return;
-
-        let isCollapsed = uniqueBackdrops.length > 30;
-        let html = '';
-        if (addSlider) {
-            html = `<div id="myFanart" is="emby-itemscontainer" class="imageSection itemsContainer virtualItemsContainer focusable focuscontainer-x scrollSlider scrollSliderX emby-scrollbuttons-scrollSlider"  data-focusabletype="nearest" data-virtualscrolllayout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2412px;" data-minoverhang="1" layout="horizontal-grid">`;
-        } else {
-            html = `<div id="myFanart" is="emby-itemscontainer" class="imageSection itemsContainer focuscontainer-x padded-left padded-left-page padded-right vertical-wrap" 
-                    style="${isCollapsed ? `max-height: ${0.81 * window.innerHeight + 56}px; overflow: hidden;` : ''}">`;
-        }
-        
-
-        for (let index = 0; index < uniqueBackdrops.length; index++) {
-            let tagIndex = uniqueBackdrops[index].ImageIndex;
-            let filename = uniqueBackdrops[index].Filename; // Get the filename
-            let url = ApiClient.getImageUrl(item.Id, { type: "Backdrop", index: tagIndex, tag: item.BackdropImageTags[tagIndex] });
-            let width = uniqueBackdrops[index].Width;
-            let height = uniqueBackdrops[index].Height;
-
-            // Check if width or height is undefined, null, or 0
-            let ratio = (width && height) ? (width / height).toFixed(2) : (16 / 9).toFixed(2);
-        
-            // Add the filename as a data attribute
-            html += `<img class='my-fanart-image ${addSlider ? 'my-fanart-image-slider' : ''}' src="${url}" alt="${index}" loading="lazy" data-filename="${filename || ''}" data-ratio="${ratio}"/>`;
-        }
-        html += `</div>`;
-
-        // Add the toggle button if images exceed 30
-        if (isCollapsed && !addSlider) {
-            html += `
-                <button id="toggleFanart" style="margin-top: 10px; display: block;">
-                    ▼ 显示剧照(共${uniqueBackdrops.length}张) ▼
-                </button>
-            `;
-        }
-
-        const banner = createBanner("剧照", html, addSlider);
-        peopleSection.insertAdjacentHTML("afterend", banner);
-
-        if (addSlider) {
-            adjustSliderWidth();
-
-            const actorMoreSections = document.querySelectorAll('.imageSection');
-            if (actorMoreSections.length == 1) {
-                window.addEventListener('resize', function () {
-                    adjustSliderWidth();
-                });
-            }
-        } else if (isCollapsed) {
-            const button = viewnode.querySelector("#toggleFanart");
-            button.addEventListener("click", () => {
-                const fanartSection = viewnode.querySelector("#myFanart");
-
-                if (fanartSection.style.maxHeight === "none") {
-                    fanartSection.style.maxHeight = `${0.81 * window.innerHeight + 56}px`;
-                    fanartSection.style.overflow = "hidden";
-                    button.textContent = `▼ 显示剧照(共${uniqueBackdrops.length}张) ▼`;
-                } else {
-                    fanartSection.style.maxHeight = "none";
-                    fanartSection.style.overflow = "visible";
-                    button.textContent = "▲ 隐藏剧照 ▲";
-                }
-            });
-        }
-    }
-
-    function adjustSliderWidth() {
- 
-        const fanartSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .imageSection");
-        if (!fanartSection || !fanartSection.classList.contains('scrollSlider')) return
-
-        const fanartImages = fanartSection.querySelectorAll(".my-fanart-image");
-        if (!fanartImages || fanartImages.length === 0) return;
-
-        
-        const height = Math.max(0.2 * window.innerHeight, 180);
-
-        // Initialize total width
-        let totalWidth = 0;
-
-        // Iterate through each fanart image
-        fanartImages.forEach(image => {
-  
-            // Read the ratio from the dataset or default to 16/9 if not present
-            const ratio = parseFloat(image.dataset.ratio) || (16 / 9);
-
-            // Calculate the width of the current image
-            const imageWidth = height * ratio + 20; // Add 20 as padding
-
-            // Add the image width to the total width
-            totalWidth += imageWidth;
-        });
-
-        // Apply the total width to the fanart section
-        fanartSection.style.minWidth = `${totalWidth}px`;
-    }
-
-    function modalInject() {
-
-        // Detect if the device is touch-enabled
-        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints;
-        var fanartSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .imageSection");
-        if (!fanartSection) return
-
-        var fanartImages = fanartSection.querySelectorAll(".my-fanart-image");
-        if (!fanartImages) return
-
-        let modal = document.getElementById('myModal');
-        if (!modal) {
-            modal = createModal();
-            attachEventListeners(isTouchDevice);
-        }
-
-        const modalImg = modal.querySelector('.modal-content');
-        const modalCaption = modal.querySelector('.modal-caption');
-        const closeButton = modal.querySelector('.close');
-        const prevButton = modal.querySelector('.prev');
-        const nextButton = modal.querySelector('.next');
-
-
-        // Add a single event listener for all images
-        fanartSection.addEventListener(isTouchDevice ? 'touchstart' : 'click', handleTapOrClick);
-
-        let tapTimeout = null;  // Timeout for double-tap detection
-        let lastTapTime = 0;    // Time of the last tap
-
-        function handleTapOrClick(event) {
-            const target = event.target;
-            const triggerTime = 500;
-
-            // Check if the tapped/clicked element is a fanart image
-            if (target.classList.contains('my-fanart-image')) {
-                const index = Array.from(fanartSection.querySelectorAll('.my-fanart-image')).indexOf(target);
-
-                if (isTouchDevice) {
-                    const currentTime = new Date().getTime();
-                    const tapInterval = currentTime - lastTapTime;
-
-                    if (tapInterval < triggerTime && tapInterval > 0) {
-                        // If it's a double-tap within 500ms, show the image
-                        clearTimeout(tapTimeout); // Clear the single tap timeout
-                        showImage(index); // Show image on double-tap
-                        lastTapTime = 0;  // Reset tap time
-                    } else {
-                        // Update last tap time, set a timeout for the next tap
-                        lastTapTime = currentTime;
-
-                        tapTimeout = setTimeout(() => {
-                            // Reset tap after timeout (do nothing on single tap)
-                            lastTapTime = 0;
-                        }, triggerTime); // 500ms delay for double-tap detection
-                    }
-                } else {
-                    // For non-touch devices, show image immediately on a single click
-                    showImage(index);
-                }
-            }
-        }
-
-        function showImage(index) {
-            fanartImages = viewnode.querySelectorAll("div[is='emby-scroller']:not(.hide) .imageSection .my-fanart-image");
-
-            const selectedImage = fanartImages[index];
-            if (selectedImage) {
-                modalImg.style.opacity = '0';
-                modalImg.src = selectedImage.src;
-                modalImg.alt = selectedImage.alt;
-                modalCaption.textContent = `${selectedImage.dataset.filename} (${index + 1}/${fanartImages.length})`;
-                modal.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-                modalImg.style.transform = `scale(1)`;
-                modal.classList.remove('modal-closing'); // Remove closing animation class if previously applied
-
-                const prevButton = document.querySelector('.prev');
-                const nextButton = document.querySelector('.next');
-                // Check if the image is the first or the last
-                if (index === 0) {
-                    prevButton.classList.add('disabled');
-                } else {
-                    prevButton.classList.remove('disabled');
-                }
-
-                if (index === fanartImages.length - 1) {
-                    nextButton.classList.add('disabled');
-                } else {
-                    nextButton.classList.remove('disabled');
-                }
-
-                // Fade in the modal image
-                fadeIn(modalImg, 300); // 500ms duration for fade-in effect
-            }
-        }
-
-        function myShowImage(index) {
-            fanartImages = viewnode.querySelectorAll("div[is='emby-scroller']:not(.hide) .imageSection .my-fanart-image");
-            const selectedImage = fanartImages[index];
-            const prevButton = document.querySelector('.prev');
-            const nextButton = document.querySelector('.next');
-
-            if (selectedImage) {
-                modalImg.src = selectedImage.src;
-                modalImg.alt = selectedImage.alt;
-                modalCaption.textContent = `${selectedImage.dataset.filename} (${index + 1}/${fanartImages.length})`;
-
-                // Check if the image is the first or the last
-                if (index === 0) {
-                    prevButton.classList.add('disabled');
-                } else {
-                    prevButton.classList.remove('disabled');
-                }
-
-                if (index === fanartImages.length - 1) {
-                    nextButton.classList.add('disabled');
-                } else {
-                    nextButton.classList.remove('disabled');
-                }
-            }
-        }
-
-        function nextImage() {
-            const index = parseInt(modalImg.alt, 10);
-            let newIndex = index + 1;
-            fanartImages = viewnode.querySelectorAll("div[is='emby-scroller']:not(.hide) .imageSection .my-fanart-image");
-            if (newIndex >= fanartImages.length) {
-                newIndex = index;
-                // Trigger the shake animation when at the last image
-                modalImg.style.animation = 'shake 0.3s ease';
-                setTimeout(() => {
-                    modalImg.style.animation = ''; // Remove the animation after it plays
-                }, 300);
-                showToast({
-                    text: '已到最后',
-                    icon: `<span class="material-symbols-outlined">last_page</span>`,
-                })
-                resetImageStyles();
-                return
-            }
-            modalImg.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-            modalImg.style.transform = 'translateX(-100%)';
-            modalImg.style.opacity = '0';
-            setTimeout(() => {
-                myShowImage(newIndex);
-                modalImg.style.transition = 'transform 0s ease, opacity 0s ease'; // Remove transition temporarily
-                modalImg.style.transform = 'translateX(100%)'; // Jump to the right
-                setTimeout(() => {
-                    modalImg.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-                    modalImg.style.transform = 'translateX(0)'; // Swipe back to the middle
-                    modalImg.style.opacity = '1';
-                    modalImg.style.transform = `scale(1)`;
-                }, 10); // Delay to ensure transition reset
-            }, 200);
-        }
-
-        function prevImage() {
-            const index = parseInt(modalImg.alt, 10);
-            let newIndex = index - 1;
-            if (newIndex < 0) {
-                newIndex = 0;
-                // Trigger the shake animation when at the first image
-                modalImg.style.animation = 'shake 0.3s ease';
-                setTimeout(() => {
-                    modalImg.style.animation = ''; // Remove the animation after it plays
-                }, 300);
-                showToast({
-                    text: '已到最前',
-                    icon: `<span class="material-symbols-outlined">first_page</span>`
-                })
-                resetImageStyles();
-                return
-            }
-            modalImg.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-            modalImg.style.transform = 'translateX(100%)';
-            modalImg.style.opacity = '0';
-            setTimeout(() => {
-                myShowImage(newIndex);
-                modalImg.style.transition = 'transform 0s ease, opacity 0s ease'; // Remove transition temporarily
-                modalImg.style.transform = 'translateX(-100%)'; // Jump to the left
-                setTimeout(() => {
-                    modalImg.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-                    modalImg.style.transform = 'translateX(0)'; // Swipe back to the middle
-                    modalImg.style.opacity = '1';
-                    modalImg.style.transform = `scale(1)`;
-                }, 10); // Delay to ensure transition reset
-            }, 200);
-        }
-
-        function closeModal() {
-            modal.classList.add('modal-closing'); // Apply closing animation class
-            setTimeout(() => {
-                modal.style.display = 'none'; // Hide the modal after animation completes
-                modal.classList.remove('modal-closing'); // Remove closing animation class
-                document.body.style.overflow = ''; // Restore scrolling
-            }, 300); // Adjust the delay to match the animation duration
-        }
-
-        function closeModalSwipe() {
-            const imgRect = modalImg.getBoundingClientRect(); // Get the image position relative to the viewport
-            const windowWidth = window.innerWidth; // Get the viewport width
-            const windowHeight = window.innerHeight; // Get the viewport height
-
-            // Calculate the transform origin as a percentage relative to the viewport (screen)
-            const transformOriginXPercent = ((imgRect.left + imgRect.width / 2) / windowWidth) * 100;
-            const transformOriginYPercent = ((imgRect.top + imgRect.height / 2) / windowHeight) * 100;
-
-            // Apply the transform-origin in percentage relative to the viewport
-            modalImg.style.transformOrigin = `${transformOriginXPercent}% ${transformOriginYPercent}%`;
-
-            modal.classList.add('modal-closing'); // Apply closing animation class
-            setTimeout(() => {
-                modal.style.display = 'none'; // Hide the modal after animation completes
-                modal.classList.remove('modal-closing'); // Remove closing animation class
-                modalImg.style.transformOrigin = ''; // Reset transform-origin
-                document.body.style.overflow = ''; // Restore scrolling
-            }, 300); // Adjust the delay to match the animation duration
-        }
-
-        function fadeIn(element, duration) {
-            let opacity = 0;
-            const startTime = performance.now();
-
-            function animate(currentTime) {
-                const elapsed = currentTime - startTime;
-                opacity = Math.min(elapsed / duration, 1);
-                element.style.opacity = opacity;
-
-                if (opacity < 1) {
-                    requestAnimationFrame(animate);
-                }
-            }
-
-            requestAnimationFrame(animate);
-        }
-
-
-        function setButtonSize(button, isSmaller) {
-            if (isSmaller) {
-                button.classList.add('click-smaller'); // Add smaller class when clicked
-            } else {
-                button.classList.remove('click-smaller'); // Remove smaller class on release
-            }
-        }
-
-        function attachEventListeners(isTouchDevice) {
-            const modalImg = modal.querySelector('.modal-content');
-            const closeButton = modal.querySelector('.close');
-            const prevButton = modal.querySelector('.prev');
-            const nextButton = modal.querySelector('.next');
-
-            if (isTouchDevice) {
-                prevButton.style.display = 'none';
-                nextButton.style.display = 'none';
-                closeButton.style.display = 'none';
-                handleTouchSwipe();
-            } else {
-                const buttonEvent = 'mousedown';
-                const buttonReleaseEvent = 'mouseup';
-
-                prevButton.addEventListener(buttonEvent, () => setButtonSize(prevButton, true));
-                prevButton.addEventListener(buttonReleaseEvent, () => setButtonSize(prevButton, false));
-                prevButton.addEventListener('click', prevImage);
-
-                nextButton.addEventListener(buttonEvent, () => setButtonSize(nextButton, true));
-                nextButton.addEventListener(buttonReleaseEvent, () => setButtonSize(nextButton, false));
-                nextButton.addEventListener('click', nextImage);
-
-                closeButton.addEventListener('click', closeModal);
-                modalImg.addEventListener('wheel', handleWheelZoom);
-            }
-        }
-
-        function handleTouchSwipe() {
-            let touchstartX = 0;
-            let touchendX = 0;
-            let touchstartY = 0;
-            let touchendY = 0;
-            let isSwipingX = false;
-            let isSwipingY = false;
-            let directionLocked = false;
-
-            modal.addEventListener('touchstart', (event) => {
-                const touch = event.changedTouches[0];
-                modalImg.style.transition = 'none';
-                touchstartX = touch.screenX;
-                touchstartY = touch.screenY;
-                isSwipingX = false;
-                isSwipingY = false;
-                directionLocked = false; // Reset direction lock
-            });
-
-            modal.addEventListener('touchmove', (event) => {
-                const touch = event.changedTouches[0];
-                const deltaX = touch.screenX - touchstartX;
-                const deltaY = touch.screenY - touchstartY;
-
-                // Determine direction of swipe
-                if (!directionLocked) {
-                    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                        isSwipingX = true;
-                    } else {
-                        isSwipingY = true;
-                    }
-                    directionLocked = true; // Lock direction after the initial movement
-                }
-
-                const maxDelta = 300; // Maximum distance for full opacity reduction
-                let distance = 0;
-
-                if (isSwipingX) {
-                    // Horizontal swipe - calculate distance and move the image
-                    distance = Math.abs(deltaX);
-                    modalImg.style.transform = `translateX(${deltaX}px)`; // Move horizontally
-                } else if (isSwipingY) {
-                    // Vertical swipe - calculate combined distance (Pythagorean distance)
-                    distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY); // Diagonal distance
-                    modalImg.style.transform = `translate(${deltaX}px, ${deltaY}px)`; // Move both X and Y
-                }
-
-                // Calculate opacity based on distance (same logic for X and Y swiping)
-                const opacity = 1 - 0.7 * Math.min(distance / maxDelta, 1);
-                modalImg.style.opacity = opacity;
-
-                // Prevent the background from moving (disable page scrolling)
-                event.preventDefault();
-            });
-
-            modal.addEventListener('touchend', (event) => {
-                const touch = event.changedTouches[0];
-                touchendX = touch.screenX;
-                touchendY = touch.screenY;
-                handleSwipe();
-            });
-
-            function handleSwipe() {
-                const thresholdX = 80; // Minimum horizontal distance for swipe
-                const thresholdY = 100; // Minimum vertical distance for upward swipe
-
-                const deltaX = touchendX - touchstartX;
-                const deltaY = touchstartY - touchendY;
-
-                if (isSwipingX && Math.abs(deltaX) > thresholdX) {
-                    if (deltaX < 0) {
-                        nextImage();
-                    } else {
-                        prevImage();
-                    }
-                } else if (isSwipingY && Math.abs(deltaY) > thresholdY) {
-                    closeModalSwipe(); // Swipe up
-                } else {
-                    resetImageStyles();
-                }
-            }
-        }
-
-
-        function resetImageStyles() {
-            modalImg.style.transform = 'translateX(0)';
-            modalImg.style.opacity = 1;
-        }
-
-        function handleWheelZoom(event) {
-            event.preventDefault();
-            const zoomStep = 0.1;
-            let currentZoom = parseFloat(getComputedStyle(modalImg).getPropertyValue('transform').split(' ')[3]) || 1;
-
-            currentZoom += event.deltaY < 0 ? zoomStep : -zoomStep;
-            currentZoom = Math.max(zoomStep, currentZoom); // Limit minimum zoom
-            modalImg.style.transform = `scale(${currentZoom})`;
-        }
-    }
-
-    function createModal() {
-        const modalHTML = `
-        <span class="close">&#10006;</span>
-        <img class="modal-content" id="modalImg">
-        <div class="modal-caption" id="modalCaption">example.jpg (1/10)</div>
-        <button class="prev">&#10094;</button>
-        <button class="next">&#10095;</button>
-        `;
-
-        const modal = document.createElement('div');
-        modal.id = 'myModal';
-        modal.classList.add('modal');
-        modal.innerHTML = modalHTML;
-
-        document.body.appendChild(modal);
-
-        return modal;
-    }
-
-
-    function showToast(options) {
-        //options can be added: text, icon, iconStrikeThrough, secondaryText
-        Emby.importModule("./modules/toast/toast.js").then(function (toast) {
-            return toast(options)
-        })
-    }
-
-    function addResizeListener() {
-        if (!isResizeListenerAdded) {
-            window.addEventListener('resize', function () {
-                adjustCardOffsets();
-            });
-            isResizeListenerAdded = true; // Set the flag to true after adding the listener
-        }
-    }
-
-    async function actorMoreInject(isDirector = false, excludeIds = []) {
-        const name = getActorName(isDirector);
-        isDirector ? (directorName = name) : (actorName = name);
-
-        if (name.length > 0) {
-            const moreItems = await getActorMovies(name, excludeIds);
-            const aboutSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .aboutSection");
-
-
-            if (moreItems.length > 0) {
-                // Create an HTML structure to display all images
-                let imgHtml = '';
-                for (let i = 0; i < moreItems.length; i++) {
-                    imgHtml += createItemContainer(moreItems[i], i);
-                };
-
-                const slider = createSlider(name, imgHtml, !isDirector);
-                const sliderElement = document.createElement('div');
-                const sliderId = isDirector? "myDirectorMoreSlider" : "myActorMoreSlider";
-                sliderElement.id = sliderId;
-                sliderElement.innerHTML = slider;
-                aboutSection.insertAdjacentElement('beforebegin', sliderElement);
-
-                addResizeListener();
-
-                adjustCardOffset(`#${sliderId}`, '.actorMoreItemsContainer', '.virtualScrollItem');
-
-                addHoverEffect(sliderElement);
-
-                return moreItems.map(moreItem => moreItem.Id);
-
-            }
-        }
-        return [];
-    }
-
-    async function addHoverEffect(slider) {
-        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        if (isTouchDevice || ApiClient.getCurrentUserId() != adminUserId) return
-
-        const portraitCards = slider.querySelectorAll('.virtualScrollItem');
-        if (!portraitCards) return;
-
-        for (let card of portraitCards) {
-            let itemId = card.dataset.id;
-
-            const localTrailers = await ApiClient.getLocalTrailers(ApiClient.getCurrentUserId(), itemId);
-
-            if (!localTrailers || localTrailers.length == 0) continue;
-
-            const trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
-            const trailerUrl = await getTrailerUrl(trailerItem);
-            //const trailerUrl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
-
-            const imageContainer = card.querySelector('.cardImageContainer');
-            const img = imageContainer.querySelector('.cardImage');
-            let isHovered = false;
-
-            imageContainer.classList.add('has-trailer');
-
-            // Add mouseenter event to change image, width, and layering immediately
-            card.addEventListener('mouseenter', async () => {
-                isHovered = true; 
-                // Create video element
-                let videoElement = createVideoElement(trailerUrl);
-
-                imageContainer.appendChild(videoElement); // Add video to the container
-                img.style.filter = 'blur(5px)';
-
-                setTimeout(() => {
-                    if (isHovered) {
-                        videoElement.style.opacity = '1';
-                    }
-                }, 50);
-
-                videoElement.addEventListener('ended', () => {
-                    videoElement.style.opacity = '0'; // Remove the video element
-                    img.style.filter = ''; // Remove blur effect
-                });                      
-                 
-            });
-
-            // Add mouseleave event to reset the image, width, and layering immediately
-            card.addEventListener('mouseleave', () => {
-                isHovered = false;
-                img.style.filter = ''; // Remove blur effect
-                const allVideos = imageContainer.querySelectorAll('video');
-                allVideos.forEach(video => {
-                    video.remove(); // Remove each video element
-                });
-            });
-        }
-    }
-
-    async function getTrailerUrl(trailerItem) {
-        // return `${ApiClient._serverAddress}/emby/videos/${trailerItem.Id}/original.${trailerItem.MediaSources[0].Container}?DeviceId=${ApiClient._deviceId}&MediaSourceId=${trailerItem.MediaSources[0].Id}&api_key=${ApiClient.accessToken()}`;
-
-        let videourl = '';
-        const trailerurl = (await ApiClient.getPlaybackInfo(trailerItem.Id, {},
-            { "MaxStaticBitrate": 140000000, "MaxStreamingBitrate": 140000000, "MusicStreamingTranscodingBitrate": 192000, "DirectPlayProfiles": [{ "Container": "mp4,m4v", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "mkv", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "flv", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "aac,mp3" }, { "Container": "mov", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "opus", "Type": "Audio" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3" }, { "Container": "mp2,mp3", "Type": "Audio", "AudioCodec": "mp2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac" }, { "Container": "m4a", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "mp4", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "flac", "Type": "Audio" }, { "Container": "webma,webm", "Type": "Audio" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "PCM_S16LE,PCM_S24LE" }, { "Container": "ogg", "Type": "Audio" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis,opus", "VideoCodec": "av1,VP8,VP9" }], "TranscodingProfiles": [{ "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mkv", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "Context": "Static", "MaxAudioChannels": "2", "CopyTimestamps": true }, { "Container": "m4s,ts", "Type": "Video", "AudioCodec": "ac3,mp3,aac", "VideoCodec": "h264,h265,hevc", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true, "ManifestSubtitles": "vtt" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis", "VideoCodec": "vpx", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp4", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264", "Context": "Static", "Protocol": "http" }], "ContainerProfiles": [], "CodecProfiles": [{ "Type": "VideoAudio", "Codec": "aac", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "VideoAudio", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "Video", "Codec": "h264", "Conditions": [{ "Condition": "EqualsAny", "Property": "VideoProfile", "Value": "high|main|baseline|constrained baseline|high 10", "IsRequired": false }, { "Condition": "LessThanEqual", "Property": "VideoLevel", "Value": "62", "IsRequired": false }] }, { "Type": "Video", "Codec": "hevc", "Conditions": [] }], "SubtitleProfiles": [{ "Format": "vtt", "Method": "Hls" }, { "Format": "eia_608", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "eia_708", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "vtt", "Method": "External" }, { "Format": "ass", "Method": "External" }, { "Format": "ssa", "Method": "External" }], "ResponseProfiles": [{ "Type": "Video", "Container": "m4v", "MimeType": "video/mp4" }] }
-        )).MediaSources[0];
-
-        if (trailerurl.Protocol == "File") {
-            //videourl = `${ApiClient.serverAddress()}/emby${trailerurl.DirectStreamUrl}`;
-            videourl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
-
-        } else if (trailerurl.Protocol == "Http") {
-            videourl = trailerurl.Path;
-        }
-        return videourl;
-    }
-
-    function createVideoElement(trailerUrl) {
-        let videoElement = document.createElement('video');
-        videoElement.src = trailerUrl; // Video URL
-        videoElement.controls = false; // Show controls like play/pause
-        videoElement.autoplay = true; // Ensure video plays automatically
-        videoElement.muted = true; // Mute the video (to avoid autoplay restrictions)
-
-        // Add the CSS class to the video element
-        videoElement.classList.add('video-element');
-        videoElement.style.pointerEvents = 'none';
-        videoElement.style.opacity = '0'; // Initially hidden
-
-        return videoElement;
-    }
-
-
-    async function javdbActorInject(isDirector = false) { 
-        const showJavDbFlag = (item.CustomRating && item.CustomRating === 'JP-18+') || (item.OfficialRating && item.OfficialRating === 'JP-18+');
-        const personName = isDirector ? directorName : actorName;
-        if (showJavDbFlag && fetchJavDbFlag && personName.length > 0) {
-            let insertSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .aboutSection");
-
-            let isCensored = item.Genres.includes("无码")? false : true;
-
-            // search actor name from javdb
-            let [javDbMovies, actorUrl] = await fetchDbActor(nameMap[personName] || personName.split('（')[0], isCensored, isDirector);
-            const personTypeText = isDirector ? '导演' : '演员';
-            if (javDbMovies && javDbMovies.length > 0) {
-                javDbMovies = await filterDbMovies(javDbMovies);
-                if (javDbMovies.length == 0) return
-
-                javDbMovies.sort(() => Math.random() - 0.5);
-                /*
-                if (javDbMovies.length > 10) {
-                    javDbMovies = javDbMovies.slice(0, 10);
-                }
-                */
-                let imgHtml2 = '';
-                for (let i = 0; i < javDbMovies.length; i++) {
-                    imgHtml2 += createItemContainerLarge(javDbMovies[i], i);
-                };
-                const directorText = isDirector ? ' (导演)' : '';
-                const slider2 = createSliderLarge(`${personName}${directorText} 更多作品（来自JavDB，共${javDbMovies.length}部）`, imgHtml2, actorUrl);
-                const sliderElement2 = document.createElement('div');
-                const sectionId = isDirector ? 'myDbDirectorSlider' : 'myDbActorSlider'
-                sliderElement2.id = sectionId;
-                sliderElement2.innerHTML = slider2;
-                insertSection.insertAdjacentElement('beforebegin', sliderElement2);
-
-                adjustCardOffset(`#${sectionId}`, '.itemsContainer', '.backdropCard');
-
-                showToast({
-                    text: `${personTypeText}更多作品=>加载成功`,
-                    icon: `<span class="material-symbols-outlined">check_circle</span>`,
-                    secondaryText: personName
-                });
-
-                return
-            }
-            showToast({
-                text: `${personTypeText}更多作品=>加载失败`,
-                icon: `<span class="material-symbols-outlined">search_off</span>`,
-                secondaryText: personName
-            });
-        }
-        
-    }
-
-    async function filterDbMovies(javDbMovies) {
-        let filteredMovies;
-        filteredMovies = await Promise.all(
-            javDbMovies.map(async (movie) => {
-                const exists = await checkEmbyExist(movie.Code);
-                return exists ? null : movie;  // Exclude the movie if it exists in Emby
-            })
-        );
-        return filteredMovies.filter(movie => movie !== null);;
-    }
-
-
-    function adjustCardOffset(sectionStr, containerStr, cardStr) {
-        const scrollerContainer = viewnode.querySelector(`div[is='emby-scroller']:not(.hide) ${sectionStr} ${containerStr}`);
-        if (!scrollerContainer) return
-        const portraitCards = scrollerContainer.querySelectorAll(cardStr);
-        if (!scrollerContainer) return
-        if (portraitCards.length > 0) {
-
-            const cardWidth = portraitCards[0].offsetWidth; // Get width of the first card with padding and border
-            const cardHeight = portraitCards[0].offsetHeight;
-            const spacing = 0; // Spacing between cards (adjust as needed)
-            const totalCardWidth = cardWidth + spacing;
-
-            // Set min-width of scrollerContainer
-            scrollerContainer.style.minWidth = `${portraitCards.length * totalCardWidth}px`;
-            scrollerContainer.style.height = `${cardHeight}px`;
-
-            for (let child of portraitCards) {
-                child.style.left = `${child.previousElementSibling ? child.previousElementSibling.offsetLeft + totalCardWidth : 0}px`;
-            }
-            
-        } else {
-            console.warn("No children with the portraitCard class found in scrollerContainer!");
-        }
-    }
-
-    function adjustCardOffsets() {
-        adjustCardOffset('#myActorMoreSlider', '.actorMoreItemsContainer', '.virtualScrollItem');
-        adjustCardOffset('#myDirectorMoreSlider', '.actorMoreItemsContainer', '.virtualScrollItem');
-        adjustCardOffset('#myDbActorSlider', '.itemsContainer', '.virtualScrollItem');
-        adjustCardOffset('#myDbDirectorSlider', '.itemsContainer', '.virtualScrollItem');
-        adjustCardOffset('#myDbSeriesSlider', '.itemsContainer', '.virtualScrollItem');
-    }
-
-    async function seriesInject() {
-        if (!fetchJavDbFlag) return
-        let seriesName, similarSection, tagMovies, tagMovieIdStr;
-        if (item.Type != 'BoxSet') {
-            const showJavDbFlag = (item.CustomRating && item.CustomRating === 'JP-18+') || (item.OfficialRating && item.OfficialRating === 'JP-18+');
-            if (!showJavDbFlag) return
-            const series = item.TagItems
-                .filter(item => item.Name.includes('系列'))
-                .map(item => item.Name);
-            if (!series || series.length == 0) return
-            const parts = series[0].split(':');
-            // Extract the string after "系列:"
-            seriesName = parts.length > 1 ? parts[1].trim() : '';
-            similarSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .similarSection");
-            [tagMovies, tagMovieIdStr] = await getTagMovies(series[0]);
-        }
-        else {
-            seriesName = item.Name;
-            similarSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .linkedItems");
-            tagMovies = await getCollectionMovies(item.Id);
-        }
-
-        //const converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
-        const converter2 = OpenCC.Converter({ from: 'cn', to: 'jp' });
-        //const seriesName_tw = converter(seriesName);
-        const seriesName_jp = converter2(seriesName);
-        await waitForRandomTime();
-        let [javDbMovies, seriesUrl, javdbSeries] = await fetchDbSeries(seriesName_jp.replace("%", ""));
-        /*
-        if (javDbMovies.length == 0) {
-            await waitForRandomTime();
-            javDbMovies = await fetchDbSeries(seriesName_tw);
-        }
-        if (javDbMovies.length == 0) {
-            await waitForRandomTime();
-            javDbMovies = await fetchDbSeries(seriesName);
-        }
-        */
-        if (javDbMovies.length == 0) return 
-
-        if (javdbSeries.length > 0) {
-            if (item.Type === 'BoxSet') {
-                if (item.Name != javdbSeries) {
-                    item.Name = javdbSeries;
-                    showToast({
-                        text: "javdb系列名与本地不匹配",
-                        icon: `<span class="material-symbols-outlined">rule</span>`,
-                        secondaryText: javdbSeries
-                    });
-                    //ApiClient.updateItem(item);
-                }  
-            } else if (tagMovies.length >= 4) {
-                const collectionId = await getCollectionId(javdbSeries);
-                if (collectionId.length == 0) {
-                    const newCollectionId = await collectionCreate(javdbSeries, tagMovieIdStr);
-                    if (newCollectionId.length > 0) {
-                        showToast({
-                            text: "合集创建成功",
-                            icon: `<span class="material-symbols-outlined">add_notes</span>`,
-                            secondaryText: javdbSeries
-                        });
-                    }    
-                }
-            }
-        }
-
-        tagMovies.length > 0 && (javDbMovies = javDbMovies.filter(movie => !tagMovies.some(tagMovie => tagMovie.includes(movie.Code))));
-        if (javDbMovies.length == 0) {
-            showToast({
-                text: `javdb系列已全部下载`,
-                icon: `<span class="material-symbols-outlined">download_done</span>`
-            });
-            return
-        }
-
-        item.Type !== 'BoxSet' && javDbMovies.sort(() => Math.random() - 0.5);
-        let imgHtml2 = '';
-        for (let i = 0; i < javDbMovies.length; i++) {
-            imgHtml2 += createItemContainerLarge(javDbMovies[i], i);
-        };
-        const seriesName_trans = await translateOnly(seriesName_jp);
-        const slider2 = createSliderLarge(`系列: ${seriesName} （${seriesName_trans}） 更多作品（来自JavDB，共${javDbMovies.length}部）`, imgHtml2, seriesUrl);
-        const sliderElement2 = document.createElement('div');
-        sliderElement2.id = 'myDbSeriesSlider';
-        sliderElement2.innerHTML = slider2;
-
-        let insertSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .aboutSection"); 
-        //!insertSection && (insertSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myActorMoreSlider"));
-        //!insertSection && (insertSection = similarSection);
-
-        insertSection.insertAdjacentElement('beforebegin', sliderElement2);
-        showToast({
-            text: "系列更多作品=>加载成功",
-            icon: `<span class="material-symbols-outlined">check_circle</span>`,
-            secondaryText: `系列: ${seriesName}`
-        });
-
-        if (item.Type != 'BoxSet') {
-            adjustCardOffset('#myDbSeriesSlider', '.itemsContainer', '.backdropCard');
-            addResizeListener();
-        } else {
-            for (let movie of javDbMovies) {
-                let insertItem = await checkEmbyExist(movie.Code);
-                if (insertItem) {
-                    insertItemToCollection(insertItem.Id, item.Id);
-                    showToast({
-                        text: "新作品加入合集",
-                        icon: `<span class="material-symbols-outlined">docs_add_on</span>`,
-                        secondaryText: insertItem.Name
-                    })
-                }
-            }
-        }        
-    }
-
-    async function collectionCreate(collectionName, idsToAdd) {
-        const encodedCollectionName = encodeURIComponent(collectionName);
-        const urlSearch = `${ApiClient._serverAddress}/emby/Collections?IsLocked=false&Name=${encodedCollectionName}&Ids=${idsToAdd}&api_key=${ApiClient.accessToken() }`;
-        const headers = {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        };
-
-        try {
-            const response = await fetch(urlSearch, { method: 'POST', headers });
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            const data = await response.json();
-            if (data.Id) {
-                console.log(`Collection successfully created: ${data.Id}`);
-                return data.Id;
-            } else {
-                console.error('Collection creation failed.');
-                return '';
-            }
-        } catch (error) {
-            console.error(`Error occurred during request: ${error}`);
-            return '';
-        }
-    }
-   
-    async function getCollectionId(collectionName) {
-        const collections = await ApiClient.getItems(
-            ApiClient.getCurrentUserId(),
-            {
-                Recursive: "true",
-                IncludeItemTypes: "BoxSet",
-                SearchTerm: collectionName
-            }
-        );
-
-        if (collections && collections.Items.length > 0) {
-            return collections.Items[0].Id;
-        }
-        else {
-            return '';
-        }
-    }
-    
-
-    async function checkEmbyExist(movie) {
-        const movies = await ApiClient.getItems(
-            ApiClient.getCurrentUserId(),
-            {
-                Recursive: "true",
-                IncludeItemTypes: "Movie",
-                SearchTerm: `${movie}`,
-            }
-        );
-        if (movies && movies.Items.length > 0) return movies.Items[0];
-        else return null;
-    }
-
-    async function insertItemToCollection(itemId, collectionId) {
-        const insert_url = `${ApiClient._serverAddress}/emby/Collections/${collectionId}/Items?Ids=${itemId}&api_key=${ApiClient.accessToken()}`;
-        const headers = { "accept": "*/*" };
-        try {
-            const response = await fetch(insert_url, {
-                method: 'POST',
-                headers: headers
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to add movie to collection');
-            }
-
-            return response.status === 204;
-        } catch (error) {
-            console.error('Error adding movie to collection:', error);
-            return false;
-        }
-    }
-
-   
-
-    function getActorName(isDirector = false) {
-        const people = item.People;
-        const personType = isDirector? 'Director' : 'Actor';
-        const actorNames = people.filter(person => person.Type === personType).map(person => person.Name);
-        return actorNames.length > 0 ? pickRandomLink(actorNames) : '';
-    }
-
-    async function getActorMovies(name = actorName, excludeIds = []) {
-        const actorMoreMovies = await ApiClient.getItems(
-            ApiClient.getCurrentUserId(),
-            {
-                Recursive: true,
-                IncludeItemTypes: 'Movie',
-                Fields: 'ProductionYear', 
-                Person: name
-            }
-        );
-
-        if (actorMoreMovies.Items.length > 0) {
-            let moreItems = Array.from(actorMoreMovies.Items);
-            if (name === actorName) {
-                //const actorMovieNames = moreItems.map(movie => getPartBefore(movie.Name, ' ')); // for future use
-                console.log('no longer needed');
-            } else if (excludeIds && excludeIds.length > 0) {
-                moreItems = moreItems.filter(movie => !excludeIds.some(excludeId => movie.Id === excludeId));
-            }
-
-            moreItems = moreItems.filter(moreItem => moreItem.Id != item.Id);
-            moreItems.sort(() => Math.random() - 0.5);
-            if (moreItems.length > 12) {
-                moreItems = moreItems.slice(0, 12);
-            }
-            return moreItems;
-        } else {
-            return []; // Return null or handle the failure case accordingly
-        }
-    }
-
-    async function getTagMovies(tagName) {
-        let tagMovieIdStr = '';
-        const tagMoreMovies = await ApiClient.getItems(
-            ApiClient.getCurrentUserId(),
-            {
-                Recursive: true,
-                IncludeItemTypes: 'Movie',
-                Tags: tagName
-            }
-        );
-
-        if (tagMoreMovies && tagMoreMovies.Items.length > 0) {
-            let moreItems = Array.from(tagMoreMovies.Items);
-            const tagMovieNames = moreItems.map(movie => getPartBefore(movie.Name, ' '));
-            const tagMovieIds = moreItems.map(movie => movie.Id);
-            tagMovieIdStr = tagMovieIds.join(',');
-            return [tagMovieNames, tagMovieIdStr];
-        } else {
-            return [null, tagMovieIdStr]; // Return null or handle the failure case accordingly
-        }
-    }
-
-    async function getCollectionMovies(collectionId) {
-        const tagMoreMovies = await ApiClient.getItems(
-            ApiClient.getCurrentUserId(),
-            {
-                Recursive: true,
-                IncludeItemTypes: 'Movie',
-                ParentId: collectionId
-            }
-        );
-        if (tagMoreMovies && tagMoreMovies.Items.length > 0) {
-            let moreItems = Array.from(tagMoreMovies.Items);
-            const tagMovieNames = moreItems.map(movie => getPartBefore(movie.Name, ' '));
-            return tagMovieNames;
-        } else {
-            return null; // Return null or handle the failure case accordingly
-        }
-    }
-
-
-    function getPartBefore(str, char) {
-        return str.split(char)[0];
-    }
-    function getPartAfter(str, char) {
-        const parts = str.split(char);
-        return parts[parts.length - 1];
-    }
-
-    
-    function getOS() {
-        let u = navigator.userAgent
-        if (!!u.match(/compatible/i) || u.match(/Windows/i)) {
-            return 'windows'
-        } else if (!!u.match(/Macintosh/i) || u.match(/MacIntel/i)) {
-            return 'macOS'
-        } else if (!!u.match(/iphone/i)) {
-            return 'iphone'
-        } else if (!!u.match(/Ipad/i)) {
-            return 'ipad'
-        } else if (u.match(/android/i)) {
-            return 'android'
-        } else if (u.match(/Ubuntu/i)) {
-            return 'Ubuntu'
-        } else {
-            return 'other'
-        }
-    }
-    
-
-    const request = (url, method = "GET", options = {}) => {
-        method = method ? method.toUpperCase().trim() : "GET";
-        if (!url || !["GET", "HEAD", "POST"].includes(method)) return;
-
-        const { responseType, headers = {} } = options;
-        let requestOptions = { method, headers };
-
-        return new Promise((resolve, reject) => {
-            fetch(url, requestOptions)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return responseType === "json" ? response.json() : response.text(); // Parse response based on responseType
-                })
-                .then(parsedResponse => {
-                    resolve(parsedResponse);
-                })
-                .catch(error => {
-                    reject(error);
-                });
-        });
-    };
-
-    async function fetchDbActor(actorName, isCensored, isDirector = false) {
-        const HOST = "https://javdb.com";
-        const personType = isDirector ? 'director' : 'actor';
-        const personName = isDirector ? directorName : actorName;
-        const url = `${HOST}/search?f=${personType}&locale=zh&q=${personName}`;
-        let javdbActorData = await request(url);
-        if (javdbActorData.length > 0) {
-            // Create a new DOMParser instance
-            const parser = new DOMParser();
-
-            // Parse the HTML data string
-            let parsedHtml = parser.parseFromString(javdbActorData, 'text/html');
-            let actorLink = null;
-
-            if (isDirector) {           
-                const directorBoxes = parsedHtml.querySelectorAll('#directors .box');
-                if (directorBoxes.length > 0) {
-                    for (let directorBox of directorBoxes) {
-                        if (directorBox.getAttribute('title') && directorBox.getAttribute('title').split(', ').includes(directorName)) {
-                            actorLink = directorBox;
-                            break;
-                        }
-                    }
-                }
-            } else {
-                // Get the href attribute from the parsed HTML
-                actorLink = parsedHtml.querySelector('.box.actor-box a:first-of-type');
-                if (actorLink && !actorLink.getAttribute('title').split(', ').includes(actorName)) {
-                    let actorBoxs = parsedHtml.querySelectorAll('.box.actor-box');
-                    for (let actorBox of actorBoxs) {
-                        let actorLink_temp = actorBox.querySelector('a');
-                        if (actorLink_temp.getAttribute('title').split(', ').includes(actorName)) {
-                            actorLink = actorLink_temp;
-                            break;
-                        }
-                    }
-                }
-
-                //Get uncensored href
-                if (!isCensored) {
-                    let actorLink_temp = null;
-                    const infoElements = parsedHtml.querySelectorAll('.actors .box.actor-box .info');
-                    if (infoElements.length > 0) {
-                        for (let infoElement of infoElements) {
-                            if (infoElement.textContent.includes("Uncensored") && infoElement.closest("a").getAttribute('title').includes(actorName)) {
-                                actorLink_temp = infoElement.closest("a");
-                                break;
-                            }
-                        }
-                        if (!actorLink_temp && infoElements[0].textContent.includes("Uncensored")) {
-                            actorLink_temp = infoElements[0].closest("a");
-                        }
-                    }
-                    if (actorLink_temp) {
-                        actorLink = actorLink_temp;
-                    }
-                }
-            }
-            
-            if (actorLink) {
-                const hrefValue = actorLink.getAttribute('href');
-                const actorUrl = `${HOST}${hrefValue}`;
-
-                //wait for random time
-                await waitForRandomTime();
-                javdbActorData = await request(actorUrl);
-                if (javdbActorData.length > 0) {
-
-                    const itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
-                    if (itemsContainer && OS_current != 'iphone' && OS_current != 'android') {
-                        const mediaInfoItem = itemsContainer.querySelectorAll('.mediaInfoItem:has(a)')[0];
-                        if (mediaInfoItem) {
-                            addNewLinks(mediaInfoItem, [createNewLinkElement(`跳转至javdb ${personName}`, '#ADD8E6', actorUrl, personName)]);
-                            mediaInfoStyle(mediaInfoItem);
-                        }
-                    }
-
-                    parsedHtml = parser.parseFromString(javdbActorData, 'text/html');
-                    const paginationList = parsedHtml.querySelector('.pagination-list');
-                    if (paginationList) {
-                        // Initialize an array to store page links
-                        const pageLinks = [];
-
-                        // Find all the page links within the pagination list
-                        const links = paginationList.querySelectorAll('a.pagination-link');
-
-                        // Iterate over each page link and extract the href attribute
-                        links.forEach(link => {
-                            const href = `${HOST}${link.getAttribute('href')}`;
-                            // Add the href to the pageLinks array
-                            pageLinks.push(href);
-                        });
-
-                        const pickLink = pickRandomLink(pageLinks);
-                        if (pickLink != actorUrl) {
-                            await waitForRandomTime();
-                            javdbActorData = await request(pickLink);
-                            if (javdbActorData.length > 0) {
-                                parsedHtml = parser.parseFromString(javdbActorData, 'text/html');
-                            }
-                        }
-                    }
-                    const movies = [];
-
-                    // Iterate over each item within the "movie-list"
-                    const DBitems = parsedHtml.querySelectorAll('.movie-list .item');
-                    arrangeDBitems(DBitems, movies);
-                    return [movies, actorUrl];
-                }
-                
-            } else {
-                console.error('Actor link not found');
-            }
-        }
-        return [[], ''];
-    }
-
-    function waitForRandomTime() {
-        const minWaitTime = 500;
-        const maxWaitTime = 1500;
-
-        const randomWaitTime = Math.random() * (maxWaitTime - minWaitTime) + minWaitTime;
-
-        return new Promise(resolve => {
-            setTimeout(() => {
-                console.log("Waited for", randomWaitTime / 1000, "seconds");
-                resolve(); // Signal that the promise is completed
-            }, randomWaitTime);
-        });
-    }
-
-    async function fetchDbSeries(seriesName) {
-        const movies = [];
-        let seriesUrl = '';
-        let javdbSeries = '';
-        const HOST = "https://javdb.com";
-        const url = `${HOST}/search?q=${seriesName}&f=series`;
-        let javdbData = await request(url);
-        if (javdbData.length > 0) {
-            const parser = new DOMParser();
-
-            // Parse the HTML data string
-            let parsedHtml = parser.parseFromString(javdbData, 'text/html');
-            const seriesContainer = parsedHtml.getElementById('series');
-
-            // Check if the container exists
-            if (seriesContainer) {
-                // Find the first anchor tag within the container
-                const seriesLinks = seriesContainer.querySelectorAll('a');
-                let firstAnchor;
-                for (const link of seriesLinks) {
-                    const movieCountText = link.querySelector('span').textContent; // Get the text content of the <span> element
-                    const movieCount = parseInt(movieCountText.match(/\((\d+)\)/)[1]);
-
-                    if (movieCount > 0) {
-                        let seriesTitle = link.querySelector('strong').textContent;
-                        if (!firstAnchor || seriesTitle === seriesName) firstAnchor = link;
-                    }
-                }
-
-                // Check if the anchor tag exists
-                if (firstAnchor) {
-                    javdbSeries = firstAnchor.querySelector('strong').textContent;
-                    // Get the href attribute of the anchor tag
-                    const firstHref = firstAnchor.getAttribute('href');
-                    seriesUrl = `${HOST}${firstHref}`;
-                    await waitForRandomTime();
-                    javdbData = await request(seriesUrl);
-
-                    if (javdbData) {
-                        const itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
-                        if (itemsContainer && OS_current != 'iphone' && OS_current != 'android') {
-                            const mediaInfoItem = itemsContainer.querySelectorAll('.mediaInfoItem:has(a)')[0];
-                            if (mediaInfoItem) {
-                                if (item.Type != 'BoxSet') {
-                                    addNewLinks(mediaInfoItem, [createNewLinkElement(`跳转至javdb ${seriesName}`, '#ADD8E6', seriesUrl, seriesName)]);
-                                } 
-                                mediaInfoStyle(mediaInfoItem);
-                            }
-                        }
-
-                        parsedHtml = parser.parseFromString(javdbData, 'text/html');
-
-                        const paginationList = parsedHtml.querySelector('.pagination-list');
-                        if (paginationList && item.Type === 'BoxSet') {
-                            // Initialize an array to store page links
-                            const pageLinks = [];
-
-                            // Find all the page links within the pagination list
-                            const links = paginationList.querySelectorAll('a.pagination-link');
-
-                            // Iterate over each page link and extract the href attribute
-                            links.forEach(link => {
-                                const href = `${HOST}${link.getAttribute('href')}`;
-                                // Add the href to the pageLinks array
-                                pageLinks.push(href);
-                            });
-                            //seriesPageLinks = pageLinks;
-
-                            for (const link of pageLinks) {
-                                if (link !== seriesUrl) {
-                                    await waitForRandomTime();
-                                    javdbData = await request(link);
-                                    if (javdbData.length > 0) {
-                                        let parsedHtmlTemp = parser.parseFromString(javdbData, 'text/html');
-                                        let DBitemsTemp = parsedHtmlTemp.querySelectorAll('.movie-list .item');
-                                        arrangeDBitems(DBitemsTemp, movies);
-                                    }
-                                }
-                            }   
-                        }
-                        // Iterate over each item within the "movie-list"
-                        const DBitems = parsedHtml.querySelectorAll('.movie-list .item');
-                        arrangeDBitems(DBitems, movies);
-                    }
-
-                }
-            }
-        }
-        return [movies, seriesUrl, javdbSeries];  
-    }
-
-    function arrangeDBitems(DBitems, movies) {
-        if (!DBitems) return null;
-        DBitems.forEach(DBitem => {
-            const link = DBitem.querySelector('a').getAttribute('href');
-            const name = DBitem.querySelector('a').getAttribute('title');
-            const code = DBitem.querySelector('.video-title strong').textContent;
-            const imgSrc = DBitem.querySelector('img').getAttribute('src');
-            const time = DBitem.querySelector('.meta').textContent.trim(); // Extracts the time from the meta
-            const score = DBitem.querySelector('.score .value').textContent.trim(); // Extracts the score from the score text
-
-            // Add the movie information to the array
-            movies.push({ Link: link, Name: name, Code: code, ImgSrc: imgSrc, Time: time, Score: score });
-        });
-    }
-
-
-    // Function to randomly pick a link from the array
-    function pickRandomLink(linksArray) {
-        // Check if the array is not empty
-        if (linksArray.length > 0) {
-            // Generate a random index within the array length
-            const randomIndex = Math.floor(Math.random() * linksArray.length);
-            // Return the link at the random index
-            return linksArray[randomIndex];
-        } else {
-            return null; // Return null if the array is empty
-        }
-    }
-
-    function containsJapanese(text) {
-        // Regular expression to match Japanese characters
-        const japaneseRegex = /[\u3040-\u309F\u30A0-\u30FF]/;
-
-        return japaneseRegex.test(text);
-    }
-
-    async function translateInject() {
-        if ((OS_current === 'iphone') || (OS_current === 'android') || (googleApiKey.length == 0)) return;
-
-        // Select the element using document.querySelector
-        const titleElement = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .itemName-primary");
-        const mainDetailButtons = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .mainDetailButtons");
-
-        // Check if the element is found
-        if (titleElement) {
-            if (containsJapanese(item.Name)) {
-                const buttonhtml = createButtonHtml('myTranslate', '翻译标题', `<span class="material-symbols-outlined">language</span>`, '翻译标题');
-
-                mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml);
-                const myTranslate = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myTranslate");
-                myTranslate.onclick = translateJapaneseToChinese;
-            }
-        } else {
-            console.log('titleElement not found');
-        }
-
-        const divElement = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .overview-text.readOnlyContent");
-
-        if (divElement && item.Type != 'BoxSet') {
-            if (containsJapanese(item.Overview)) {
-                const buttonhtml2 = createButtonHtml('myTranslate2', '翻译详情', `<span class="material-symbols-outlined">language</span>`, '翻译详情');
-                mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml2);
-                const myTranslate2 = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myTranslate2");
-                myTranslate2.onclick = translateJapaneseToChinese2;
-            }
-        }
-    }
-
-
-    async function translateOnly(text) {
-        if (googleApiKey.length === 0) { return text; }
-        const apiUrl = `https://translation.googleapis.com/language/translate/v2?key=${googleApiKey}`;
-        let text_jp = googleTranslateLanguage === 'ja' ? OpenCC.Converter({ from: 'cn', to: 'jp' })(text) : text;
-        
-        let response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                q: text_jp,
-                source: googleTranslateLanguage,
-                target: 'zh-CN', // Chinese (Simplified)
-                format: 'text',
-                profanityFilter: false, // Disable profanity filter
-            }),
-        });
-
-        let data = await response.json();
-        if (data && data.data && data.data.translations && data.data.translations.length > 0) {
-            let translatedText = data.data.translations[0].translatedText;
-            return translatedText
-        } else {
-            throw new Error('Translation failed');
-        }
-
-    }
-
-    async function translateJapaneseToChinese() {
-        const titleElement = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .itemName-primary");
-        if (!titleElement) return
-        // Get the text content of the element
-        let text = item.Name;
-
-        const translatedText = await translateOnly(text);
-        if (translatedText.length > 0) { 
-            titleElement.textContent = translatedText; // Replace titleElement text with translated text
-            item.Name = translatedText;
-            (item.Type != 'BoxSet') && ApiClient.updateItem(item);
-            showToast({
-                text: '翻译成功',
-                icon: `<span class="material-symbols-outlined">fact_check</span>`
-            })
-
-            const myTranslate = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myTranslate");
-            myTranslate.style.color = 'green';
-            myTranslate.classList.add('melt-away');
-            setTimeout(() => {
-                myTranslate.style.display = 'none';
-                javdbTitle();
-            }, 1000); 
-            
-        } 
-    }
-
-    async function translateJapaneseToChinese2() {
-        const divElement = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .overview-text.readOnlyContent");
-
-        if (!divElement) return
-        let text = item.Overview;
-
-        const translatedText = await translateOnly(text);
-
-        if (translatedText.length > 0) { 
-            divElement.textContent = translatedText; // Replace titleElement text with translated text
-            item.Overview = translatedText;
-            ApiClient.updateItem(item);
-            showToast({
-                text: '翻译成功',
-                icon: `<span class="material-symbols-outlined">fact_check</span>`
-            })
-            const myTranslate = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myTranslate2");
-            myTranslate.style.color = 'green';
-            myTranslate.classList.add('melt-away');
-            setTimeout(() => {
-                myTranslate.style.display = 'none';
-                javdbTitle();
-            }, 1000); 
-        } 
-    }
-
-
-    function translatePath(linuxPath) {
-        const mountMatch = {
-            "/XFiles/": "W:\\XFiles\\",
-            "/mnt/ZDrive/": "Z:\\",
-            "/mnt/YDrive/": "Y:\\"
-        };
-        // Iterate through the mountMatch dictionary
-        for (const [linuxPrefix, windowsPrefix] of Object.entries(mountMatch)) {
-            if (linuxPath.startsWith(linuxPrefix)) {
-                // Replace the Linux prefix with the Windows prefix
-                const relativePath = linuxPath.slice(linuxPrefix.length);
-                return windowsPrefix + relativePath.replace(/\//g, '\\');
-            }
-        }
-        // Return the original path if no match is found
-        return linuxPath;
-    }
-
-
-})();
+    // Expose the `r` function as the main entry point
+    return r;
+})()({1: [function (require, module, exports) {// emby detail page
+
+	(async function () {
+	    "use strict";
+	    const OpenCC = require('opencc-js');
+	
+	    
+	
+	    //config
+	    const show_pages = ["Movie", "Series", "Season", "BoxSet"];
+	    /* page item.Type "Person" "Movie" "Series" "Season" "Episode" "BoxSet" so. */
+	
+	    const javDbFlag = true;
+	    // fetch data form Javdb.com and display in detail page. Only support movies that has CustomRating === 'JP-18+' or OfficialRating === 'JP-18+'
+	
+	    const googleTranslateLanguage = 'ja';
+	    // put language to translate from (ja for Japanese) to Chinese. Leave '' to support any language
+	
+	
+	    var item, actorName, directorName, viewnode, paly_mutation;
+	
+	    var adminUserId = '', googleApiKey = '', nameMap = {};
+	
+	    await loadConfig();
+	
+	    var fetchJavDbFlag = javDbFlag, isResizeListenerAdded = false;;
+	
+	    const OS_current = getOS();
+	
+	    const iconJavDb = `<svg width="70.5" height="24" viewBox="0 0 326 111" fill="none" xmlns="http://www.w3.org/2000/svg">
+	                        <rect x="166" y="11" width="160" height="93" fill="#2F80ED"></rect>
+	                        <path d="M196.781 27.0078H213.41C217.736 27.0078 221.445 27.4089 224.539 28.2109C227.633 29.013 230.44 30.5169 232.961 32.7227C239.521 38.3372 242.801 46.8737 242.801 58.332C242.801 62.1133 242.471 65.5651 241.812 68.6875C241.154 71.8099 240.137 74.6315 238.762 77.1523C237.387 79.6445 235.625 81.8789 233.477 83.8555C231.786 85.3737 229.939 86.5911 227.934 87.5078C225.928 88.4245 223.766 89.069 221.445 89.4414C219.154 89.8138 216.561 90 213.668 90H197.039C194.719 90 192.971 89.6562 191.797 88.9688C190.622 88.2526 189.849 87.2643 189.477 86.0039C189.133 84.7148 188.961 83.0534 188.961 81.0195V34.8281C188.961 32.0781 189.577 30.0872 190.809 28.8555C192.04 27.6237 194.031 27.0078 196.781 27.0078ZM201.723 37.1055V79.8594H211.391C213.51 79.8594 215.172 79.8021 216.375 79.6875C217.578 79.5729 218.824 79.2865 220.113 78.8281C221.402 78.3698 222.52 77.7253 223.465 76.8945C227.733 73.2852 229.867 67.069 229.867 58.2461C229.867 52.0299 228.922 47.375 227.031 44.2812C225.169 41.1875 222.863 39.2253 220.113 38.3945C217.363 37.5352 214.04 37.1055 210.145 37.1055H201.723ZM280.914 90H261.664C258.885 90 256.895 89.3841 255.691 88.1523C254.517 86.8919 253.93 84.901 253.93 82.1797V34.8281C253.93 32.0495 254.531 30.0586 255.734 28.8555C256.966 27.6237 258.943 27.0078 261.664 27.0078H282.074C285.082 27.0078 287.689 27.194 289.895 27.5664C292.1 27.9388 294.077 28.6549 295.824 29.7148C297.314 30.6029 298.632 31.7344 299.777 33.1094C300.923 34.4557 301.797 35.9596 302.398 37.6211C303 39.2539 303.301 40.987 303.301 42.8203C303.301 49.1224 300.15 53.7344 293.848 56.6562C302.126 59.2917 306.266 64.4193 306.266 72.0391C306.266 75.5625 305.363 78.7422 303.559 81.5781C301.754 84.3854 299.319 86.4622 296.254 87.8086C294.335 88.6107 292.129 89.1836 289.637 89.5273C287.145 89.8424 284.237 90 280.914 90ZM279.969 62.0273H266.691V80.418H280.398C289.021 80.418 293.332 77.3099 293.332 71.0938C293.332 67.9141 292.215 65.6081 289.98 64.1758C287.746 62.7435 284.409 62.0273 279.969 62.0273ZM266.691 36.5898V52.875H278.379C281.559 52.875 284.008 52.5742 285.727 51.9727C287.474 51.3711 288.806 50.2253 289.723 48.5352C290.439 47.332 290.797 45.9857 290.797 44.4961C290.797 41.3164 289.665 39.2109 287.402 38.1797C285.139 37.1198 281.688 36.5898 277.047 36.5898H266.691Z" fill="white"></path>
+	                        <path d="M47.4375 29.5469V65.5469C47.4375 68.6719 47.2969 71.3281 47.0156 73.5156C46.7656 75.7031 46.1719 77.9219 45.2344 80.1719C43.6719 83.9531 41.0938 86.9062 37.5 89.0312C33.9062 91.125 29.5312 92.1719 24.375 92.1719C19.7188 92.1719 15.8281 91.4375 12.7031 89.9688C9.60938 88.5 7.10938 86.125 5.20312 82.8438C4.20312 81.0938 3.39062 79.0781 2.76562 76.7969C2.14062 74.5156 1.82812 72.3438 1.82812 70.2812C1.82812 68.0938 2.4375 66.4219 3.65625 65.2656C4.875 64.1094 6.4375 63.5312 8.34375 63.5312C10.1875 63.5312 11.5781 64.0625 12.5156 65.125C13.4531 66.1875 14.1719 67.8438 14.6719 70.0938C15.2031 72.5 15.7344 74.4219 16.2656 75.8594C16.7969 77.2969 17.6875 78.5312 18.9375 79.5625C20.1875 80.5938 21.9688 81.1094 24.2812 81.1094C30.4375 81.1094 33.5156 76.5938 33.5156 67.5625V29.5469C33.5156 26.7344 34.125 24.625 35.3438 23.2188C36.5938 21.8125 38.2812 21.1094 40.4062 21.1094C42.5625 21.1094 44.2656 21.8125 45.5156 23.2188C46.7969 24.625 47.4375 26.7344 47.4375 29.5469ZM93.9844 84.9531C90.8906 87.3594 87.8906 89.1719 84.9844 90.3906C82.1094 91.5781 78.875 92.1719 75.2812 92.1719C72 92.1719 69.1094 91.5312 66.6094 90.25C64.1406 88.9375 62.2344 87.1719 60.8906 84.9531C59.5469 82.7344 58.875 80.3281 58.875 77.7344C58.875 74.2344 59.9844 71.25 62.2031 68.7812C64.4219 66.3125 67.4688 64.6562 71.3438 63.8125C72.1562 63.625 74.1719 63.2031 77.3906 62.5469C80.6094 61.8906 83.3594 61.2969 85.6406 60.7656C87.9531 60.2031 90.4531 59.5312 93.1406 58.75C92.9844 55.375 92.2969 52.9062 91.0781 51.3438C89.8906 49.75 87.4062 48.9531 83.625 48.9531C80.375 48.9531 77.9219 49.4062 76.2656 50.3125C74.6406 51.2188 73.2344 52.5781 72.0469 54.3906C70.8906 56.2031 70.0625 57.4062 69.5625 58C69.0938 58.5625 68.0625 58.8438 66.4688 58.8438C65.0312 58.8438 63.7812 58.3906 62.7188 57.4844C61.6875 56.5469 61.1719 55.3594 61.1719 53.9219C61.1719 51.6719 61.9688 49.4844 63.5625 47.3594C65.1562 45.2344 67.6406 43.4844 71.0156 42.1094C74.3906 40.7344 78.5938 40.0469 83.625 40.0469C89.25 40.0469 93.6719 40.7188 96.8906 42.0625C100.109 43.375 102.375 45.4688 103.688 48.3438C105.031 51.2188 105.703 55.0312 105.703 59.7812C105.703 62.7812 105.688 65.3281 105.656 67.4219C105.656 69.5156 105.641 71.8438 105.609 74.4062C105.609 76.8125 106 79.3281 106.781 81.9531C107.594 84.5469 108 86.2188 108 86.9688C108 88.2812 107.375 89.4844 106.125 90.5781C104.906 91.6406 103.516 92.1719 101.953 92.1719C100.641 92.1719 99.3438 91.5625 98.0625 90.3438C96.7812 89.0938 95.4219 87.2969 93.9844 84.9531ZM93.1406 66.4375C91.2656 67.125 88.5312 67.8594 84.9375 68.6406C81.375 69.3906 78.9062 69.9531 77.5312 70.3281C76.1562 70.6719 74.8438 71.375 73.5938 72.4375C72.3438 73.4688 71.7188 74.9219 71.7188 76.7969C71.7188 78.7344 72.4531 80.3906 73.9219 81.7656C75.3906 83.1094 77.3125 83.7812 79.6875 83.7812C82.2188 83.7812 84.5469 83.2344 86.6719 82.1406C88.8281 81.0156 90.4062 79.5781 91.4062 77.8281C92.5625 75.8906 93.1406 72.7031 93.1406 68.2656V66.4375ZM125.344 48.1094L135.703 77.1719L146.859 46.8438C147.734 44.4062 148.594 42.6875 149.438 41.6875C150.281 40.6562 151.562 40.1406 153.281 40.1406C154.906 40.1406 156.281 40.6875 157.406 41.7812C158.562 42.875 159.141 44.1406 159.141 45.5781C159.141 46.1406 159.031 46.7969 158.812 47.5469C158.625 48.2969 158.391 49 158.109 49.6562C157.859 50.3125 157.562 51.0625 157.219 51.9062L144.938 82.375C144.594 83.25 144.141 84.3594 143.578 85.7031C143.047 87.0469 142.438 88.2031 141.75 89.1719C141.094 90.1094 140.266 90.8438 139.266 91.375C138.297 91.9062 137.109 92.1719 135.703 92.1719C133.891 92.1719 132.438 91.7656 131.344 90.9531C130.281 90.1094 129.484 89.2031 128.953 88.2344C128.453 87.2344 127.594 85.2812 126.375 82.375L114.188 52.2344C113.906 51.4844 113.609 50.7344 113.297 49.9844C113.016 49.2344 112.766 48.4688 112.547 47.6875C112.359 46.9062 112.266 46.2344 112.266 45.6719C112.266 44.7969 112.531 43.9375 113.062 43.0938C113.594 42.2188 114.328 41.5156 115.266 40.9844C116.203 40.4219 117.219 40.1406 118.312 40.1406C120.438 40.1406 121.891 40.75 122.672 41.9688C123.484 43.1875 124.375 45.2344 125.344 48.1094Z" fill="currentColor"></path>
+	                      </svg>`;
+	
+	    // monitor dom changements
+	    document.addEventListener("viewbeforeshow", function (e) {
+	        paly_mutation?.disconnect();
+	        if (e.detail.contextPath.startsWith("/item?id=")) {
+	            if (!e.detail.isRestored) {
+	                const mutation = new MutationObserver(async function () {
+	                    viewnode = e.target;
+	                    item = viewnode.controller?.currentItem;
+	                    if (item) {
+	                        mutation.disconnect();
+	                        if (showFlag()) {
+	          
+	                            if (item.Type === 'BoxSet') {
+	                                translateInject();
+	                                seriesInject();
+	                            } else {
+	                                init();
+	                            }     
+	                        }
+	                    }
+	                });
+	                mutation.observe(document.body, {
+	                    childList: true,
+	                    characterData: true,
+	                    subtree: true,
+	                });
+	            } else {
+	                viewnode = e.target;
+	                item = viewnode.controller.currentItem;
+	                if (item && showFlag() && item.Type != 'BoxSet') {
+	                    actorName = getActorName();
+	                    directorName = getActorName(true);
+	                    setTimeout(() => {
+	                        javdbTitle();
+	                        adjustCardOffsets();
+	                        adjustSliderWidth();
+	                    }, 500);
+	                }
+	            }
+	        }
+	    });
+	
+	    async function loadConfig() {
+	        const response = await fetch('./config.json');
+	        if (!response.ok) {
+	            console.error(`Failed to fetch config.json: ${response.status} ${response.statusText}`);
+	            return; // Exit the function if the file is not found or another error occurs
+	        }
+	        const config = await response.json();
+	        adminUserId = config.adminUserId;
+	        googleApiKey = config.googleApiKey;
+	        nameMap = config.nameMap;
+	    }
+	
+	    function moveTopDown() {
+	        const topMain = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .topDetailsMain");
+	
+	        if (topMain) {
+	            // Check if already adjusted
+	            if (topMain.dataset.movedDown === "true") {
+	                return; // Exit if already moved
+	            }
+	
+	            const distanceFromTop = topMain.getBoundingClientRect().top + window.scrollY;
+	            const height = topMain.offsetHeight;
+	            const moveDownBy = window.innerHeight - height - distanceFromTop;
+	
+	            topMain.style.paddingTop = `${moveDownBy}px`;
+	
+	            // Mark as adjusted
+	            topMain.dataset.movedDown = "true";
+	        }
+	    }
+	
+	    async function init() {
+	        javdbTitle();
+	        //buttonInit();
+	
+	        await previewInject();
+	        modalInject();
+	
+	        const excludeIds = await actorMoreInject();
+	        actorMoreInject(true, excludeIds);
+	
+	        translateInject();
+	        javdbButtonInit();
+	    }
+	
+	
+	    function showFlag() {
+	        for (let show_page of show_pages) {
+	            if (item.Type == show_page) {
+	                return true;
+	            }
+	        }
+	        return false;
+	    }
+	
+	    function timeLength() {
+	        // Select all visible div elements with the class "mediaInfoItem" inside a specific container
+	        const mediaInfoItems = viewnode.querySelectorAll("div[is='emby-scroller']:not(.hide) .mediaInfoItem");
+	
+	        // Regular expressions to match "xxh xxm", "xxh", and "xxm"
+	        const timeRegexWithHoursAndMinutes = /\b(\d{1,2})h\s*(\d{1,2})m\b/;
+	        const timeRegexHoursOnly = /\b(\d{1,2})h\b/;
+	        const timeRegexMinutesOnly = /\b(\d{1,2})m\b/;
+	
+	        // Loop through the elements to find the one that matches any of the regex patterns
+	        mediaInfoItems.forEach((mediaItem) => {
+	            if (mediaItem.querySelector('a')) {
+	                // Skip this mediaItem and continue to the next
+	                return;
+	            }
+	
+	            const trimmedText = mediaItem.textContent.trim();
+	
+	            if (trimmedText === 'JP-18+') {
+	                mediaItem.style.fontWeight = 'bold';
+	                mediaItem.style.fontFamily = "'Georgia', serif";
+	            } else if (timeRegexWithHoursAndMinutes.test(trimmedText)) {
+	                const match = trimmedText.match(timeRegexWithHoursAndMinutes);
+	                const hours = match[1];
+	                const minutes = match[2];
+	
+	                // Change the text to the desired format with hours and minutes
+	                mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时${minutes}分  •`;
+	                //mediaItem.classList.add('mediaInfoItem-border');
+	
+	            } else if (timeRegexHoursOnly.test(trimmedText)) {
+	                const match = trimmedText.match(timeRegexHoursOnly);
+	                const hours = match[1];
+	
+	                // Change the text to the desired format with only hours
+	                mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时  •`;
+	                //mediaItem.classList.add('mediaInfoItem-border');
+	
+	            } else if (timeRegexMinutesOnly.test(trimmedText)) {
+	                const match = trimmedText.match(timeRegexMinutesOnly);
+	                const minutes = match[1];
+	
+	                // Change the text to the desired format with only minutes
+	                mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${minutes}分  •`;
+	                //mediaItem.classList.add('mediaInfoItem-border');
+	            } else if (['endsAt', 'mediaInfoCriticRating'].some(className => mediaItem.classList.contains(className))) {
+	                mediaItem.style.display = 'none';
+	            } else if (/^\d{4}$/.test(trimmedText)) {
+	                let resolutionLabel;
+	
+	                if (item.Height >= 4096) {
+	                    resolutionLabel = "8K";
+	                } else if (item.Height >= 2048) {
+	                    resolutionLabel = "4K";
+	                } else if (item.Height >= 1440) {
+	                    resolutionLabel = "2K";
+	                } else if (item.Height >= 1080) {
+	                    resolutionLabel = "FHD";
+	                } else if (item.Height >= 720) {
+	                    resolutionLabel = "HD";
+	                } else {
+	                    resolutionLabel = item.Height + 'p'; // Default to the height in 'p'
+	                }
+	
+	                mediaItem.textContent = resolutionLabel;
+	
+	                // Apply some font styling to the mediaItem element
+	                mediaItem.style.fontFamily = "'Georgia', serif";  // Nicer font family
+	                mediaItem.style.fontWeight = "bold";                 // Bold text
+	
+	                mediaItem.classList.add('mediaInfoItem-border');
+	
+	                let nextSibling = mediaItem.nextElementSibling; // Get the next sibling element
+	
+	                if (nextSibling && nextSibling.nextElementSibling) {
+	                    // Insert mediaItem after its next sibling
+	                    mediaItem.parentNode.insertBefore(mediaItem, nextSibling.nextElementSibling);
+	                } else {
+	                    // If there's no further sibling, append mediaItem to the end
+	                    mediaItem.parentNode.appendChild(mediaItem);
+	                }
+	
+	            } else if (mediaItem.classList.contains('starRatingContainer')) {
+	
+	                // Extract the rating number
+	                let match = trimmedText.match(/\d+(\.\d+)?/);
+	                if (match) {
+	                    let rating = parseFloat(match[0]);
+	
+	                    // Adjust the rating if it's greater than 5
+	                    if (rating > 5) {
+	                        rating = rating / 2;
+	                    }
+	
+	                    // Ensure the number of stars does not exceed 5
+	                    let fullStars = Math.min(Math.floor(rating), 5);
+	
+	                    // Generate the stars with reduced space
+	                    let starsHTML = '';
+	                    for (let i = 0; i < fullStars; i++) {
+	                        // Apply negative margin-right only to stars that are not the last one
+	                        let margin = (i < fullStars - 1) ? '-5px' : '0';
+	                        starsHTML += `<i class="md-icon md-icon-fill starIcon" style="margin-right: ${margin};"></i>`;
+	                    }
+	
+	                    // Replace the content with the new format
+	                    mediaItem.innerHTML = `<span style="font-weight: bold;">评分</span>:${starsHTML} ${rating}分  •`;
+	                } else {
+	                    console.warn('No valid rating number found in the mediaItem.');
+	                }
+	            }
+	        });
+	    }
+	
+	    function tagInsert(mediaInfoItem) {
+	        const tagItems = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .itemTags");
+	        const tagClones = tagItems.cloneNode(true);
+	        // Remove the existing classes
+	        tagClones.className = 'mediaInfoItem';
+	        tagClones.style.marginTop = '';
+	        tagClones.style.marginBottom = '';
+	
+	
+	        // Set the desired inline styles
+	        //tagClones.style.whiteSpace = 'normal';
+	        mediaInfoItem.insertAdjacentElement('afterend', tagClones);
+	        mediaInfoStyle(tagClones);
+	    }
+	
+	    function javdbTitle() {
+	        const showJavDbFlag = (item.CustomRating && item.CustomRating === 'JP-18+') || (item.OfficialRating && item.OfficialRating === 'JP-18+');
+	        if (!showJavDbFlag || !fetchJavDbFlag || item.Type == 'BoxSet') return
+	
+	        const titleElement = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .itemName-primary");
+	        const titleText = titleElement.textContent;
+	        const code = getPartBefore(titleText, ' ');
+	
+	
+	        // Create the copy element with the copy-to-clipboard functionality
+	        const link = createCopyElement(code, '复制番号');
+	
+	        // Replace the code part in the title with the hyperlink
+	        const remainingText = titleText.slice(code.length) + ' ';
+	
+	        // Clear the current content and append the new content
+	        titleElement.innerHTML = ''; // Clear current content
+	        titleElement.appendChild(link);
+	        titleElement.appendChild(document.createTextNode(remainingText));
+	
+	        function createCopyElement(text, title) {
+	            const link = document.createElement("a");
+	            link.textContent = text;
+	            link.title = title;
+	
+	            // Add the CSS class to the link element
+	            link.classList.add('copy-link');
+	
+	            // Add event listener to copy text to clipboard
+	            link.addEventListener('click', (event) => {
+	                event.preventDefault(); // Prevent the default link behavior
+	                copyTextToClipboard(text); // Copy the text to clipboard
+	                showToast({
+	                    text: "番号复制成功",
+	                    icon: "\uf0c5",
+	                    secondaryText: code
+	                });
+	            });
+	
+	            return link;
+	        }
+	
+	        if (OS_current == 'iphone' || OS_current == 'android') return
+	
+	        const noNumCode = code.replace(/^\d+(?=[A-Za-z])/, '');
+	
+	        const newLinks = [];
+	
+	        newLinks.push(createNewLinkElement('搜索 javdb.com', 'pink', `https://javdb.com/search?q=${code}&f=all`, 'javdb'));
+	        newLinks.push(createNewLinkElement('搜索 javbus.com', 'red', `https://www.javbus.com/${code}`, 'javbus'));
+	        newLinks.push(createNewLinkElement('搜索 javlibrary.com', 'rgb(191, 96, 166)', `https://www.javlibrary.com/cn/vl_searchbyid.php?keyword=${code}`, 'javlibrary'));
+	
+	
+	        if (item.Genres.includes("无码")) {
+	            if (/^n\d{4}$/.test(code)) {
+	                newLinks.push(createNewLinkElement('搜索 tokyohot', 'red', 'https://my.tokyo-hot.com/product/?q=' + code.toLowerCase() + '&x=0&y=0', 'tokyohot'));
+	            } else if (/^\d+-\d+$/.test(code)) {
+	                newLinks.push(createNewLinkElement('搜索 caribbean', 'green', 'https://www.caribbeancom.com/moviepages/' + code.toLowerCase() + '/index.html', 'caribbean'));
+	            } else if (/^\d+_\d+$/.test(code)) {
+	                newLinks.push(createNewLinkElement('搜索 1pondo', 'rgb(230, 95, 167)', 'https://www.1pondo.tv/movies/' + code.toLowerCase() + '/', '1pondo'));
+	            } else if (code.toLowerCase().includes('heyzo')) {
+	                const extractBetweenTildes = str => str ? (str.match(/～(.*?)～/) || [str, str])[1] : null;
+	                const originalTitle = getPartAfter(item.OriginalTitle, ' ');
+	                const heyzoTitle = extractBetweenTildes(originalTitle);
+	                newLinks.push(createNewLinkElement('搜索 heyzo', 'pink', 'https://m.heyzo.com/search/' + heyzoTitle + '/1.html', 'heyzo'));
+	            } else {
+	                newLinks.push(createNewLinkElement('搜索 ave', 'red', 'https://www.aventertainments.com/search_Products.aspx?languageID=1&dept_id=29&keyword=' + code + '&searchby=keyword', 'ave'));
+	            }
+	
+	        } else if (item.Genres.includes("VR")) {
+	            newLinks.push(createNewLinkElement('搜索 dmm.co.jp', 'red', 'https://www.dmm.co.jp/digital/videoa/-/list/search/=/device=vr/?searchstr=' + code.toLowerCase().replace("-", "00"), 'dmm'));
+	            const modifyCode = (noNumCode.startsWith("DSVR") && /^\D+-\d{1,3}$/.test(code)) ? "3" + code : code;
+	            newLinks.push(createNewLinkElement('搜索 jvrlibrary.com', 'lightyellow', `https://jvrlibrary.com/jvr?id=` + modifyCode, 'jvrlibrary'));
+	        } else {
+	            newLinks.push(createNewLinkElement('搜索 7mmtv.sx', 'rgb(225, 125, 190)', `https://7mmtv.sx/zh/searchform_search/all/index.html?search_keyword=${code}&search_type=searchall&op=search`, '7mmtv'));
+	            newLinks.push(createNewLinkElement('搜索 dmm.co.jp', 'red', 'https://www.dmm.co.jp/mono/-/search/=/searchstr=' + code.toLowerCase() + '/', 'dmm'));
+	            newLinks.push(createNewLinkElement('搜索 javsubtitled.com', 'rgb(149, 221, 49)', 'https://javsubtitled.com/zh/search?keywords=' + code, 'javsubtitled'));
+	        }
+	
+	        if (!viewnode.querySelector("div[is='emby-scroller']:not(.hide) .btnPlayTrailer:not(.hide)")) {
+	            newLinks.push(createNewLinkElement('搜索 javtrailers', 'red', 'https://javtrailers.com/search/' + noNumCode, 'javtrailers'));
+	        }
+	
+	        newLinks.push(createNewLinkElement('搜索 subtitlecat.com', 'rgb(255, 191, 54)', `https://www.subtitlecat.com/index.php?search=` + noNumCode, 'subtitlecat'));
+	
+	        let itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
+	        if (itemsContainer) {
+	            let mediaInfoItem = itemsContainer.querySelector('.mediaInfoItem[style="white-space:normal;"]');
+	            if (mediaInfoItem) {
+	                addNewLinks(mediaInfoItem, newLinks);
+	                mediaInfoStyle(mediaInfoItem);
+	                timeLength();
+	                //tagInsert(mediaInfoItem);
+	                moveTopDown();
+	            }
+	        } else {
+	            paly_mutation = new MutationObserver(function () {
+	                let itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
+	                if (itemsContainer) {
+	                    let mediaInfoItem = itemsContainer.querySelector('.mediaInfoItem[style="white-space:normal;"]');
+	                    if (mediaInfoItem) {
+	                        paly_mutation.disconnect();
+	                        addNewLinks(mediaInfoItem, newLinks);
+	                        mediaInfoStyle(mediaInfoItem);
+	                        timeLength();
+	                        //tagInsert(mediaInfoItem);
+	                        moveTopDown();
+	                    }
+	                }
+	            });
+	            paly_mutation.observe(viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer"), {
+	                childList: true,
+	                characterData: true,
+	                subtree: true,
+	            });
+	        }
+	    }
+	
+	    function mediaInfoStyle(mediaInfoItem) {
+	        // Apply the CSS class to the mediaInfoItem
+	        mediaInfoItem.classList.add('media-info-item');
+	        mediaInfoItem.style.whiteSpace = 'normal';
+	
+	        // Remove commas before <a> tags
+	        mediaInfoItem.innerHTML = mediaInfoItem.innerHTML.replace(/,\s*(?=<a)/g, '');
+	
+	        // Select all <a> elements inside the selected mediaInfoItem
+	        let links = mediaInfoItem.querySelectorAll('a');
+	
+	        // Remove any trailing commas from the <a> text
+	        links.forEach(link => {
+	            link.textContent = link.textContent.replace(/,$/, '');
+	            link.classList.remove('button-link', 'button-link-fontweight-inherit', 'nobackdropfilter');
+	            if (link.style.fontWeight === 'inherit') {
+	                link.style.fontWeight = '';
+	            }
+	            //link.removeAttribute('style');
+	        });
+	    }
+	
+	
+	    function addNewLinks(mediaInfoItem, newLinks) {
+	        if (item.Type == 'BoxSet') return;
+	        newLinks.forEach((link, index) => {
+	            mediaInfoItem.appendChild(document.createTextNode(', '));
+	            mediaInfoItem.appendChild(link);
+	        });
+	    }
+	
+	    function createNewLinkElement(title, color, url, text) {
+	        if (item.Type == 'BoxSet') return null;
+	        const newLink = document.createElement('a');
+	        //newLink.className = 'button-link button-link-color-inherit emby-button';
+	        newLink.className = 'button-link-color-inherit emby-button';
+	        newLink.style.fontWeight = 'inherit';
+	        newLink.classList.add('code-link');
+	        newLink.target = '_blank';
+	        newLink.title = title;
+	        newLink.style.color = color;
+	        newLink.href = url;
+	        newLink.textContent = text;
+	        return newLink;
+	    }
+	
+	    function createButtonHtml(id, title, icon, text, includeText = true) {
+	        return `
+	            <button id="${id}" is="emby-button" type="button" class="detailButton raised emby-button detailButton-stacked" title="${title}">              
+	                <i class="md-icon md-icon-fill button-icon button-icon-left autortl icon-Copy">${icon}</i>
+	                ${includeText ? `<span class="button-text">${text}</span>` : ''}
+	            </button>
+	        `;
+	    }
+	
+	    function buttonInit() {
+	        //removeExisting('embyCopyUrl');
+	        if (OS_current != 'windows') return;
+	        const itemPath = translatePath(item.Path);
+	        const itemFolderPath = itemPath.substring(0, itemPath.lastIndexOf('\\'));
+	
+	        const mainDetailButtons = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .mainDetailButtons");
+	
+	        const buttonhtml = createButtonHtml('embyCopyUrl', `复制所在文件夹路径: ${itemFolderPath}`, `<span class="material-symbols-outlined">folder_copy</span>`, '复制路径');
+	        mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml);
+	        viewnode.querySelector("div[is='emby-scroller']:not(.hide) #embyCopyUrl").onclick = embyCopyUrl;
+	
+	        async function embyCopyUrl() {
+	            const itemPath = translatePath(item.Path);
+	            const folderPath = itemPath.substring(0, itemPath.lastIndexOf('\\'));
+	            copyTextToClipboard(folderPath);
+	            const buttonTextElement = this.querySelector('.button-text');
+	            const originalColor = buttonTextElement.style.color;
+	            buttonTextElement.style.color = 'green';
+	            setTimeout(() => {
+	                buttonTextElement.style.color = originalColor;
+	            }, 1000);
+	            showToast({
+	                text: "路径复制成功",
+	                icon: "\uf0c5",
+	                secondaryText: itemFolderPath
+	            });
+	        }
+	    }
+	
+	    function javdbButtonInit() {
+	        const showJavDbFlag = (item.CustomRating && item.CustomRating === 'JP-18+') || (item.OfficialRating && item.OfficialRating === 'JP-18+');
+	        if (!showJavDbFlag || !fetchJavDbFlag) return;
+	
+	        const mainDetailButtons = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .mainDetailButtons");
+	        const buttonhtml = createButtonHtml('injectJavdb', '加载javdb.com数据', iconJavDb, '', false);
+	
+	        mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml);
+	        const javInjectButton = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #injectJavdb");
+	        //javInjectButton.classList.add('injectJavdb');
+	
+	        javInjectButton.addEventListener('click', async () => {
+	            showToast({
+	                text: 'javdb资源=>搜索中。。。',
+	                icon: `<span class="material-symbols-outlined">mystery</span>`
+	            });
+	            javInjectButton.style.color = 'green';
+	            javInjectButton.classList.add('melt-away');
+	            setTimeout(() => {
+	                javInjectButton.style.display = 'none';
+	            }, 1000);
+	
+	            await javdbActorInject();
+	            await javdbActorInject(true);
+	            seriesInject();
+	        });
+	    }
+	
+	    // Function to fetch JSON data from a URL
+	    /*
+	    async function fetchJsonData(url) {
+	        try {
+	            const response = await fetch(url);
+	            if (!response.ok) {
+	                throw new Error('Network response was not ok');
+	            }
+	            const jsonData = await response.json();
+	            return jsonData;
+	        } catch (error) {
+	            console.error('Error fetching JSON data:', error);
+	            return null;
+	        }
+	    }
+	    */
+	
+	
+	    // Function to copy text to clipboard
+	    function copyTextToClipboard(text) {
+	        // Create a temporary textarea element
+	        let textarea = document.createElement('textarea');
+	        textarea.value = text;
+	        textarea.setAttribute('readonly', '');
+	        textarea.style.position = 'absolute';
+	        textarea.style.left = '-9999px'; // Move the textarea off-screen
+	
+	        // Append the textarea to the body
+	        document.body.appendChild(textarea);
+	
+	        // Select and copy the text
+	        textarea.select();
+	        let success = document.execCommand('copy');
+	
+	        // Clean up: remove the textarea from the DOM
+	        document.body.removeChild(textarea);
+	
+	        // Handle success or failure
+	        if (success) {
+	            console.log(`Copied to clipboard: ${text}`);
+	        } else {
+	            console.error('Failed to copy to clipboard');
+	        }
+	    }
+	
+	
+	    function createBanner(text, html, addSlider = false) {
+	        let banner;
+	
+	        if (addSlider) {
+	            banner = `
+			    <div class="verticalSection verticalSection-cards emby-scrollbuttons-scroller">
+	              
+				    <h2 class="sectionTitle sectionTitle-cards padded-left padded-left-page padded-right">${text}</h2>
+	                <div is="emby-scroller" class="emby-scroller padded-top-focusscale padded-bottom-focusscale padded-left padded-left-page padded-right scrollX hiddenScrollX scrollFrameX" data-mousewheel="false" data-focusscroll="true" data-horizontal="true" bis_skin_checked="1">
+				        ${html}
+	                </div>
+			    </div>`;
+	        } else {
+	            banner = `
+			    <div class="verticalSection verticalSection-cards">
+				    <h2 class="sectionTitle sectionTitle-cards padded-left padded-left-page padded-right">${text}</h2>
+				    ${html}
+			    </div>`;
+	        }
+	        
+	        return banner
+	    }
+	
+	    function createSlider(text, html, isActor = 1) {
+	        const titleText = isActor ? `${text} 其他作品` : `${text}（导演） 其他作品`;
+	        const slider = `
+	            <div class="verticalSection verticalSection-cards actorMoreSection emby-scrollbuttons-scroller" bis_skin_checked = "1" >
+	                <h2 class="sectionTitle sectionTitle-cards padded-left padded-left-page padded-right">${titleText}</h2>
+	                <div is="emby-scroller" class="emby-scroller padded-top-focusscale padded-bottom-focusscale padded-left padded-left-page padded-right scrollX hiddenScrollX scrollFrameX" data-mousewheel="false" data-focusscroll="true" data-horizontal="true" bis_skin_checked="1">
+	
+	                    <div is="emby-itemscontainer" class="scrollSlider focuscontainer-x itemsContainer focusable actorMoreItemsContainer scrollSliderX emby-scrollbuttons-scrollSlider virtualItemsContainer virtual-scroller-overflowvisible virtual-scroller" data-focusabletype="nearest" data-virtualscrolllayout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2412px; height: 351px;" data-minoverhang="1" layout="horizontal-grid">
+	                        ${html}
+	                    </div>
+	                </div>
+	            </div>
+	        `;
+	
+	        return slider;
+	    }
+	
+	    function createSliderLarge(text, html, linkUrl) {
+	        let slider;
+	        if (item.Type != 'BoxSet') {
+	            slider = `
+	            <div class="verticalSection verticalSection-cards emby-scrollbuttons-scroller" bis_skin_checked="1">
+	                <div class="sectionTitleContainer sectionTitleContainer-cards padded-left padded-left-page padded-right" bis_skin_checked="1">
+	                    <a onclick="window.open('${linkUrl}', '_blank')" is="emby-sectiontitle" class="noautofocus button-link button-link-color-inherit sectionTitleTextButton sectionTitleTextButton-link sectionTitleTextButton-more emby-button emby-button-backdropfilter">
+	                        <h2 class="sectionTitle sectionTitle-cards">${text}</h2>
+	                        <i class="md-icon sectionTitleMoreIcon secondaryText"></i>
+	                    </a>
+	                </div>
+	                <div is="emby-scroller" data-mousewheel="false" data-focusscroll="true" class="padded-top-focusscale padded-bottom-focusscale padded-left padded-left-page padded-right emby-scroller scrollX hiddenScrollX scrollFrameX" bis_skin_checked="1">
+	                    <div is="emby-itemscontainer" data-focusabletype="nearest" class="focusable focuscontainer-x itemsContainer scrollSlider scrollSliderX emby-scrollbuttons-scrollSlider virtualItemsContainer virtual-scroller-overflowvisible virtual-scroller" data-virtualscrolllayout="horizontal-grid" data-minoverhang="1" layout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2400px; height: 265px;">
+	                       ${html}
+	                    </div>
+	                </div>
+	            </div>
+	            `;
+	        } else {
+	            slider = `
+	                <div class="linked-Movie-section verticalSection verticalSection-cards">
+	                    <div class="sectionTitleContainer padded-left padded-left-page padded-right sectionTitleContainer-cards focusable" data-focusabletype="nearest">
+	                        <a onclick="window.open('${linkUrl}', '_blank')" is="emby-sectiontitle" class="noautofocus button-link button-link-color-inherit sectionTitleTextButton sectionTitleTextButton-link sectionTitleTextButton-more emby-button emby-button-backdropfilter">
+	                            <h2 class="sectionTitle sectionTitle-cards sectionTitleText-withseeall">${text}</h2>
+	                            <i class="md-icon sectionTitleMoreIcon secondaryText"></i>
+	                        </a>
+	                    </div>
+	                    <div is="emby-itemscontainer" class="itemsContainer focuscontainer-x padded-left padded-left-page padded-right vertical-wrap">
+	                        ${html}
+	                    </div>
+	                </div>
+	            `;
+	        }
+	
+	        return slider
+	    }
+	
+	    function createItemContainer(itemInfo, increment) {
+	        let distance, imgUrl, typeWord;
+	        if ('ontouchstart' in window || navigator.maxTouchPoints > 0 || ApiClient.getCurrentUserId() != adminUserId) {
+	            distance = OS_current === 'ipad' ? 182 : OS_current === 'iphone' ? 120 : 200;
+	            imgUrl = ApiClient.getImageUrl(itemInfo.Id, { type: "Primary", tag: itemInfo.ImageTags.Primary, maxHeight: 330, maxWidth: 220 });
+	            typeWord = 'portrait';
+	
+	        } else {
+	            distance = OS_current === 'ipad' ? 260 : OS_current === 'iphone' ? 300 : 350;
+	            imgUrl = ApiClient.getImageUrl(itemInfo.Id, { type: "Thumb", tag: itemInfo.ImageTags.Thumb, maxHeight: 360, maxWidth: 640 });
+	            typeWord = 'backdrop';
+	        }
+	
+	        let code = itemInfo.ProductionYear;
+	        let name = itemInfo.Name;
+	
+	        const itemContainer = `
+	            <div data-id="${itemInfo.Id}" class="virtualScrollItem card ${typeWord}Card card-horiz ${typeWord}Card-horiz card-hoverable card-autoactive" tabindex="0" draggable="false" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
+	                <div class="cardBox cardBox-touchzoom cardBox-bottompadded" bis_skin_checked="1">
+	                    <button onclick="Emby.Page.showItem('${itemInfo.Id}')" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-${typeWord} myCardImage">
+	                        <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
+	                    </button>
+	                    <div class="cardText cardText-first cardText-first-padded" bis_skin_checked="1">
+	                        <span title="${name}">${name}</span>
+	                    </div>
+	                    <div class="cardText cardText-secondary" bis_skin_checked="1">
+	                        ${code}
+	                    </div>
+	                </div>
+	            </div>
+	        `;
+	
+	        return itemContainer;
+	    }
+	
+	    function createItemContainerLarge(itemInfo, increment) {
+	        let distance = OS_current === 'ipad' ? 260 : OS_current === 'iphone' ? 300 : 350;
+	        const imgUrl = itemInfo.ImgSrc;
+	        const title = `${itemInfo.Code} ${itemInfo.Name}`;
+	        const link = `https://javdb.com${itemInfo.Link}?locale=zh`;
+	        const score = itemInfo.Score;
+	        const time = itemInfo.Time;
+	        let itemContainer;
+	        if (item.Type != 'BoxSet') {
+	            itemContainer = `
+	            <div class="virtualScrollItem card backdropCard card-horiz backdropCard-horiz card-hoverable card-autoactive" tabindex="0" draggable="true" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
+	                <div class="cardBox cardBox-touchzoom cardBox-bottompadded" bis_skin_checked="1">
+	                    <button onclick="window.open('${link}', '_blank')" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-backdrop myCardImage">
+	                        <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
+	                    </button>
+	                    <div class="cardText cardText-first cardText-first-padded" bis_skin_checked="1">
+	                        <span title="${title}">${title}</span>
+	                    </div>
+	                    <div class="cardText cardText-secondary" bis_skin_checked="1">${time} || 评分：${score}
+	                    </div>
+	                </div>
+	            </div>
+	            `;
+	        } else {
+	            itemContainer = `
+	            <div class="card backdropCard card-horiz card-hoverable card-autoactive" tabindex="0" draggable="true">
+	                <div class="cardBox cardBox-touchzoom cardBox-bottompadded">
+	                    <button onclick="window.open('${link}', '_blank')" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-backdrop myCardImage">  
+	                        <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
+	                    </button>
+	                    <div class="cardText cardText-first cardText-first-padded">
+	                        <span title="${title}">${title}</span>
+	                    </div>
+	                    <div class="cardText cardText-secondary">
+	                        ${time} || 评分：${score}
+	                    </div>
+	                </div>
+	            </div>
+	            `;
+	        }
+	        return itemContainer;
+	    }
+	
+	    async function previewInject(isSlider = false) {
+	
+	        const showJavDbFlag = (item.CustomRating && item.CustomRating === 'JP-18+') || (item.OfficialRating && item.OfficialRating === 'JP-18+');
+	
+	        let addSlider = false;
+	        if (!showJavDbFlag || 'ontouchstart' in window || navigator.maxTouchPoints || window.innerHeight > window.innerWidth || isSlider) addSlider = true;
+	
+	
+	        if (item.BackdropImageTags.length === 0) return;
+	
+	        const images = await ApiClient.getItemImageInfos(item.Id);
+	        const backdrops = images.filter(image => image.ImageType === "Backdrop");
+	
+	        const uniqueBackdrops = [];
+	        const seenFilenames = new Set();
+	
+	        backdrops.forEach((backdrop) => {
+	            // Check for duplicate filenames
+	            if (!seenFilenames.has(backdrop.Path)) {
+	                seenFilenames.add(backdrop.Path);
+	                uniqueBackdrops.push(backdrop);
+	            }
+	        });
+	
+	        uniqueBackdrops.sort((a, b) => {
+	            // Always prioritize the item with ImageIndex = 0
+	            if (a.ImageIndex === 0) return -1;
+	            if (b.ImageIndex === 0) return 1;
+	
+	            // Move undefined or null filenames to the end
+	            if (!a.Filename && b.Filename) return 1;
+	            if (a.Filename && !b.Filename) return -1;
+	
+	            // Function to extract the numeric part from the filename
+	            const extractNumber = (filename) => {
+	                if (!filename) return 0; // Return 0 if filename is undefined or null
+	                const matches = filename.match(/(\d+)/g); // Match all numbers in the filename
+	                return matches ? parseInt(matches[matches.length - 1], 10) : 0; // Use the last number
+	            };
+	
+	            const numA = extractNumber(a.Filename);
+	            const numB = extractNumber(b.Filename);
+	
+	            // Sort based on the extracted number
+	            if (numA !== numB) {
+	                return numA - numB; // Compare numerically
+	            }
+	
+	            // Fallback to lexicographical order for filenames
+	            return (a.Filename || '').localeCompare(b.Filename || '');
+	        });
+	
+	        const peopleSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .peopleSection");
+	        if (!peopleSection) return;
+	
+	        let isCollapsed = uniqueBackdrops.length > 30;
+	        let html = '';
+	        if (addSlider) {
+	            html = `<div id="myFanart" is="emby-itemscontainer" class="imageSection itemsContainer virtualItemsContainer focusable focuscontainer-x scrollSlider scrollSliderX emby-scrollbuttons-scrollSlider"  data-focusabletype="nearest" data-virtualscrolllayout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2412px;" data-minoverhang="1" layout="horizontal-grid">`;
+	        } else {
+	            html = `<div id="myFanart" is="emby-itemscontainer" class="imageSection itemsContainer focuscontainer-x padded-left padded-left-page padded-right vertical-wrap" 
+	                    style="${isCollapsed ? `max-height: ${0.81 * window.innerHeight + 56}px; overflow: hidden;` : ''}">`;
+	        }
+	        
+	
+	        for (let index = 0; index < uniqueBackdrops.length; index++) {
+	            let tagIndex = uniqueBackdrops[index].ImageIndex;
+	            let filename = uniqueBackdrops[index].Filename; // Get the filename
+	            let url = ApiClient.getImageUrl(item.Id, { type: "Backdrop", index: tagIndex, tag: item.BackdropImageTags[tagIndex] });
+	            let width = uniqueBackdrops[index].Width;
+	            let height = uniqueBackdrops[index].Height;
+	
+	            // Check if width or height is undefined, null, or 0
+	            let ratio = (width && height) ? (width / height).toFixed(2) : (16 / 9).toFixed(2);
+	        
+	            // Add the filename as a data attribute
+	            html += `<img class='my-fanart-image ${addSlider ? 'my-fanart-image-slider' : ''}' src="${url}" alt="${index}" loading="lazy" data-filename="${filename || ''}" data-ratio="${ratio}"/>`;
+	        }
+	        html += `</div>`;
+	
+	        // Add the toggle button if images exceed 30
+	        if (isCollapsed && !addSlider) {
+	            html += `
+	                <button id="toggleFanart" style="margin-top: 10px; display: block;">
+	                    ▼ 显示剧照(共${uniqueBackdrops.length}张) ▼
+	                </button>
+	            `;
+	        }
+	
+	        const banner = createBanner("剧照", html, addSlider);
+	        peopleSection.insertAdjacentHTML("afterend", banner);
+	
+	        if (addSlider) {
+	            adjustSliderWidth();
+	
+	            const actorMoreSections = document.querySelectorAll('.imageSection');
+	            if (actorMoreSections.length == 1) {
+	                window.addEventListener('resize', function () {
+	                    adjustSliderWidth();
+	                });
+	            }
+	        } else if (isCollapsed) {
+	            const button = viewnode.querySelector("#toggleFanart");
+	            button.addEventListener("click", () => {
+	                const fanartSection = viewnode.querySelector("#myFanart");
+	
+	                if (fanartSection.style.maxHeight === "none") {
+	                    fanartSection.style.maxHeight = `${0.81 * window.innerHeight + 56}px`;
+	                    fanartSection.style.overflow = "hidden";
+	                    button.textContent = `▼ 显示剧照(共${uniqueBackdrops.length}张) ▼`;
+	                } else {
+	                    fanartSection.style.maxHeight = "none";
+	                    fanartSection.style.overflow = "visible";
+	                    button.textContent = "▲ 隐藏剧照 ▲";
+	                }
+	            });
+	        }
+	    }
+	
+	    function adjustSliderWidth() {
+	 
+	        const fanartSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .imageSection");
+	        if (!fanartSection || !fanartSection.classList.contains('scrollSlider')) return
+	
+	        const fanartImages = fanartSection.querySelectorAll(".my-fanart-image");
+	        if (!fanartImages || fanartImages.length === 0) return;
+	
+	        
+	        const height = Math.max(0.2 * window.innerHeight, 180);
+	
+	        // Initialize total width
+	        let totalWidth = 0;
+	
+	        // Iterate through each fanart image
+	        fanartImages.forEach(image => {
+	  
+	            // Read the ratio from the dataset or default to 16/9 if not present
+	            const ratio = parseFloat(image.dataset.ratio) || (16 / 9);
+	
+	            // Calculate the width of the current image
+	            const imageWidth = height * ratio + 20; // Add 20 as padding
+	
+	            // Add the image width to the total width
+	            totalWidth += imageWidth;
+	        });
+	
+	        // Apply the total width to the fanart section
+	        fanartSection.style.minWidth = `${totalWidth}px`;
+	    }
+	
+	    function modalInject() {
+	
+	        // Detect if the device is touch-enabled
+	        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints;
+	        var fanartSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .imageSection");
+	        if (!fanartSection) return
+	
+	        var fanartImages = fanartSection.querySelectorAll(".my-fanart-image");
+	        if (!fanartImages) return
+	
+	        let modal = document.getElementById('myModal');
+	        if (!modal) {
+	            modal = createModal();
+	            attachEventListeners(isTouchDevice);
+	        }
+	
+	        const modalImg = modal.querySelector('.modal-content');
+	        const modalCaption = modal.querySelector('.modal-caption');
+	        const closeButton = modal.querySelector('.close');
+	        const prevButton = modal.querySelector('.prev');
+	        const nextButton = modal.querySelector('.next');
+	
+	
+	        // Add a single event listener for all images
+	        fanartSection.addEventListener(isTouchDevice ? 'touchstart' : 'click', handleTapOrClick);
+	
+	        let tapTimeout = null;  // Timeout for double-tap detection
+	        let lastTapTime = 0;    // Time of the last tap
+	
+	        function handleTapOrClick(event) {
+	            const target = event.target;
+	            const triggerTime = 500;
+	
+	            // Check if the tapped/clicked element is a fanart image
+	            if (target.classList.contains('my-fanart-image')) {
+	                const index = Array.from(fanartSection.querySelectorAll('.my-fanart-image')).indexOf(target);
+	
+	                if (isTouchDevice) {
+	                    const currentTime = new Date().getTime();
+	                    const tapInterval = currentTime - lastTapTime;
+	
+	                    if (tapInterval < triggerTime && tapInterval > 0) {
+	                        // If it's a double-tap within 500ms, show the image
+	                        clearTimeout(tapTimeout); // Clear the single tap timeout
+	                        showImage(index); // Show image on double-tap
+	                        lastTapTime = 0;  // Reset tap time
+	                    } else {
+	                        // Update last tap time, set a timeout for the next tap
+	                        lastTapTime = currentTime;
+	
+	                        tapTimeout = setTimeout(() => {
+	                            // Reset tap after timeout (do nothing on single tap)
+	                            lastTapTime = 0;
+	                        }, triggerTime); // 500ms delay for double-tap detection
+	                    }
+	                } else {
+	                    // For non-touch devices, show image immediately on a single click
+	                    showImage(index);
+	                }
+	            }
+	        }
+	
+	        function showImage(index) {
+	            fanartImages = viewnode.querySelectorAll("div[is='emby-scroller']:not(.hide) .imageSection .my-fanart-image");
+	
+	            const selectedImage = fanartImages[index];
+	            if (selectedImage) {
+	                modalImg.style.opacity = '0';
+	                modalImg.src = selectedImage.src;
+	                modalImg.alt = selectedImage.alt;
+	                modalCaption.textContent = `${selectedImage.dataset.filename} (${index + 1}/${fanartImages.length})`;
+	                modal.style.display = 'flex';
+	                document.body.style.overflow = 'hidden';
+	                modalImg.style.transform = `scale(1)`;
+	                modal.classList.remove('modal-closing'); // Remove closing animation class if previously applied
+	
+	                const prevButton = document.querySelector('.prev');
+	                const nextButton = document.querySelector('.next');
+	                // Check if the image is the first or the last
+	                if (index === 0) {
+	                    prevButton.classList.add('disabled');
+	                } else {
+	                    prevButton.classList.remove('disabled');
+	                }
+	
+	                if (index === fanartImages.length - 1) {
+	                    nextButton.classList.add('disabled');
+	                } else {
+	                    nextButton.classList.remove('disabled');
+	                }
+	
+	                // Fade in the modal image
+	                fadeIn(modalImg, 300); // 500ms duration for fade-in effect
+	            }
+	        }
+	
+	        function myShowImage(index) {
+	            fanartImages = viewnode.querySelectorAll("div[is='emby-scroller']:not(.hide) .imageSection .my-fanart-image");
+	            const selectedImage = fanartImages[index];
+	            const prevButton = document.querySelector('.prev');
+	            const nextButton = document.querySelector('.next');
+	
+	            if (selectedImage) {
+	                modalImg.src = selectedImage.src;
+	                modalImg.alt = selectedImage.alt;
+	                modalCaption.textContent = `${selectedImage.dataset.filename} (${index + 1}/${fanartImages.length})`;
+	
+	                // Check if the image is the first or the last
+	                if (index === 0) {
+	                    prevButton.classList.add('disabled');
+	                } else {
+	                    prevButton.classList.remove('disabled');
+	                }
+	
+	                if (index === fanartImages.length - 1) {
+	                    nextButton.classList.add('disabled');
+	                } else {
+	                    nextButton.classList.remove('disabled');
+	                }
+	            }
+	        }
+	
+	        function nextImage() {
+	            const index = parseInt(modalImg.alt, 10);
+	            let newIndex = index + 1;
+	            fanartImages = viewnode.querySelectorAll("div[is='emby-scroller']:not(.hide) .imageSection .my-fanart-image");
+	            if (newIndex >= fanartImages.length) {
+	                newIndex = index;
+	                // Trigger the shake animation when at the last image
+	                modalImg.style.animation = 'shake 0.3s ease';
+	                setTimeout(() => {
+	                    modalImg.style.animation = ''; // Remove the animation after it plays
+	                }, 300);
+	                showToast({
+	                    text: '已到最后',
+	                    icon: `<span class="material-symbols-outlined">last_page</span>`,
+	                })
+	                resetImageStyles();
+	                return
+	            }
+	            modalImg.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+	            modalImg.style.transform = 'translateX(-100%)';
+	            modalImg.style.opacity = '0';
+	            setTimeout(() => {
+	                myShowImage(newIndex);
+	                modalImg.style.transition = 'transform 0s ease, opacity 0s ease'; // Remove transition temporarily
+	                modalImg.style.transform = 'translateX(100%)'; // Jump to the right
+	                setTimeout(() => {
+	                    modalImg.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+	                    modalImg.style.transform = 'translateX(0)'; // Swipe back to the middle
+	                    modalImg.style.opacity = '1';
+	                    modalImg.style.transform = `scale(1)`;
+	                }, 10); // Delay to ensure transition reset
+	            }, 200);
+	        }
+	
+	        function prevImage() {
+	            const index = parseInt(modalImg.alt, 10);
+	            let newIndex = index - 1;
+	            if (newIndex < 0) {
+	                newIndex = 0;
+	                // Trigger the shake animation when at the first image
+	                modalImg.style.animation = 'shake 0.3s ease';
+	                setTimeout(() => {
+	                    modalImg.style.animation = ''; // Remove the animation after it plays
+	                }, 300);
+	                showToast({
+	                    text: '已到最前',
+	                    icon: `<span class="material-symbols-outlined">first_page</span>`
+	                })
+	                resetImageStyles();
+	                return
+	            }
+	            modalImg.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+	            modalImg.style.transform = 'translateX(100%)';
+	            modalImg.style.opacity = '0';
+	            setTimeout(() => {
+	                myShowImage(newIndex);
+	                modalImg.style.transition = 'transform 0s ease, opacity 0s ease'; // Remove transition temporarily
+	                modalImg.style.transform = 'translateX(-100%)'; // Jump to the left
+	                setTimeout(() => {
+	                    modalImg.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+	                    modalImg.style.transform = 'translateX(0)'; // Swipe back to the middle
+	                    modalImg.style.opacity = '1';
+	                    modalImg.style.transform = `scale(1)`;
+	                }, 10); // Delay to ensure transition reset
+	            }, 200);
+	        }
+	
+	        function closeModal() {
+	            modal.classList.add('modal-closing'); // Apply closing animation class
+	            setTimeout(() => {
+	                modal.style.display = 'none'; // Hide the modal after animation completes
+	                modal.classList.remove('modal-closing'); // Remove closing animation class
+	                document.body.style.overflow = ''; // Restore scrolling
+	            }, 300); // Adjust the delay to match the animation duration
+	        }
+	
+	        function closeModalSwipe() {
+	            const imgRect = modalImg.getBoundingClientRect(); // Get the image position relative to the viewport
+	            const windowWidth = window.innerWidth; // Get the viewport width
+	            const windowHeight = window.innerHeight; // Get the viewport height
+	
+	            // Calculate the transform origin as a percentage relative to the viewport (screen)
+	            const transformOriginXPercent = ((imgRect.left + imgRect.width / 2) / windowWidth) * 100;
+	            const transformOriginYPercent = ((imgRect.top + imgRect.height / 2) / windowHeight) * 100;
+	
+	            // Apply the transform-origin in percentage relative to the viewport
+	            modalImg.style.transformOrigin = `${transformOriginXPercent}% ${transformOriginYPercent}%`;
+	
+	            modal.classList.add('modal-closing'); // Apply closing animation class
+	            setTimeout(() => {
+	                modal.style.display = 'none'; // Hide the modal after animation completes
+	                modal.classList.remove('modal-closing'); // Remove closing animation class
+	                modalImg.style.transformOrigin = ''; // Reset transform-origin
+	                document.body.style.overflow = ''; // Restore scrolling
+	            }, 300); // Adjust the delay to match the animation duration
+	        }
+	
+	        function fadeIn(element, duration) {
+	            let opacity = 0;
+	            const startTime = performance.now();
+	
+	            function animate(currentTime) {
+	                const elapsed = currentTime - startTime;
+	                opacity = Math.min(elapsed / duration, 1);
+	                element.style.opacity = opacity;
+	
+	                if (opacity < 1) {
+	                    requestAnimationFrame(animate);
+	                }
+	            }
+	
+	            requestAnimationFrame(animate);
+	        }
+	
+	
+	        function setButtonSize(button, isSmaller) {
+	            if (isSmaller) {
+	                button.classList.add('click-smaller'); // Add smaller class when clicked
+	            } else {
+	                button.classList.remove('click-smaller'); // Remove smaller class on release
+	            }
+	        }
+	
+	        function attachEventListeners(isTouchDevice) {
+	            const modalImg = modal.querySelector('.modal-content');
+	            const closeButton = modal.querySelector('.close');
+	            const prevButton = modal.querySelector('.prev');
+	            const nextButton = modal.querySelector('.next');
+	
+	            if (isTouchDevice) {
+	                prevButton.style.display = 'none';
+	                nextButton.style.display = 'none';
+	                closeButton.style.display = 'none';
+	                handleTouchSwipe();
+	            } else {
+	                const buttonEvent = 'mousedown';
+	                const buttonReleaseEvent = 'mouseup';
+	
+	                prevButton.addEventListener(buttonEvent, () => setButtonSize(prevButton, true));
+	                prevButton.addEventListener(buttonReleaseEvent, () => setButtonSize(prevButton, false));
+	                prevButton.addEventListener('click', prevImage);
+	
+	                nextButton.addEventListener(buttonEvent, () => setButtonSize(nextButton, true));
+	                nextButton.addEventListener(buttonReleaseEvent, () => setButtonSize(nextButton, false));
+	                nextButton.addEventListener('click', nextImage);
+	
+	                closeButton.addEventListener('click', closeModal);
+	                modalImg.addEventListener('wheel', handleWheelZoom);
+	            }
+	        }
+	
+	        function handleTouchSwipe() {
+	            let touchstartX = 0;
+	            let touchendX = 0;
+	            let touchstartY = 0;
+	            let touchendY = 0;
+	            let isSwipingX = false;
+	            let isSwipingY = false;
+	            let directionLocked = false;
+	
+	            modal.addEventListener('touchstart', (event) => {
+	                const touch = event.changedTouches[0];
+	                modalImg.style.transition = 'none';
+	                touchstartX = touch.screenX;
+	                touchstartY = touch.screenY;
+	                isSwipingX = false;
+	                isSwipingY = false;
+	                directionLocked = false; // Reset direction lock
+	            });
+	
+	            modal.addEventListener('touchmove', (event) => {
+	                const touch = event.changedTouches[0];
+	                const deltaX = touch.screenX - touchstartX;
+	                const deltaY = touch.screenY - touchstartY;
+	
+	                // Determine direction of swipe
+	                if (!directionLocked) {
+	                    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+	                        isSwipingX = true;
+	                    } else {
+	                        isSwipingY = true;
+	                    }
+	                    directionLocked = true; // Lock direction after the initial movement
+	                }
+	
+	                const maxDelta = 300; // Maximum distance for full opacity reduction
+	                let distance = 0;
+	
+	                if (isSwipingX) {
+	                    // Horizontal swipe - calculate distance and move the image
+	                    distance = Math.abs(deltaX);
+	                    modalImg.style.transform = `translateX(${deltaX}px)`; // Move horizontally
+	                } else if (isSwipingY) {
+	                    // Vertical swipe - calculate combined distance (Pythagorean distance)
+	                    distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY); // Diagonal distance
+	                    modalImg.style.transform = `translate(${deltaX}px, ${deltaY}px)`; // Move both X and Y
+	                }
+	
+	                // Calculate opacity based on distance (same logic for X and Y swiping)
+	                const opacity = 1 - 0.7 * Math.min(distance / maxDelta, 1);
+	                modalImg.style.opacity = opacity;
+	
+	                // Prevent the background from moving (disable page scrolling)
+	                event.preventDefault();
+	            });
+	
+	            modal.addEventListener('touchend', (event) => {
+	                const touch = event.changedTouches[0];
+	                touchendX = touch.screenX;
+	                touchendY = touch.screenY;
+	                handleSwipe();
+	            });
+	
+	            function handleSwipe() {
+	                const thresholdX = 80; // Minimum horizontal distance for swipe
+	                const thresholdY = 100; // Minimum vertical distance for upward swipe
+	
+	                const deltaX = touchendX - touchstartX;
+	                const deltaY = touchstartY - touchendY;
+	
+	                if (isSwipingX && Math.abs(deltaX) > thresholdX) {
+	                    if (deltaX < 0) {
+	                        nextImage();
+	                    } else {
+	                        prevImage();
+	                    }
+	                } else if (isSwipingY && Math.abs(deltaY) > thresholdY) {
+	                    closeModalSwipe(); // Swipe up
+	                } else {
+	                    resetImageStyles();
+	                }
+	            }
+	        }
+	
+	
+	        function resetImageStyles() {
+	            modalImg.style.transform = 'translateX(0)';
+	            modalImg.style.opacity = 1;
+	        }
+	
+	        function handleWheelZoom(event) {
+	            event.preventDefault();
+	            const zoomStep = 0.1;
+	            let currentZoom = parseFloat(getComputedStyle(modalImg).getPropertyValue('transform').split(' ')[3]) || 1;
+	
+	            currentZoom += event.deltaY < 0 ? zoomStep : -zoomStep;
+	            currentZoom = Math.max(zoomStep, currentZoom); // Limit minimum zoom
+	            modalImg.style.transform = `scale(${currentZoom})`;
+	        }
+	    }
+	
+	    function createModal() {
+	        const modalHTML = `
+	        <span class="close">&#10006;</span>
+	        <img class="modal-content" id="modalImg">
+	        <div class="modal-caption" id="modalCaption">example.jpg (1/10)</div>
+	        <button class="prev">&#10094;</button>
+	        <button class="next">&#10095;</button>
+	        `;
+	
+	        const modal = document.createElement('div');
+	        modal.id = 'myModal';
+	        modal.classList.add('modal');
+	        modal.innerHTML = modalHTML;
+	
+	        document.body.appendChild(modal);
+	
+	        return modal;
+	    }
+	
+	
+	    function showToast(options) {
+	        //options can be added: text, icon, iconStrikeThrough, secondaryText
+	        Emby.importModule("./modules/toast/toast.js").then(function (toast) {
+	            return toast(options)
+	        })
+	    }
+	
+	    function addResizeListener() {
+	        if (!isResizeListenerAdded) {
+	            window.addEventListener('resize', function () {
+	                adjustCardOffsets();
+	            });
+	            isResizeListenerAdded = true; // Set the flag to true after adding the listener
+	        }
+	    }
+	
+	    async function actorMoreInject(isDirector = false, excludeIds = []) {
+	        const name = getActorName(isDirector);
+	        isDirector ? (directorName = name) : (actorName = name);
+	
+	        if (name.length > 0) {
+	            const moreItems = await getActorMovies(name, excludeIds);
+	            const aboutSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .aboutSection");
+	
+	
+	            if (moreItems.length > 0) {
+	                // Create an HTML structure to display all images
+	                let imgHtml = '';
+	                for (let i = 0; i < moreItems.length; i++) {
+	                    imgHtml += createItemContainer(moreItems[i], i);
+	                };
+	
+	                const slider = createSlider(name, imgHtml, !isDirector);
+	                const sliderElement = document.createElement('div');
+	                const sliderId = isDirector? "myDirectorMoreSlider" : "myActorMoreSlider";
+	                sliderElement.id = sliderId;
+	                sliderElement.innerHTML = slider;
+	                aboutSection.insertAdjacentElement('beforebegin', sliderElement);
+	
+	                addResizeListener();
+	
+	                adjustCardOffset(`#${sliderId}`, '.actorMoreItemsContainer', '.virtualScrollItem');
+	
+	                addHoverEffect(sliderElement);
+	
+	                return moreItems.map(moreItem => moreItem.Id);
+	
+	            }
+	        }
+	        return [];
+	    }
+	
+	    async function addHoverEffect(slider) {
+	        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+	        if (isTouchDevice || ApiClient.getCurrentUserId() != adminUserId) return
+	
+	        const portraitCards = slider.querySelectorAll('.virtualScrollItem');
+	        if (!portraitCards) return;
+	
+	        for (let card of portraitCards) {
+	            let itemId = card.dataset.id;
+	
+	            const localTrailers = await ApiClient.getLocalTrailers(ApiClient.getCurrentUserId(), itemId);
+	
+	            if (!localTrailers || localTrailers.length == 0) continue;
+	
+	            const trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
+	            const trailerUrl = await getTrailerUrl(trailerItem);
+	            //const trailerUrl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
+	
+	            const imageContainer = card.querySelector('.cardImageContainer');
+	            const img = imageContainer.querySelector('.cardImage');
+	            let isHovered = false;
+	
+	            imageContainer.classList.add('has-trailer');
+	
+	            // Add mouseenter event to change image, width, and layering immediately
+	            card.addEventListener('mouseenter', async () => {
+	                isHovered = true; 
+	                // Create video element
+	                let videoElement = createVideoElement(trailerUrl);
+	
+	                imageContainer.appendChild(videoElement); // Add video to the container
+	                img.style.filter = 'blur(5px)';
+	
+	                setTimeout(() => {
+	                    if (isHovered) {
+	                        videoElement.style.opacity = '1';
+	                    }
+	                }, 50);
+	
+	                videoElement.addEventListener('ended', () => {
+	                    videoElement.style.opacity = '0'; // Remove the video element
+	                    img.style.filter = ''; // Remove blur effect
+	                });                      
+	                 
+	            });
+	
+	            // Add mouseleave event to reset the image, width, and layering immediately
+	            card.addEventListener('mouseleave', () => {
+	                isHovered = false;
+	                img.style.filter = ''; // Remove blur effect
+	                const allVideos = imageContainer.querySelectorAll('video');
+	                allVideos.forEach(video => {
+	                    video.remove(); // Remove each video element
+	                });
+	            });
+	        }
+	    }
+	
+	    async function getTrailerUrl(trailerItem) {
+	        // return `${ApiClient._serverAddress}/emby/videos/${trailerItem.Id}/original.${trailerItem.MediaSources[0].Container}?DeviceId=${ApiClient._deviceId}&MediaSourceId=${trailerItem.MediaSources[0].Id}&api_key=${ApiClient.accessToken()}`;
+	
+	        let videourl = '';
+	        const trailerurl = (await ApiClient.getPlaybackInfo(trailerItem.Id, {},
+	            { "MaxStaticBitrate": 140000000, "MaxStreamingBitrate": 140000000, "MusicStreamingTranscodingBitrate": 192000, "DirectPlayProfiles": [{ "Container": "mp4,m4v", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "mkv", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "flv", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "aac,mp3" }, { "Container": "mov", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "opus", "Type": "Audio" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3" }, { "Container": "mp2,mp3", "Type": "Audio", "AudioCodec": "mp2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac" }, { "Container": "m4a", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "mp4", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "flac", "Type": "Audio" }, { "Container": "webma,webm", "Type": "Audio" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "PCM_S16LE,PCM_S24LE" }, { "Container": "ogg", "Type": "Audio" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis,opus", "VideoCodec": "av1,VP8,VP9" }], "TranscodingProfiles": [{ "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mkv", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "Context": "Static", "MaxAudioChannels": "2", "CopyTimestamps": true }, { "Container": "m4s,ts", "Type": "Video", "AudioCodec": "ac3,mp3,aac", "VideoCodec": "h264,h265,hevc", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true, "ManifestSubtitles": "vtt" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis", "VideoCodec": "vpx", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp4", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264", "Context": "Static", "Protocol": "http" }], "ContainerProfiles": [], "CodecProfiles": [{ "Type": "VideoAudio", "Codec": "aac", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "VideoAudio", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "Video", "Codec": "h264", "Conditions": [{ "Condition": "EqualsAny", "Property": "VideoProfile", "Value": "high|main|baseline|constrained baseline|high 10", "IsRequired": false }, { "Condition": "LessThanEqual", "Property": "VideoLevel", "Value": "62", "IsRequired": false }] }, { "Type": "Video", "Codec": "hevc", "Conditions": [] }], "SubtitleProfiles": [{ "Format": "vtt", "Method": "Hls" }, { "Format": "eia_608", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "eia_708", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "vtt", "Method": "External" }, { "Format": "ass", "Method": "External" }, { "Format": "ssa", "Method": "External" }], "ResponseProfiles": [{ "Type": "Video", "Container": "m4v", "MimeType": "video/mp4" }] }
+	        )).MediaSources[0];
+	
+	        if (trailerurl.Protocol == "File") {
+	            //videourl = `${ApiClient.serverAddress()}/emby${trailerurl.DirectStreamUrl}`;
+	            videourl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
+	
+	        } else if (trailerurl.Protocol == "Http") {
+	            videourl = trailerurl.Path;
+	        }
+	        return videourl;
+	    }
+	
+	    function createVideoElement(trailerUrl) {
+	        let videoElement = document.createElement('video');
+	        videoElement.src = trailerUrl; // Video URL
+	        videoElement.controls = false; // Show controls like play/pause
+	        videoElement.autoplay = true; // Ensure video plays automatically
+	        videoElement.muted = true; // Mute the video (to avoid autoplay restrictions)
+	
+	        // Add the CSS class to the video element
+	        videoElement.classList.add('video-element');
+	        videoElement.style.pointerEvents = 'none';
+	        videoElement.style.opacity = '0'; // Initially hidden
+	
+	        return videoElement;
+	    }
+	
+	
+	    async function javdbActorInject(isDirector = false) { 
+	        const showJavDbFlag = (item.CustomRating && item.CustomRating === 'JP-18+') || (item.OfficialRating && item.OfficialRating === 'JP-18+');
+	        const personName = isDirector ? directorName : actorName;
+	        if (showJavDbFlag && fetchJavDbFlag && personName.length > 0) {
+	            let insertSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .aboutSection");
+	
+	            let isCensored = item.Genres.includes("无码")? false : true;
+	
+	            // search actor name from javdb
+	            let [javDbMovies, actorUrl] = await fetchDbActor(nameMap[personName] || personName.split('（')[0], isCensored, isDirector);
+	            const personTypeText = isDirector ? '导演' : '演员';
+	            if (javDbMovies && javDbMovies.length > 0) {
+	                javDbMovies = await filterDbMovies(javDbMovies);
+	                if (javDbMovies.length == 0) return
+	
+	                javDbMovies.sort(() => Math.random() - 0.5);
+	                /*
+	                if (javDbMovies.length > 10) {
+	                    javDbMovies = javDbMovies.slice(0, 10);
+	                }
+	                */
+	                let imgHtml2 = '';
+	                for (let i = 0; i < javDbMovies.length; i++) {
+	                    imgHtml2 += createItemContainerLarge(javDbMovies[i], i);
+	                };
+	                const directorText = isDirector ? ' (导演)' : '';
+	                const slider2 = createSliderLarge(`${personName}${directorText} 更多作品（来自JavDB，共${javDbMovies.length}部）`, imgHtml2, actorUrl);
+	                const sliderElement2 = document.createElement('div');
+	                const sectionId = isDirector ? 'myDbDirectorSlider' : 'myDbActorSlider'
+	                sliderElement2.id = sectionId;
+	                sliderElement2.innerHTML = slider2;
+	                insertSection.insertAdjacentElement('beforebegin', sliderElement2);
+	
+	                adjustCardOffset(`#${sectionId}`, '.itemsContainer', '.backdropCard');
+	
+	                showToast({
+	                    text: `${personTypeText}更多作品=>加载成功`,
+	                    icon: `<span class="material-symbols-outlined">check_circle</span>`,
+	                    secondaryText: personName
+	                });
+	
+	                return
+	            }
+	            showToast({
+	                text: `${personTypeText}更多作品=>加载失败`,
+	                icon: `<span class="material-symbols-outlined">search_off</span>`,
+	                secondaryText: personName
+	            });
+	        }
+	        
+	    }
+	
+	    async function filterDbMovies(javDbMovies) {
+	        let filteredMovies;
+	        filteredMovies = await Promise.all(
+	            javDbMovies.map(async (movie) => {
+	                const exists = await checkEmbyExist(movie.Code);
+	                return exists ? null : movie;  // Exclude the movie if it exists in Emby
+	            })
+	        );
+	        return filteredMovies.filter(movie => movie !== null);;
+	    }
+	
+	
+	    function adjustCardOffset(sectionStr, containerStr, cardStr) {
+	        const scrollerContainer = viewnode.querySelector(`div[is='emby-scroller']:not(.hide) ${sectionStr} ${containerStr}`);
+	        if (!scrollerContainer) return
+	        const portraitCards = scrollerContainer.querySelectorAll(cardStr);
+	        if (!scrollerContainer) return
+	        if (portraitCards.length > 0) {
+	
+	            const cardWidth = portraitCards[0].offsetWidth; // Get width of the first card with padding and border
+	            const cardHeight = portraitCards[0].offsetHeight;
+	            const spacing = 0; // Spacing between cards (adjust as needed)
+	            const totalCardWidth = cardWidth + spacing;
+	
+	            // Set min-width of scrollerContainer
+	            scrollerContainer.style.minWidth = `${portraitCards.length * totalCardWidth}px`;
+	            scrollerContainer.style.height = `${cardHeight}px`;
+	
+	            for (let child of portraitCards) {
+	                child.style.left = `${child.previousElementSibling ? child.previousElementSibling.offsetLeft + totalCardWidth : 0}px`;
+	            }
+	            
+	        } else {
+	            console.warn("No children with the portraitCard class found in scrollerContainer!");
+	        }
+	    }
+	
+	    function adjustCardOffsets() {
+	        adjustCardOffset('#myActorMoreSlider', '.actorMoreItemsContainer', '.virtualScrollItem');
+	        adjustCardOffset('#myDirectorMoreSlider', '.actorMoreItemsContainer', '.virtualScrollItem');
+	        adjustCardOffset('#myDbActorSlider', '.itemsContainer', '.virtualScrollItem');
+	        adjustCardOffset('#myDbDirectorSlider', '.itemsContainer', '.virtualScrollItem');
+	        adjustCardOffset('#myDbSeriesSlider', '.itemsContainer', '.virtualScrollItem');
+	    }
+	
+	    async function seriesInject() {
+	        if (!fetchJavDbFlag) return
+	        let seriesName, similarSection, tagMovies, tagMovieIdStr;
+	        if (item.Type != 'BoxSet') {
+	            const showJavDbFlag = (item.CustomRating && item.CustomRating === 'JP-18+') || (item.OfficialRating && item.OfficialRating === 'JP-18+');
+	            if (!showJavDbFlag) return
+	            const series = item.TagItems
+	                .filter(item => item.Name.includes('系列'))
+	                .map(item => item.Name);
+	            if (!series || series.length == 0) return
+	            const parts = series[0].split(':');
+	            // Extract the string after "系列:"
+	            seriesName = parts.length > 1 ? parts[1].trim() : '';
+	            similarSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .similarSection");
+	            [tagMovies, tagMovieIdStr] = await getTagMovies(series[0]);
+	        }
+	        else {
+	            seriesName = item.Name;
+	            similarSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .linkedItems");
+	            tagMovies = await getCollectionMovies(item.Id);
+	        }
+	
+	        //const converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
+	        const converter2 = OpenCC.Converter({ from: 'cn', to: 'jp' });
+	        //const seriesName_tw = converter(seriesName);
+	        const seriesName_jp = converter2(seriesName);
+	        await waitForRandomTime();
+	        let [javDbMovies, seriesUrl, javdbSeries] = await fetchDbSeries(seriesName_jp.replace("%", ""));
+	        /*
+	        if (javDbMovies.length == 0) {
+	            await waitForRandomTime();
+	            javDbMovies = await fetchDbSeries(seriesName_tw);
+	        }
+	        if (javDbMovies.length == 0) {
+	            await waitForRandomTime();
+	            javDbMovies = await fetchDbSeries(seriesName);
+	        }
+	        */
+	        if (javDbMovies.length == 0) return 
+	
+	        if (javdbSeries.length > 0) {
+	            if (item.Type === 'BoxSet') {
+	                if (item.Name != javdbSeries) {
+	                    item.Name = javdbSeries;
+	                    showToast({
+	                        text: "javdb系列名与本地不匹配",
+	                        icon: `<span class="material-symbols-outlined">rule</span>`,
+	                        secondaryText: javdbSeries
+	                    });
+	                    //ApiClient.updateItem(item);
+	                }  
+	            } else if (tagMovies.length >= 4) {
+	                const collectionId = await getCollectionId(javdbSeries);
+	                if (collectionId.length == 0) {
+	                    const newCollectionId = await collectionCreate(javdbSeries, tagMovieIdStr);
+	                    if (newCollectionId.length > 0) {
+	                        showToast({
+	                            text: "合集创建成功",
+	                            icon: `<span class="material-symbols-outlined">add_notes</span>`,
+	                            secondaryText: javdbSeries
+	                        });
+	                    }    
+	                }
+	            }
+	        }
+	
+	        tagMovies.length > 0 && (javDbMovies = javDbMovies.filter(movie => !tagMovies.some(tagMovie => tagMovie.includes(movie.Code))));
+	        if (javDbMovies.length == 0) {
+	            showToast({
+	                text: `javdb系列已全部下载`,
+	                icon: `<span class="material-symbols-outlined">download_done</span>`
+	            });
+	            return
+	        }
+	
+	        item.Type !== 'BoxSet' && javDbMovies.sort(() => Math.random() - 0.5);
+	        let imgHtml2 = '';
+	        for (let i = 0; i < javDbMovies.length; i++) {
+	            imgHtml2 += createItemContainerLarge(javDbMovies[i], i);
+	        };
+	        const seriesName_trans = await translateOnly(seriesName_jp);
+	        const slider2 = createSliderLarge(`系列: ${seriesName} （${seriesName_trans}） 更多作品（来自JavDB，共${javDbMovies.length}部）`, imgHtml2, seriesUrl);
+	        const sliderElement2 = document.createElement('div');
+	        sliderElement2.id = 'myDbSeriesSlider';
+	        sliderElement2.innerHTML = slider2;
+	
+	        let insertSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .aboutSection"); 
+	        //!insertSection && (insertSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myActorMoreSlider"));
+	        //!insertSection && (insertSection = similarSection);
+	
+	        insertSection.insertAdjacentElement('beforebegin', sliderElement2);
+	        showToast({
+	            text: "系列更多作品=>加载成功",
+	            icon: `<span class="material-symbols-outlined">check_circle</span>`,
+	            secondaryText: `系列: ${seriesName}`
+	        });
+	
+	        if (item.Type != 'BoxSet') {
+	            adjustCardOffset('#myDbSeriesSlider', '.itemsContainer', '.backdropCard');
+	            addResizeListener();
+	        } else {
+	            for (let movie of javDbMovies) {
+	                let insertItem = await checkEmbyExist(movie.Code);
+	                if (insertItem) {
+	                    insertItemToCollection(insertItem.Id, item.Id);
+	                    showToast({
+	                        text: "新作品加入合集",
+	                        icon: `<span class="material-symbols-outlined">docs_add_on</span>`,
+	                        secondaryText: insertItem.Name
+	                    })
+	                }
+	            }
+	        }        
+	    }
+	
+	    async function collectionCreate(collectionName, idsToAdd) {
+	        const encodedCollectionName = encodeURIComponent(collectionName);
+	        const urlSearch = `${ApiClient._serverAddress}/emby/Collections?IsLocked=false&Name=${encodedCollectionName}&Ids=${idsToAdd}&api_key=${ApiClient.accessToken() }`;
+	        const headers = {
+	            'Accept': 'application/json',
+	            'Content-Type': 'application/json'
+	        };
+	
+	        try {
+	            const response = await fetch(urlSearch, { method: 'POST', headers });
+	            if (!response.ok) {
+	                throw new Error(`HTTP error! Status: ${response.status}`);
+	            }
+	            const data = await response.json();
+	            if (data.Id) {
+	                console.log(`Collection successfully created: ${data.Id}`);
+	                return data.Id;
+	            } else {
+	                console.error('Collection creation failed.');
+	                return '';
+	            }
+	        } catch (error) {
+	            console.error(`Error occurred during request: ${error}`);
+	            return '';
+	        }
+	    }
+	   
+	    async function getCollectionId(collectionName) {
+	        const collections = await ApiClient.getItems(
+	            ApiClient.getCurrentUserId(),
+	            {
+	                Recursive: "true",
+	                IncludeItemTypes: "BoxSet",
+	                SearchTerm: collectionName
+	            }
+	        );
+	
+	        if (collections && collections.Items.length > 0) {
+	            return collections.Items[0].Id;
+	        }
+	        else {
+	            return '';
+	        }
+	    }
+	    
+	
+	    async function checkEmbyExist(movie) {
+	        const movies = await ApiClient.getItems(
+	            ApiClient.getCurrentUserId(),
+	            {
+	                Recursive: "true",
+	                IncludeItemTypes: "Movie",
+	                SearchTerm: `${movie}`,
+	            }
+	        );
+	        if (movies && movies.Items.length > 0) return movies.Items[0];
+	        else return null;
+	    }
+	
+	    async function insertItemToCollection(itemId, collectionId) {
+	        const insert_url = `${ApiClient._serverAddress}/emby/Collections/${collectionId}/Items?Ids=${itemId}&api_key=${ApiClient.accessToken()}`;
+	        const headers = { "accept": "*/*" };
+	        try {
+	            const response = await fetch(insert_url, {
+	                method: 'POST',
+	                headers: headers
+	            });
+	
+	            if (!response.ok) {
+	                throw new Error('Failed to add movie to collection');
+	            }
+	
+	            return response.status === 204;
+	        } catch (error) {
+	            console.error('Error adding movie to collection:', error);
+	            return false;
+	        }
+	    }
+	
+	   
+	
+	    function getActorName(isDirector = false) {
+	        const people = item.People;
+	        const personType = isDirector? 'Director' : 'Actor';
+	        const actorNames = people.filter(person => person.Type === personType).map(person => person.Name);
+	        return actorNames.length > 0 ? pickRandomLink(actorNames) : '';
+	    }
+	
+	    async function getActorMovies(name = actorName, excludeIds = []) {
+	        const actorMoreMovies = await ApiClient.getItems(
+	            ApiClient.getCurrentUserId(),
+	            {
+	                Recursive: true,
+	                IncludeItemTypes: 'Movie',
+	                Fields: 'ProductionYear', 
+	                Person: name
+	            }
+	        );
+	
+	        if (actorMoreMovies.Items.length > 0) {
+	            let moreItems = Array.from(actorMoreMovies.Items);
+	            if (name === actorName) {
+	                //const actorMovieNames = moreItems.map(movie => getPartBefore(movie.Name, ' ')); // for future use
+	                console.log('no longer needed');
+	            } else if (excludeIds && excludeIds.length > 0) {
+	                moreItems = moreItems.filter(movie => !excludeIds.some(excludeId => movie.Id === excludeId));
+	            }
+	
+	            moreItems = moreItems.filter(moreItem => moreItem.Id != item.Id);
+	            moreItems.sort(() => Math.random() - 0.5);
+	            if (moreItems.length > 12) {
+	                moreItems = moreItems.slice(0, 12);
+	            }
+	            return moreItems;
+	        } else {
+	            return []; // Return null or handle the failure case accordingly
+	        }
+	    }
+	
+	    async function getTagMovies(tagName) {
+	        let tagMovieIdStr = '';
+	        const tagMoreMovies = await ApiClient.getItems(
+	            ApiClient.getCurrentUserId(),
+	            {
+	                Recursive: true,
+	                IncludeItemTypes: 'Movie',
+	                Tags: tagName
+	            }
+	        );
+	
+	        if (tagMoreMovies && tagMoreMovies.Items.length > 0) {
+	            let moreItems = Array.from(tagMoreMovies.Items);
+	            const tagMovieNames = moreItems.map(movie => getPartBefore(movie.Name, ' '));
+	            const tagMovieIds = moreItems.map(movie => movie.Id);
+	            tagMovieIdStr = tagMovieIds.join(',');
+	            return [tagMovieNames, tagMovieIdStr];
+	        } else {
+	            return [null, tagMovieIdStr]; // Return null or handle the failure case accordingly
+	        }
+	    }
+	
+	    async function getCollectionMovies(collectionId) {
+	        const tagMoreMovies = await ApiClient.getItems(
+	            ApiClient.getCurrentUserId(),
+	            {
+	                Recursive: true,
+	                IncludeItemTypes: 'Movie',
+	                ParentId: collectionId
+	            }
+	        );
+	        if (tagMoreMovies && tagMoreMovies.Items.length > 0) {
+	            let moreItems = Array.from(tagMoreMovies.Items);
+	            const tagMovieNames = moreItems.map(movie => getPartBefore(movie.Name, ' '));
+	            return tagMovieNames;
+	        } else {
+	            return null; // Return null or handle the failure case accordingly
+	        }
+	    }
+	
+	
+	    function getPartBefore(str, char) {
+	        return str.split(char)[0];
+	    }
+	    function getPartAfter(str, char) {
+	        const parts = str.split(char);
+	        return parts[parts.length - 1];
+	    }
+	
+	    
+	    function getOS() {
+	        let u = navigator.userAgent
+	        if (!!u.match(/compatible/i) || u.match(/Windows/i)) {
+	            return 'windows'
+	        } else if (!!u.match(/Macintosh/i) || u.match(/MacIntel/i)) {
+	            return 'macOS'
+	        } else if (!!u.match(/iphone/i)) {
+	            return 'iphone'
+	        } else if (!!u.match(/Ipad/i)) {
+	            return 'ipad'
+	        } else if (u.match(/android/i)) {
+	            return 'android'
+	        } else if (u.match(/Ubuntu/i)) {
+	            return 'Ubuntu'
+	        } else {
+	            return 'other'
+	        }
+	    }
+	    
+	
+	    const request = (url, method = "GET", options = {}) => {
+	        method = method ? method.toUpperCase().trim() : "GET";
+	        if (!url || !["GET", "HEAD", "POST"].includes(method)) return;
+	
+	        const { responseType, headers = {} } = options;
+	        let requestOptions = { method, headers };
+	
+	        return new Promise((resolve, reject) => {
+	            fetch(url, requestOptions)
+	                .then(response => {
+	                    if (!response.ok) {
+	                        throw new Error(`HTTP error! Status: ${response.status}`);
+	                    }
+	                    return responseType === "json" ? response.json() : response.text(); // Parse response based on responseType
+	                })
+	                .then(parsedResponse => {
+	                    resolve(parsedResponse);
+	                })
+	                .catch(error => {
+	                    reject(error);
+	                });
+	        });
+	    };
+	
+	    async function fetchDbActor(actorName, isCensored, isDirector = false) {
+	        const HOST = "https://javdb.com";
+	        const personType = isDirector ? 'director' : 'actor';
+	        const personName = isDirector ? directorName : actorName;
+	        const url = `${HOST}/search?f=${personType}&locale=zh&q=${personName}`;
+	        let javdbActorData = await request(url);
+	        if (javdbActorData.length > 0) {
+	            // Create a new DOMParser instance
+	            const parser = new DOMParser();
+	
+	            // Parse the HTML data string
+	            let parsedHtml = parser.parseFromString(javdbActorData, 'text/html');
+	            let actorLink = null;
+	
+	            if (isDirector) {           
+	                const directorBoxes = parsedHtml.querySelectorAll('#directors .box');
+	                if (directorBoxes.length > 0) {
+	                    for (let directorBox of directorBoxes) {
+	                        if (directorBox.getAttribute('title') && directorBox.getAttribute('title').split(', ').includes(directorName)) {
+	                            actorLink = directorBox;
+	                            break;
+	                        }
+	                    }
+	                }
+	            } else {
+	                // Get the href attribute from the parsed HTML
+	                actorLink = parsedHtml.querySelector('.box.actor-box a:first-of-type');
+	                if (actorLink && !actorLink.getAttribute('title').split(', ').includes(actorName)) {
+	                    let actorBoxs = parsedHtml.querySelectorAll('.box.actor-box');
+	                    for (let actorBox of actorBoxs) {
+	                        let actorLink_temp = actorBox.querySelector('a');
+	                        if (actorLink_temp.getAttribute('title').split(', ').includes(actorName)) {
+	                            actorLink = actorLink_temp;
+	                            break;
+	                        }
+	                    }
+	                }
+	
+	                //Get uncensored href
+	                if (!isCensored) {
+	                    let actorLink_temp = null;
+	                    const infoElements = parsedHtml.querySelectorAll('.actors .box.actor-box .info');
+	                    if (infoElements.length > 0) {
+	                        for (let infoElement of infoElements) {
+	                            if (infoElement.textContent.includes("Uncensored") && infoElement.closest("a").getAttribute('title').includes(actorName)) {
+	                                actorLink_temp = infoElement.closest("a");
+	                                break;
+	                            }
+	                        }
+	                        if (!actorLink_temp && infoElements[0].textContent.includes("Uncensored")) {
+	                            actorLink_temp = infoElements[0].closest("a");
+	                        }
+	                    }
+	                    if (actorLink_temp) {
+	                        actorLink = actorLink_temp;
+	                    }
+	                }
+	            }
+	            
+	            if (actorLink) {
+	                const hrefValue = actorLink.getAttribute('href');
+	                const actorUrl = `${HOST}${hrefValue}`;
+	
+	                //wait for random time
+	                await waitForRandomTime();
+	                javdbActorData = await request(actorUrl);
+	                if (javdbActorData.length > 0) {
+	
+	                    const itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
+	                    if (itemsContainer && OS_current != 'iphone' && OS_current != 'android') {
+	                        const mediaInfoItem = itemsContainer.querySelectorAll('.mediaInfoItem:has(a)')[0];
+	                        if (mediaInfoItem) {
+	                            addNewLinks(mediaInfoItem, [createNewLinkElement(`跳转至javdb ${personName}`, '#ADD8E6', actorUrl, personName)]);
+	                            mediaInfoStyle(mediaInfoItem);
+	                        }
+	                    }
+	
+	                    parsedHtml = parser.parseFromString(javdbActorData, 'text/html');
+	                    const paginationList = parsedHtml.querySelector('.pagination-list');
+	                    if (paginationList) {
+	                        // Initialize an array to store page links
+	                        const pageLinks = [];
+	
+	                        // Find all the page links within the pagination list
+	                        const links = paginationList.querySelectorAll('a.pagination-link');
+	
+	                        // Iterate over each page link and extract the href attribute
+	                        links.forEach(link => {
+	                            const href = `${HOST}${link.getAttribute('href')}`;
+	                            // Add the href to the pageLinks array
+	                            pageLinks.push(href);
+	                        });
+	
+	                        const pickLink = pickRandomLink(pageLinks);
+	                        if (pickLink != actorUrl) {
+	                            await waitForRandomTime();
+	                            javdbActorData = await request(pickLink);
+	                            if (javdbActorData.length > 0) {
+	                                parsedHtml = parser.parseFromString(javdbActorData, 'text/html');
+	                            }
+	                        }
+	                    }
+	                    const movies = [];
+	
+	                    // Iterate over each item within the "movie-list"
+	                    const DBitems = parsedHtml.querySelectorAll('.movie-list .item');
+	                    arrangeDBitems(DBitems, movies);
+	                    return [movies, actorUrl];
+	                }
+	                
+	            } else {
+	                console.error('Actor link not found');
+	            }
+	        }
+	        return [[], ''];
+	    }
+	
+	    function waitForRandomTime() {
+	        const minWaitTime = 500;
+	        const maxWaitTime = 1500;
+	
+	        const randomWaitTime = Math.random() * (maxWaitTime - minWaitTime) + minWaitTime;
+	
+	        return new Promise(resolve => {
+	            setTimeout(() => {
+	                console.log("Waited for", randomWaitTime / 1000, "seconds");
+	                resolve(); // Signal that the promise is completed
+	            }, randomWaitTime);
+	        });
+	    }
+	
+	    async function fetchDbSeries(seriesName) {
+	        const movies = [];
+	        let seriesUrl = '';
+	        let javdbSeries = '';
+	        const HOST = "https://javdb.com";
+	        const url = `${HOST}/search?q=${seriesName}&f=series`;
+	        let javdbData = await request(url);
+	        if (javdbData.length > 0) {
+	            const parser = new DOMParser();
+	
+	            // Parse the HTML data string
+	            let parsedHtml = parser.parseFromString(javdbData, 'text/html');
+	            const seriesContainer = parsedHtml.getElementById('series');
+	
+	            // Check if the container exists
+	            if (seriesContainer) {
+	                // Find the first anchor tag within the container
+	                const seriesLinks = seriesContainer.querySelectorAll('a');
+	                let firstAnchor;
+	                for (const link of seriesLinks) {
+	                    const movieCountText = link.querySelector('span').textContent; // Get the text content of the <span> element
+	                    const movieCount = parseInt(movieCountText.match(/\((\d+)\)/)[1]);
+	
+	                    if (movieCount > 0) {
+	                        let seriesTitle = link.querySelector('strong').textContent;
+	                        if (!firstAnchor || seriesTitle === seriesName) firstAnchor = link;
+	                    }
+	                }
+	
+	                // Check if the anchor tag exists
+	                if (firstAnchor) {
+	                    javdbSeries = firstAnchor.querySelector('strong').textContent;
+	                    // Get the href attribute of the anchor tag
+	                    const firstHref = firstAnchor.getAttribute('href');
+	                    seriesUrl = `${HOST}${firstHref}`;
+	                    await waitForRandomTime();
+	                    javdbData = await request(seriesUrl);
+	
+	                    if (javdbData) {
+	                        const itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
+	                        if (itemsContainer && OS_current != 'iphone' && OS_current != 'android') {
+	                            const mediaInfoItem = itemsContainer.querySelectorAll('.mediaInfoItem:has(a)')[0];
+	                            if (mediaInfoItem) {
+	                                if (item.Type != 'BoxSet') {
+	                                    addNewLinks(mediaInfoItem, [createNewLinkElement(`跳转至javdb ${seriesName}`, '#ADD8E6', seriesUrl, seriesName)]);
+	                                } 
+	                                mediaInfoStyle(mediaInfoItem);
+	                            }
+	                        }
+	
+	                        parsedHtml = parser.parseFromString(javdbData, 'text/html');
+	
+	                        const paginationList = parsedHtml.querySelector('.pagination-list');
+	                        if (paginationList && item.Type === 'BoxSet') {
+	                            // Initialize an array to store page links
+	                            const pageLinks = [];
+	
+	                            // Find all the page links within the pagination list
+	                            const links = paginationList.querySelectorAll('a.pagination-link');
+	
+	                            // Iterate over each page link and extract the href attribute
+	                            links.forEach(link => {
+	                                const href = `${HOST}${link.getAttribute('href')}`;
+	                                // Add the href to the pageLinks array
+	                                pageLinks.push(href);
+	                            });
+	                            //seriesPageLinks = pageLinks;
+	
+	                            for (const link of pageLinks) {
+	                                if (link !== seriesUrl) {
+	                                    await waitForRandomTime();
+	                                    javdbData = await request(link);
+	                                    if (javdbData.length > 0) {
+	                                        let parsedHtmlTemp = parser.parseFromString(javdbData, 'text/html');
+	                                        let DBitemsTemp = parsedHtmlTemp.querySelectorAll('.movie-list .item');
+	                                        arrangeDBitems(DBitemsTemp, movies);
+	                                    }
+	                                }
+	                            }   
+	                        }
+	                        // Iterate over each item within the "movie-list"
+	                        const DBitems = parsedHtml.querySelectorAll('.movie-list .item');
+	                        arrangeDBitems(DBitems, movies);
+	                    }
+	
+	                }
+	            }
+	        }
+	        return [movies, seriesUrl, javdbSeries];  
+	    }
+	
+	    function arrangeDBitems(DBitems, movies) {
+	        if (!DBitems) return null;
+	        DBitems.forEach(DBitem => {
+	            const link = DBitem.querySelector('a').getAttribute('href');
+	            const name = DBitem.querySelector('a').getAttribute('title');
+	            const code = DBitem.querySelector('.video-title strong').textContent;
+	            const imgSrc = DBitem.querySelector('img').getAttribute('src');
+	            const time = DBitem.querySelector('.meta').textContent.trim(); // Extracts the time from the meta
+	            const score = DBitem.querySelector('.score .value').textContent.trim(); // Extracts the score from the score text
+	
+	            // Add the movie information to the array
+	            movies.push({ Link: link, Name: name, Code: code, ImgSrc: imgSrc, Time: time, Score: score });
+	        });
+	    }
+	
+	
+	    // Function to randomly pick a link from the array
+	    function pickRandomLink(linksArray) {
+	        // Check if the array is not empty
+	        if (linksArray.length > 0) {
+	            // Generate a random index within the array length
+	            const randomIndex = Math.floor(Math.random() * linksArray.length);
+	            // Return the link at the random index
+	            return linksArray[randomIndex];
+	        } else {
+	            return null; // Return null if the array is empty
+	        }
+	    }
+	
+	    function containsJapanese(text) {
+	        // Regular expression to match Japanese characters
+	        const japaneseRegex = /[\u3040-\u309F\u30A0-\u30FF]/;
+	
+	        return japaneseRegex.test(text);
+	    }
+	
+	    async function translateInject() {
+	        if ((OS_current === 'iphone') || (OS_current === 'android') || (googleApiKey.length == 0)) return;
+	
+	        // Select the element using document.querySelector
+	        const titleElement = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .itemName-primary");
+	        const mainDetailButtons = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .mainDetailButtons");
+	
+	        // Check if the element is found
+	        if (titleElement) {
+	            if (containsJapanese(item.Name)) {
+	                const buttonhtml = createButtonHtml('myTranslate', '翻译标题', `<span class="material-symbols-outlined">language</span>`, '翻译标题');
+	
+	                mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml);
+	                const myTranslate = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myTranslate");
+	                myTranslate.onclick = translateJapaneseToChinese;
+	            }
+	        } else {
+	            console.log('titleElement not found');
+	        }
+	
+	        const divElement = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .overview-text.readOnlyContent");
+	
+	        if (divElement && item.Type != 'BoxSet') {
+	            if (containsJapanese(item.Overview)) {
+	                const buttonhtml2 = createButtonHtml('myTranslate2', '翻译详情', `<span class="material-symbols-outlined">language</span>`, '翻译详情');
+	                mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml2);
+	                const myTranslate2 = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myTranslate2");
+	                myTranslate2.onclick = translateJapaneseToChinese2;
+	            }
+	        }
+	    }
+	
+	
+	    async function translateOnly(text) {
+	        if (googleApiKey.length === 0) { return text; }
+	        const apiUrl = `https://translation.googleapis.com/language/translate/v2?key=${googleApiKey}`;
+	        let text_jp = googleTranslateLanguage === 'ja' ? OpenCC.Converter({ from: 'cn', to: 'jp' })(text) : text;
+	        
+	        let response = await fetch(apiUrl, {
+	            method: 'POST',
+	            headers: {
+	                'Content-Type': 'application/json',
+	            },
+	            body: JSON.stringify({
+	                q: text_jp,
+	                source: googleTranslateLanguage,
+	                target: 'zh-CN', // Chinese (Simplified)
+	                format: 'text',
+	                profanityFilter: false, // Disable profanity filter
+	            }),
+	        });
+	
+	        let data = await response.json();
+	        if (data && data.data && data.data.translations && data.data.translations.length > 0) {
+	            let translatedText = data.data.translations[0].translatedText;
+	            return translatedText
+	        } else {
+	            throw new Error('Translation failed');
+	        }
+	
+	    }
+	
+	    async function translateJapaneseToChinese() {
+	        const titleElement = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .itemName-primary");
+	        if (!titleElement) return
+	        // Get the text content of the element
+	        let text = item.Name;
+	
+	        const translatedText = await translateOnly(text);
+	        if (translatedText.length > 0) { 
+	            titleElement.textContent = translatedText; // Replace titleElement text with translated text
+	            item.Name = translatedText;
+	            (item.Type != 'BoxSet') && ApiClient.updateItem(item);
+	            showToast({
+	                text: '翻译成功',
+	                icon: `<span class="material-symbols-outlined">fact_check</span>`
+	            })
+	
+	            const myTranslate = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myTranslate");
+	            myTranslate.style.color = 'green';
+	            myTranslate.classList.add('melt-away');
+	            setTimeout(() => {
+	                myTranslate.style.display = 'none';
+	                javdbTitle();
+	            }, 1000); 
+	            
+	        } 
+	    }
+	
+	    async function translateJapaneseToChinese2() {
+	        const divElement = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .overview-text.readOnlyContent");
+	
+	        if (!divElement) return
+	        let text = item.Overview;
+	
+	        const translatedText = await translateOnly(text);
+	
+	        if (translatedText.length > 0) { 
+	            divElement.textContent = translatedText; // Replace titleElement text with translated text
+	            item.Overview = translatedText;
+	            ApiClient.updateItem(item);
+	            showToast({
+	                text: '翻译成功',
+	                icon: `<span class="material-symbols-outlined">fact_check</span>`
+	            })
+	            const myTranslate = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myTranslate2");
+	            myTranslate.style.color = 'green';
+	            myTranslate.classList.add('melt-away');
+	            setTimeout(() => {
+	                myTranslate.style.display = 'none';
+	                javdbTitle();
+	            }, 1000); 
+	        } 
+	    }
+	
+	
+	    function translatePath(linuxPath) {
+	        const mountMatch = {
+	            "/XFiles/": "W:\\XFiles\\",
+	            "/mnt/ZDrive/": "Z:\\",
+	            "/mnt/YDrive/": "Y:\\"
+	        };
+	        // Iterate through the mountMatch dictionary
+	        for (const [linuxPrefix, windowsPrefix] of Object.entries(mountMatch)) {
+	            if (linuxPath.startsWith(linuxPrefix)) {
+	                // Replace the Linux prefix with the Windows prefix
+	                const relativePath = linuxPath.slice(linuxPrefix.length);
+	                return windowsPrefix + relativePath.replace(/\//g, '\\');
+	            }
+	        }
+	        // Return the original path if no match is found
+	        return linuxPath;
+	    }
+	
+	
+	})();
 
 
 },{"opencc-js":2}],2:[function(require,module,exports){
