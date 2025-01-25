@@ -38,6 +38,10 @@ Add some features for Emby detail page
    1. 加载javdb演员/导演结果
    2. Emby User ID 必须匹配 (in config.json)
 
+### emby-swiper-trailer.js
+   1. 来自：https://github.com/newday-life/emby-web-mod/blob/main/emby-swiper/emby-swiper-trailer
+   2. 将Youtube trailer修改为本地trailer
+
 ### config.json
    1. save configs. 必须放在index.html同级目录中
    2. google API key （选填。不添加不会触发翻译功能）
