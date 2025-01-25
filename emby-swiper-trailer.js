@@ -16,7 +16,7 @@ class HomeSwiper {
 		this.itemQuery.Limit = 9;
 		this.showItemNum = 9;
 		this.loadFlag = false;//是否已经加载
-		this.flag_cssjs = true;//是否是cssjs插件加载，修复cssjs插件加载首次可能不运行的问题
+		this.flag_cssjs = false;//是否是cssjs插件加载，修复cssjs插件加载首次可能不运行的问题
 		this.SwiperCss = `
 		/**
 		* Swiper 11.1.14
@@ -347,7 +347,7 @@ class HomeSwiper {
 			}, speed);
 		}
 	}
-	static showVideoOverlay(swiper) {
+	static async showVideoOverlay(swiper) {
 		// Destroy any existing video player
 		if (this.player) {
 			this.player.pause();
@@ -359,9 +359,13 @@ class HomeSwiper {
 		let videoContainer = swiper.slides[swiper.activeIndex].querySelector(".youtubePlayerContainerSwiper");
 
 		// Ensure the video container exists and has a data-src attribute
-		if (videoContainer && videoContainer.getAttribute("data-src")) {
+		if (videoContainer && videoContainer.getAttribute("data-id")) {
 			// Get the video source from the data-src attribute
-			const videoSrc = videoContainer.getAttribute("data-src");
+			const videoId = videoContainer.getAttribute("data-id");
+
+			const localTrailers = await ApiClient.getLocalTrailers(ApiClient.getCurrentUserId(), videoId);
+			const trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
+			const videoSrc = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
 
 			// Create the video element
 			const videoElement = document.createElement("video");
@@ -374,11 +378,6 @@ class HomeSwiper {
 
 			// Create or select the video mask element
 			let videoMask = videoContainer.querySelector(".video-mask");
-			if (!videoMask) {
-				videoMask = document.createElement("div");
-				videoMask.classList.add("video-mask");
-				videoContainer.appendChild(videoMask);
-			}
 
 			// Append the video element to the container
 			videoContainer.innerHTML = ""; // Clear any existing content
@@ -417,9 +416,7 @@ class HomeSwiper {
 				videoMask.style.display = "none"; // Hide the mask on error
 				videoContainer.innerHTML = ""; // Clear the video element
 			});
-		} else {
-			//console.warn("No video source found for this slide.");
-		}
+		} 
 	}
 	static async initBanner() {
 		var element = document.createElement("div");
@@ -456,7 +453,7 @@ class HomeSwiper {
 			};
 			for (let j = 0; j < datas.data.length; ++j) {
 				let detail = datas.data[j];
-				let ImageUrl, videoId, localTrailers, trailerItem;
+				let ImageUrl, videoId;
 				if (datas.CollectionType === "homevideos") {
 					ImageUrl = await this.getImageUrl(detail, this.coverOptions);
 				}
@@ -464,14 +461,17 @@ class HomeSwiper {
 					ImageUrl = await this.getImageUrl(detail, this.backdropOptions);
 				};
 				if (detail.LocalTrailerCount > 0) {
+					videoId = detail.Id;
+					/*
 					localTrailers = await ApiClient.getLocalTrailers(ApiClient.getCurrentUserId(), detail.Id);
 					trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
 					videoId = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
+					*/
 				}
 				const backdropHtml = `
 						<div class="swiper-slide" id="${detail.Id}">			
 							<img id="${detail.Id}" data-parentid="${datas.Id}"  class="banner-cover ${hvclass}" draggable="false" loading="${j === 0 ? 'eager' : 'lazy'}" decoding="async" src="${ImageUrl}" />
-                            <div class="youtubePlayerContainerSwiper" `+ (videoId ? `data-src="${videoId}"` : ``) + `><div class="video-mask"></div></div>
+                            <div class="youtubePlayerContainerSwiper" `+ (videoId ? `data-id="${videoId}"` : ``) + `><div class="video-mask"></div></div>
 							`+ ((detail.ImageTags && detail.ImageTags.Logo) ? `
 							<img draggable="false" loading="${j === 0 ? 'eager' : 'lazy'}" decoding="async" class="banner-logo padded-right" src="${await this.getImageUrl(detail, this.logoOptions)}">` : ``) + `
 							<div class="banner-mask"></div>
