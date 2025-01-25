@@ -16,7 +16,7 @@ class HomeSwiper {
 		this.itemQuery.Limit = 9;
 		this.showItemNum = 9;
 		this.loadFlag = false;//是否已经加载
-		this.flag_cssjs = false;//是否是cssjs插件加载，修复cssjs插件加载首次可能不运行的问题
+		this.flag_cssjs = true;//是否是cssjs插件加载，修复cssjs插件加载首次可能不运行的问题
 		this.SwiperCss = `
 		/**
 		* Swiper 11.1.14
