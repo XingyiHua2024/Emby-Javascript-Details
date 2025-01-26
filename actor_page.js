@@ -904,7 +904,7 @@
         const linksSection = aboutSection.querySelector(".linksSection");
         if (!linksSection) return
         const itemLinks = linksSection.querySelector('.itemLinks');
-        const links = extractLinks(item.Overview, '===== 外部链接 =====');
+        const links = extractLinks(item.Overview? item.Overview : '', '===== 外部链接 =====');
         if (links.length == 0) return
         const linkKeys = Object.keys(links); 
         aboutSection.classList.remove('hide');
