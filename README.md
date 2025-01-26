@@ -47,8 +47,7 @@ Add some features for Emby detail page
    2. google API key （选填。不添加不会触发翻译功能）
    3. Emby User ID （选填。不添加不会触发JavDb功能）
 
-### style.css
-   1. css styles
+### no need css anymore
 
 ## 部署服务器方法 1：
 1. 在客户端或网页的 `index.html` <body></body> 标签最后，插入以下内容：
@@ -57,7 +56,6 @@ Add some features for Emby detail page
    <script type="text/javascript" src="emby_detail_page.js"></script>
    <script type="text/javascript" src="list_page.js"></script>
    <script type="text/javascript" src="actor_page.js"></script>
-   <link rel="stylesheet" href="./style.css">
    ```
 2. 将 `XXX.js` 文件下载放在index.html同级目录中，非window记得授权可读。
 3. 将修改后的 `config.json` 文件放在index.html同级目录中。
