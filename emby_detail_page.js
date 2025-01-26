@@ -1,12 +1,11 @@
 (async function () {
     "use strict";
-    class CommonUtils {
+   class CommonUtils {
         static loadExtastyle(content, id) {
             let style = document.createElement("style");
-            style.type = "text/css";
-            style.id = id;
-            style.innerHTML = content;
-            document.head.appendChild(style);
+            style.id = id; // Set the ID for the style element
+            style.innerHTML = content; // Set the CSS content
+            document.head.appendChild(style); // Append the style element to the document head
         }
     }
 
@@ -27,7 +26,7 @@
 
     await loadConfig();
 
-    var fetchJavDbFlag = javDbFlag, isResizeListenerAdded = false;;
+    var fetchJavDbFlag = javDbFlag, isResizeListenerAdded = false, isFanartResizeListenerAdded = false;
 
     const OS_current = getOS();
 
@@ -699,6 +698,7 @@
         return itemContainer;
     }
 
+   
     async function previewInject(isSlider = false) {
 
         const showJavDbFlag = (item.CustomRating && item.CustomRating === 'JP-18+') || (item.OfficialRating && item.OfficialRating === 'JP-18+');
@@ -712,49 +712,60 @@
         const images = await ApiClient.getItemImageInfos(item.Id);
         const backdrops = images.filter(image => image.ImageType === "Backdrop");
 
+        const seenPaths = new Map();
         const uniqueBackdrops = [];
-        const seenFilenames = new Set();
 
-        backdrops.forEach((backdrop) => {
-            // Check for duplicate filenames
-            if (!seenFilenames.has(backdrop.Path)) {
-                seenFilenames.add(backdrop.Path);
+        for (let i = 0; i < backdrops.length; i++) {
+            const backdrop = backdrops[i];
+            if (!seenPaths.has(backdrop.Path)) {
+                seenPaths.set(backdrop.Path, true);
                 uniqueBackdrops.push(backdrop);
             }
-        });
+        }
+
+        const extractNumber = (filename) => {
+            if (!filename) return null; // Return null for undefined or null filenames
+            const matches = filename.match(/(\d+)/g); // Match all numbers in the filename
+            return matches ? parseInt(matches[matches.length - 1], 10) : null; // Use the last number or return null if no numbers
+        };
 
         uniqueBackdrops.sort((a, b) => {
             // Always prioritize the item with ImageIndex = 0
             if (a.ImageIndex === 0) return -1;
             if (b.ImageIndex === 0) return 1;
-
-            // Move undefined or null filenames to the end
-            if (!a.Filename && b.Filename) return 1;
-            if (a.Filename && !b.Filename) return -1;
-
-            // Function to extract the numeric part from the filename
-            const extractNumber = (filename) => {
-                if (!filename) return 0; // Return 0 if filename is undefined or null
-                const matches = filename.match(/(\d+)/g); // Match all numbers in the filename
-                return matches ? parseInt(matches[matches.length - 1], 10) : 0; // Use the last number
-            };
-
+        
+            // Handle undefined or null filenames (move them to the end)
+            if (!a.Filename && !b.Filename) return 0; // Both are undefined/null, keep order
+            if (!a.Filename) return 1; // Move a to the end
+            if (!b.Filename) return -1; // Move b to the end
+        
+            // Extract numbers from filenames
             const numA = extractNumber(a.Filename);
             const numB = extractNumber(b.Filename);
-
-            // Sort based on the extracted number
-            if (numA !== numB) {
-                return numA - numB; // Compare numerically
+        
+            // Check if filenames are non-numeric (string names)
+            const isStringNameA = numA === null; // True if filename is non-numeric
+            const isStringNameB = numB === null; // True if filename is non-numeric
+        
+            // Move string names to the beginning (after ImageIndex = 0)
+            if (isStringNameA && !isStringNameB) return -1; // a is string name, b is numeric
+            if (!isStringNameA && isStringNameB) return 1; // a is numeric, b is string name
+            if (isStringNameA && isStringNameB) {
+                // Both are string names, sort lexicographically
+                return a.Filename.localeCompare(b.Filename);
             }
-
-            // Fallback to lexicographical order for filenames
-            return (a.Filename || '').localeCompare(b.Filename || '');
+        
+            // Both are numeric filenames, sort by extracted number
+            return numA - numB;
         });
 
         const peopleSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .peopleSection");
         if (!peopleSection) return;
 
         let isCollapsed = uniqueBackdrops.length > 30;
+
+        if (!isCollapsed) {addSlider = true};
+        
         let html = '';
         if (addSlider) {
             html = `<div id="myFanart" is="emby-itemscontainer" class="imageSection itemsContainer virtualItemsContainer focusable focuscontainer-x scrollSlider scrollSliderX emby-scrollbuttons-scrollSlider"  data-focusabletype="nearest" data-virtualscrolllayout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2412px;" data-minoverhang="1" layout="horizontal-grid">`;
@@ -794,11 +805,11 @@
         if (addSlider) {
             adjustSliderWidth();
 
-            const actorMoreSections = document.querySelectorAll('.imageSection');
-            if (actorMoreSections.length == 1) {
+            if (!isFanartResizeListenerAdded) {
                 window.addEventListener('resize', function () {
                     adjustSliderWidth();
                 });
+                isFanartResizeListenerAdded = true;
             }
         } else if (isCollapsed) {
             const button = viewnode.querySelector("#toggleFanart");
