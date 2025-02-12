@@ -85,7 +85,9 @@
             return; // Exit the function if the file is not found or another error occurs
         }
         const config = await response.json();
-        adminUserId = config.adminUserId;
+        if (config) {
+            adminUserId = config.adminUserId || adminUserId;
+        }     
     }
 
     async function applyBackgroundStyle() {
@@ -152,11 +154,12 @@
 
         let isHovered = false; // Flag to track hover status
 
-        const handleMouseLeave = () => {
+        node.addEventListener('mouseleave', () => {
+            if (!isHovered) return; // Exit if not hovered
             isHovered = false;
             imgContainer.classList.add('has-trailer');
             img.style.filter = ''; // Remove blur effect
-
+        
             const playerContainer = imgContainer.querySelector(`#player-${itemId}`);
             if (playerContainer) {
                 const player = window.YT.get(playerContainer.id);
@@ -164,34 +167,26 @@
                 playerContainer.remove();
             } else {
                 const allVideos = cardOverlay.querySelectorAll('video');
-                allVideos.forEach(video => {
-                    video.remove(); // Remove each video element
-                });
+                allVideos.forEach(video => video.remove());
             }
-        };
-
+        });
+        
         node.addEventListener('mouseenter', () => {
             if (isHovered) return; // Prevent duplicate mouseenter logic
             isHovered = true;
             imgContainer.classList.remove('has-trailer');
-
-            // Add the mouseleave listener only once
-            if (!node.hasMouseLeaveListener) {
-                node.addEventListener('mouseleave', handleMouseLeave);
-                node.hasMouseLeaveListener = true;
-            }
-
+        
             // Check if the trailer is a YouTube URL
             if (item.LocalTrailerCount == 0 && trailerUrl.includes('youtube.com') || trailerUrl.includes('youtu.be')) {
                 const embedUrl = trailerUrl.includes('watch')
                     ? trailerUrl.replace('watch?v=', 'embed/')
                     : trailerUrl.replace('youtu.be/', 'youtube.com/embed/');
-
+        
                 const playerContainer = document.createElement('div');
                 playerContainer.classList.add('video-element');
                 playerContainer.id = `player-${itemId}`;
                 imgContainer.appendChild(playerContainer);
-
+        
                 const player = new YT.Player(playerContainer.id, {
                     videoId: new URL(embedUrl).pathname.split('/').pop(),
                     playerVars: {
@@ -212,7 +207,7 @@
                 videoElement.autoplay = true;
                 videoElement.muted = true;
                 videoElement.classList.add('video-element');
-
+        
                 cardOverlay.appendChild(videoElement);
                 img.style.filter = 'blur(5px)';
             }
