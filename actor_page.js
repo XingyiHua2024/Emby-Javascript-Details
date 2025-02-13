@@ -5,10 +5,9 @@
     class CommonUtils {
         static loadExtastyle(content, id) {
             let style = document.createElement("style");
-            style.type = "text/css";
-            style.id = id;
-            style.innerHTML = content;
-            document.head.appendChild(style);
+            style.id = id; // Set the ID for the style element
+            style.innerHTML = content; // Set the CSS content
+            document.head.appendChild(style); // Append the style element to the document head
         }
     }
 
@@ -24,9 +23,11 @@
     var fetchJavDbFlag = javDbFlag;
 
     var adminUserId = '', nameMap = {};
+
     const OS_current = getOS();
 
     const embyDetailCss = `.has-trailer{position:relative;box-shadow:0 0 10px 3px rgb(255 255 255 / .8);transition:box-shadow 0.3s ease-in-out;border-radius:8px}.has-trailer:hover{box-shadow:0 0 10px 3px rgb(255 0 150 / .3);transition:box-shadow 0.2s ease-in-out}.injectJavdb{opacity:1;transition:color 0.3s,transform 0.3s,box-shadow 0.3s,filter 0.3s}.injectJavdb:hover{transform:scale(1.05);background:linear-gradient(135deg,rgb(255 0 150 / .3),rgb(0 150 255 / .3));box-shadow:0 4px 15px rgb(0 0 0 / .2),0 0 10px rgb(0 150 255 / .5)}.injectJavdb .button-text,.injectJavdb .button-icon{color:pink;transition:color 0.3s,filter 0.3s}.injectJavdb:hover .button-text,.injectJavdb:hover .button-icon{color:black!important}.injectJavbus .button-text,.injectJavbus .button-icon{color:#ff8181!important}.noUncensored{opacity:1;transition:color 0.3s,transform 0.3s,box-shadow 0.3s,filter 0.3s}.noUncensored .button-text,.noUncensored .button-icon{color:grey!important}.melt-away{animation:sandMeltAnimation 1s ease-out forwards}@keyframes sandMeltAnimation{0%{opacity:1}100%{opacity:0}}.my-fanart-image{display:inline-block;margin:8px 10px 8px 10px;vertical-align:top;border-radius:8px;height:27vh;transition:transform 0.3s ease,filter 0.3s ease;min-height:180px}.my-fanart-image-slider{height:20vh!important}.my-fanart-image:hover{transform:scale(1.03);filter:brightness(80%)}.modal{display:none;position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;overflow:hidden;background-color:rgb(0 0 0 / .8);justify-content:center;align-items:center}.modal-content{margin:auto;max-width:70%;max-height:70%;overflow:hidden;opacity:0}@media (max-width:768px){.modal-content{max-width:80%;max-height:80%}}.modal-closing .modal-content{animation-name:shrinkAndRotate;animation-duration:0.3s;animation-timing-function:ease-out}.close{color:#fff;position:absolute;width:45px;height:45px;display:flex;justify-content:center;align-items:center;top:30px;right:30px;font-size:30px;font-weight:700;cursor:pointer;transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:0;background-color:rgb(0 0 0 / .5);user-select:none;caret-color:#fff0}.prev,.next{position:absolute;width:40px;height:40px;line-height:40px;justify-content:center;align-items:center;display:flex;top:50%;background-color:rgb(0 0 0 / .5);color:#fff;border:none;cursor:pointer;font-size:35px;font-weight:700;transform:translateY(-50%) translateX(-50%);transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:35px}.prev{left:80px}.next{right:20px}.prev:hover,.next:hover{background-color:rgb(255 255 255 / .3);padding:35px}.close:hover{background-color:rgb(255 255 255 / .3);padding:10px}@keyframes shrinkAndRotate{0%{transform:scale(1)}100%{transform:scale(0)}}.click-smaller{transform:scale(.9) translate(-50%,-50%);transition:transform 0.2s}.prev.disabled,.next.disabled{color:grey!important;cursor:default}@keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-10px)}50%{transform:translateX(10px)}75%{transform:translateX(-10px)}100%{transform:translateX(0)}}.modal-caption{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);text-align:center;font-size:16px;color:#fff;background-color:rgb(0 0 0 / .6);padding:5px 10px;border-radius:5px}@media screen and (max-width:480px){.modal-caption{bottom:100px}}.video-element{position:absolute;width:100%;height:100%;object-fit:contain;z-index:3;pointer-events:auto;transition:opacity 0.5s ease}.copy-link{color:lightblue;cursor:pointer;display:inline-block;transition:transform 0.1s ease}.copy-link:active{transform:scale(.95)}.media-info-item{display:block;width:100%;margin-top:10px;text-align:left}.media-info-item a{padding:5px 10px;background:rgb(255 255 255 / .15);margin-bottom:5px;margin-right:5px;-webkit-backdrop-filter:blur(5em);backdrop-filter:blur(5em);font-weight:600;font-family:'Poppins',sans-serif;transition:transform 0.2s ease,background-color 0.3s ease,box-shadow 0.3s ease,color 0.3s ease;text-decoration:none;color:#fff}.media-info-item a:hover{transform:scale(1.05);background:linear-gradient(135deg,rgb(255 0 150 / .3),rgb(0 150 255 / .3));box-shadow:0 4px 15px rgb(0 0 0 / .2),0 0 10px rgb(0 150 255 / .5)}.pageButton{cursor:pointer;padding:6px 16px;background:rgb(255 255 255 / 15%);border-radius:5px;box-shadow:0 2px 4px rgb(0 0 0 / .2);transition:background-color 0.3s ease,box-shadow 0.3s ease}.pageButton:hover{background:rgb(255 255 255 / 85%);color:#000;box-shadow:0 4px 8px rgb(0 0 0 / .4)}#pageInput-actorPage::-webkit-inner-spin-button,#pageInput-actorPage::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}#pageInput-actorPage{-moz-appearance:textfield;appearance:none;height:auto;text-align:center;padding:5px;font-family:inherit;font-size:inherit;font-weight:inherit;line-height:inherit}#filterDropdown{width:auto;backdrop-filter:blur(5px);color:#fff;transition:background-color 0.3s ease,box-shadow 0.3s ease;margin-left:20px;font-family:inherit;padding:6px 16px;font-weight:inherit;line-height:inherit;border:none}#filterDropdown:hover{background:rgb(255 255 255 / 85%);color:#000;box-shadow:0 4px 8px rgb(0 0 0 / .4)}#filterDropdown:focus{outline:none;box-shadow:0 0 4px 2px rgb(255 255 255 / .8)}#filterDropdown option{font-family:inherit;color:#000;background:#fff;border:none;padding:5px;font-weight:inherit}#filterDropdown option:hover{background:#c8c8c8}.myCardImage{transition:filter 0.2s ease}.myCardImage:hover{filter:brightness(70%)}#toggleFanart{padding:10px 20px;font-size:18px;background:rgb(255 255 255 / .15);margin-top:15px;margin-bottom:15px;border:none;border-radius:8px;font-weight:700;font-family:'Poppins',sans-serif;color:#fff;text-decoration:none;cursor:pointer;display:block;margin-left:auto;margin-right:auto;-webkit-backdrop-filter:blur(5em);backdrop-filter:blur(5em);transition:transform 0.2s ease,background-color 0.3s ease,box-shadow 0.3s ease,color 0.3s ease}#toggleFanart:hover{transform:scale(1.1);background:linear-gradient(135deg,rgb(255 0 150 / .4),rgb(0 150 255 / .4));box-shadow:0 6px 20px rgb(0 0 0 / .3),0 0 15px rgb(0 150 255 / .6);color:#fff}#toggleFanart:active{transform:scale(.95);box-shadow:0 3px 12px rgb(0 0 0 / .3)}.bg-style{background:linear-gradient(to right top,rgb(0 0 0 / .98),rgb(0 0 0 / .2)),url(https://assets.nflxext.com/ffe/siteui/vlv3/058eee37-6c24-403a-95bd-7d85d3260ae1/5030300f-ed0c-473a-9795-a5123d1dd81d/US-en-20240422-POP_SIGNUP_TWO_WEEKS-perspective_WEB_0941c399-f3c4-4352-8c6d-0a3281e37aa0_large.jpg);background-attachment:fixed;background-repeat:no-repeat;background-position:center;background-size:cover}@media (max-width:50em){.swiper-thumbs{display:none!important}}`;
+
     await loadConfig();
 
 
@@ -52,7 +53,7 @@
             } else {
                 viewnode = e.target;
                 item = viewnode.controller.currentItem;
-                if (item && item.Type === 'Person' && pageLinks.length == 0) {
+                if (item && item.Type === 'Person') {
                     setTimeout(() => {
                         injectLinks();
                     }, 500);
@@ -68,8 +69,10 @@
             return; // Exit the function if the file is not found or another error occurs
         }
         const config = await response.json();
-        adminUserId = config.adminUserId;
-        nameMap = config.nameMap;
+        if (config) {
+            adminUserId = config.adminUserId || adminUserId;
+            nameMap = config.nameMap || nameMap;
+        }
     }
 
     async function init() {
@@ -184,7 +187,7 @@
             //icon: `<i class="fa-solid fa-magnifying-glass"></i>`
             icon: `<span class="material-symbols-outlined">mystery</span>`
         });
-        let javDbMovies = await fetchDbActor(nameMap[item.Name] || item.Name.split('（')[0], false);
+        let javDbMovies = await fetchDbActor(item.Name, false);
 
         if (javDbMovies.length > 0) {
             javDbMovies = await filterDbMovies(javDbMovies);
@@ -193,7 +196,6 @@
                     text: '没有找到相关资源',
                     icon: `<span class="material-symbols-outlined">search_off</span>`
                 });
-                emptyPage();
                 return
             } else {
                 showToast({
@@ -210,36 +212,23 @@
     async function javDbInit() {
         if (!fetchJavDbFlag) return;
         if (!containsJapanese(item.Name) && (item.Name.includes(' ') || item.Name.includes('·'))) return;
-        if (personType != 'director') {
-            const taglineAV = item.Taglines && item.Taglines.length > 0 && (item.Taglines[0].includes('AV女优') || item.Taglines[0].includes('AV女優'));
-            const hasMetaTube = item.ExternalUrls.some(url => url.Name === "MetaTube");
-            const overviewAV = item.Overview && item.Overview.length > 0 && (item.Overview.includes('AV女优') || item.Overview.includes('===== 外部链接 ====='));
-
-            if (!taglineAV && !hasMetaTube && !overviewAV) return;
-        }
+        if (personType != 'director' && !isAVIdol()) return;
          
         pageLinks = [];
         isCensored = true;
         const linkedItems = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .linkedItems");
-        const actorMovieNames = await getActorMovies(item.Name);
 
-        let h2Element = linkedItems.querySelector(".sectionTitle-cards");
-        if (h2Element) {
-            h2Element.textContent += `（共${actorMovieNames.length}部）`;
-        }
-        const localName = nameMap[item.Name] || item.Name.split('（')[0].replace(/・/g, "･");
-
-        let javDbMovies = await fetchDbActor(localName);
+        let javDbMovies = await fetchDbActor(item.Name);
         if (javDbMovies) {
             javDbMovies = await filterDbMovies(javDbMovies);
             if (javDbMovies.length == 0) return
 
             let imgHtml = '';
             for (let i = 0; i < javDbMovies.length; i++) {
-                imgHtml += createItemContainerLarge2(javDbMovies[i], i);
+                imgHtml += createItemContainerLarge(javDbMovies[i], i);
             }
 
-            const slider = createSliderLarge2(`更多作品（来自JavDB，共${javDbMovies.length}部）`, imgHtml, "actorMoreSection-actorPage", "myitemsContainer-actorPage");
+            const slider = createSliderLarge(`更多作品（来自JavDB，共${javDbMovies.length}部）`, imgHtml, "actorMoreSection-actorPage", "myitemsContainer-actorPage");
             const sliderElement = document.createElement('div');
             sliderElement.id = 'myDbActorSlider-actorPage';
             sliderElement.innerHTML = slider;
@@ -298,23 +287,18 @@
             });
         }
 
-        h2Element = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .linkedItems .sectionTitle-cards")
+        let h2Element = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .linkedItems .sectionTitle-cards");
         if (h2Element && h2Element.textContent === '电影') {
+            const actorMovieNames = await getActorMovies(item.Name);
             h2Element.textContent += `（共${actorMovieNames.length}部）`;
         }
     }
 
     async function filterDbMovies(javDbMovies) {
-        let filteredMovies;
-
-        filteredMovies = await Promise.all(
-            javDbMovies.map(async (movie) => {
-                const exists = await checkEmbyExist(movie.Code);
-                return exists ? null : movie;  // Exclude the movie if it exists in Emby
-            })
+        const results = await Promise.all(
+            javDbMovies.map(movie => checkEmbyExist(movie.Code).then(exists => exists ? null : movie))
         );
-
-        return filteredMovies.filter(movie => movie !== null);;
+        return results.filter(Boolean);
     }
 
 
@@ -339,7 +323,7 @@
 
                 let imgHtml = '';
                 for (let i = 0; i < javDbMovies.length; i++) {
-                    imgHtml += createItemContainerLarge2(javDbMovies[i], i);
+                    imgHtml += createItemContainerLarge(javDbMovies[i], i);
                 };
                 const itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myitemsContainer-actorPage");
                 itemsContainer.innerHTML = imgHtml;
@@ -384,16 +368,8 @@
         }
     }
 
-    function emptyPage() {
-        pageLinks = [];
-        const itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myitemsContainer-actorPage");
-        itemsContainer.innerHTML = '';
-        viewnode.querySelector("div[is='emby-scroller']:not(.hide) #pageNumber-actorPage").textContent = ` 第<0/0>页 `;
-        viewnode.querySelector("div[is='emby-scroller']:not(.hide) #text-actorPage").textContent = `没有找到相关影片`
-    }
 
-
-    function createSliderLarge2(text, html, sectionId, itemsContainerId) {
+    function createSliderLarge(text, html, sectionId, itemsContainerId) {
         const slider = `
             <div id=${sectionId} class="linked-Movie-section verticalSection verticalSection-cards">
                 <div class="sectionTitleContainer padded-left padded-left-page padded-right sectionTitleContainer-cards focusable" data-focusabletype="nearest">
@@ -427,16 +403,19 @@
         return slider
     }
 
-    function createItemContainerLarge2(itemInfo, increment) {
+    function createItemContainerLarge(itemInfo, increment) {
         const imgUrl = itemInfo.ImgSrc;
         const title = `${itemInfo.Code} ${itemInfo.Name}`;
         const link = `https://javdb.com${itemInfo.Link}?locale=zh`;
         const score = itemInfo.Score;
+        const scoreStr = score.match(/^(\d+(\.\d+)?)/);
+        const scoreNum = scoreStr ? parseFloat(scoreStr[0]) : null;
+        const scoreHighlight = scoreNum && scoreNum > 4.4 ? " has-trailer" : "";
         const time = itemInfo.Time;
         const itemContainer = `
             <div class="card backdropCard card-horiz card-hoverable card-autoactive" tabindex="0" draggable="true">
                 <div class="cardBox cardBox-touchzoom cardBox-bottompadded">
-                    <button onclick="window.open('${link}', '_blank')" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-backdrop myCardImage">
+                    <button onclick="window.open('${link}', '_blank')" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-backdrop myCardImage${scoreHighlight}">
                         <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
                     </button>
                     <div class="cardText cardText-first cardText-first-padded">
@@ -472,18 +451,27 @@
         }   
     }
 
-    async function fetchDbActor(actorName, insertFlag = true) {
+    function javdbNameMap(name) {
+        if (!name) return "";
+        const localName = nameMap[name] || getPartBefore(name, "（");
+        return localName.replace(/・/g, "･");
+    }
+
+    async function fetchDbActor(name, insertFlag = true) {
+        const actorName = javdbNameMap(name);
         if (insertFlag) {
             isCensored = true;
-            hasUncensored = false;
-            
+            hasUncensored = false;        
         }
 
         pageLinks = [];
         const HOST = "https://javdb.com";
         const url = `${HOST}/search?f=${personType}&locale=zh&q=${actorName}`;
 
-        let javdbActorData = await request(url);
+        let actorLink = null;
+        let actorUrl = getUrl(item.Overview, "===== 外部链接 =====", "JavDb");
+
+        let javdbActorData = (!actorUrl || personType != 'director') ? await request(url) : '';
         if (javdbActorData.length > 0) {
             // Create a new DOMParser instance
             const parser = new DOMParser();
@@ -491,19 +479,11 @@
             // Parse the HTML data string
             let parsedHtml = parser.parseFromString(javdbActorData, 'text/html');
 
-            // Get the href attribute from the parsed HTML
-            let actorLink = null;
-
             if (personType === 'director') {
                 const directorBoxes = parsedHtml.querySelectorAll('#directors .box');
-                if (directorBoxes.length > 0) {
-                    for (let directorBox of directorBoxes) {
-                        if (directorBox.getAttribute('title') && directorBox.getAttribute('title').split(', ').includes(actorName)) {
-                            actorLink = directorBox;
-                            break;
-                        }
-                    }
-                }
+                actorLink = Array.from(directorBoxes).find(box =>
+                    box.getAttribute('title')?.split(', ').includes(actorName)
+                ) || null;
             } else {
                 if (!isCensored) {
                     let actorLink_temp = null;
@@ -587,51 +567,41 @@
                     });
                 }
             }
-
-            if (actorLink) {
-                const hrefValue = actorLink.getAttribute('href');
-                const actorUrl = `${HOST}${hrefValue}`;
-                if (insertFlag) {
-                    javdbButtonInit(actorUrl);
-                    addLink(item.Overview? item.Overview : '', "===== 外部链接 =====", "JavDb", actorUrl);        
-                }
-
-
-                //wait for random time
-                await waitForRandomTime();
-                javdbActorData = await request(actorUrl);
-                if (javdbActorData.length > 0) {
-                    parsedHtml = parser.parseFromString(javdbActorData, 'text/html');
-                    const paginationList = parsedHtml.querySelector('.pagination-list');
-                    if (paginationList) {
-
-                        // Find all the page links within the pagination list
-                        const links = paginationList.querySelectorAll('a.pagination-link');
-
-                        // Iterate over each page link and extract the href attribute
-                        links.forEach(link => {
-                            const href = `${HOST}${link.getAttribute('href')}`;
-                            // Add the href to the pageLinks array
-                            pageLinks.push(href);
-                        });
-                    }
-                    else {
-                        pageLinks.push(actorUrl);
-                    }
-                    // Iterate over each item within the "movie-list"
-                    const DBitems = parsedHtml.querySelectorAll('.movie-list .item');
-                    const movies = arrangeDBitems(DBitems);
-                    return movies;
-                }
-
-            } else {
-                console.error('Actor link not found');
-                if (insertFlag) {
-                    javdbButtonInit(url);
-                }
-            }
         }
-        return null;
+
+        if (actorLink) {
+            const hrefValue = actorLink.getAttribute('href');
+            actorUrl = `${HOST}${hrefValue}`;
+            insertFlag && addLink(item.Overview || '', "===== 外部链接 =====", "JavDb", actorUrl);        
+        }
+
+        if (!actorUrl) {
+            console.error('Actor link not found');
+            insertFlag && javdbButtonInit(url);
+            return null
+        }
+
+        insertFlag && javdbButtonInit(actorUrl);      
+
+        //wait for random time
+        await waitForRandomTime();
+        javdbActorData = await request(actorUrl);
+        if (javdbActorData.length > 0) {
+            const parser = new DOMParser();
+            let parsedHtml = parser.parseFromString(javdbActorData, 'text/html');
+            const paginationList = parsedHtml.querySelector('.pagination-list');
+            if (paginationList) {
+                pageLinks = [...paginationList.querySelectorAll('a.pagination-link')].map(link => `${HOST}${link.getAttribute('href')}`);
+            }
+            else {
+                pageLinks.push(actorUrl);
+            }
+            // Iterate over each item within the "movie-list"
+            const DBitems = parsedHtml.querySelectorAll('.movie-list .item');
+            const movies = arrangeDBitems(DBitems);
+            return movies;
+        }
+        return null;          
     }
 
     function arrangeDBitems(DBitems) {
@@ -691,14 +661,14 @@
     }
 
     function waitForRandomTime() {
-        const minWaitTime = 1000;
-        const maxWaitTime = 2500;
+        const minWaitTime = 500;
+        const maxWaitTime = 1500;
 
         const randomWaitTime = Math.random() * (maxWaitTime - minWaitTime) + minWaitTime;
 
         return new Promise(resolve => {
             setTimeout(() => {
-                console.log("Waited for", randomWaitTime / 1000, "seconds");
+                //console.log("Waited for", randomWaitTime / 1000, "seconds");
                 resolve(); // Signal that the promise is completed
             }, randomWaitTime);
         });
@@ -850,7 +820,7 @@
         ApiClient.updateItem(item);
     }
 
-    /*
+
     function getUrl(text, sectionHeader, key) {
         if (!text || !sectionHeader || !key) {
             console.error("Invalid input. Make sure text, sectionHeader, and key are provided.");
@@ -886,25 +856,19 @@
         console.log(`Key "${key}" not found after section "${sectionHeader}".`);
         return null;
     }
-    */
+
     
 
     function injectLinks() {
         if (!fetchJavDbFlag) return;
         if (!containsJapanese(item.Name) && (item.Name.includes(' ') || item.Name.includes('·'))) return;
-        if (personType != 'director') {
-            const taglineAV = item.Taglines && item.Taglines.length > 0 && item.Taglines[0].includes('AV女优');
-            const hasMetaTube = item.ExternalUrls.some(url => url.Name === "MetaTube");
-            const overviewAV = item.Overview && item.Overview.length > 0 && item.Overview.includes('AV女优');
-
-            if (!taglineAV && !hasMetaTube && !overviewAV) return;
-        }
+        if (personType != 'director' && !isAVIdol()) return;
 
         const aboutSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .aboutSection");
         const linksSection = aboutSection.querySelector(".linksSection");
         if (!linksSection) return
         const itemLinks = linksSection.querySelector('.itemLinks');
-        const links = extractLinks(item.Overview? item.Overview : '', '===== 外部链接 =====');
+        const links = extractLinks(item.Overview || '', '===== 外部链接 =====');
         if (links.length == 0) return
         const linkKeys = Object.keys(links); 
         aboutSection.classList.remove('hide');
@@ -937,16 +901,57 @@
 
 
     async function checkEmbyExist(movie) {
+        const localMovie = addPrefix(movie);
         const movies = await ApiClient.getItems(
             ApiClient.getCurrentUserId(),
             {
                 Recursive: "true",
                 IncludeItemTypes: "Movie",
-                SearchTerm: `${movie}`,
+                SearchTerm: `${localMovie}`,
             }
         );
         if (movies && movies.Items.length > 0) return movies.Items[0];
         else return null;
+    }
+
+    function addPrefix(input) {
+        const prefixDic = { 
+            "KIWVR": "408",
+            "MAAN": "300",
+            "DANDY": "104",
+            "STCV": "529",
+            "LUXU": "259",
+            "SUKE": "428",
+            "PAK": "483",
+            "MIUM": "300",
+            "NTK": "300",
+            "JAC": "390",
+            "SUKE": "428",
+            "TEN": "459",
+            "INSTV": "413"
+        };
+
+        // Iterate over the keys in the prefix dictionary
+        for (const key in prefixDic) {
+            // Check if the input starts with the current key
+            if (input.startsWith(key)) {
+                // Get the corresponding value from the dictionary
+                const prefix = prefixDic[key];
+                // Return the modified string
+                return prefix + input;
+            }
+        }
+    
+        // If no key matches, return the original string
+        return input;
+    }
+
+    function isAVIdol() {
+        return (
+            item.Taglines?.[0]?.includes('AV女优') || item.Taglines?.[0]?.includes('AV女優') ||
+            item.ExternalUrls?.some(url => url.Name === "MetaTube") ||
+            item.Overview?.includes('AV女优') || item.Overview?.includes('===== 外部链接 =====')
+        );
     }
 
     function containsJapanese(text) {
