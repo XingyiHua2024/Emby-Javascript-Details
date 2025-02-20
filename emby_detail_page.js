@@ -1,32 +1,25 @@
 (async function () {
     "use strict";
-    class CommonUtils {
-        static loadExtastyle(content, id) {
-            let style = document.createElement("style");
-            style.id = id; // Set the ID for the style element
-            style.innerHTML = content; // Set the CSS content
-            document.head.appendChild(style); // Append the style element to the document head
-        }
-    }
 
-    //config
+    /******************** user config ********************/
+    var googleApiKey = ''; //Google API Key
+    var nameMap = {};
+    var fetchJavDbFlag = true; //enable javdb scrap 
+    /*****************************************************/
+
     const show_pages = ["Movie", "Series", "Season", "BoxSet", "Person"];
-    /* page item.Type "Person" "Movie" "Series" "Season" "Episode" "BoxSet" so. */
-
-    const javDbFlag = true;
-    // fetch data form Javdb.com and display in detail page. Only support movies that has CustomRating === 'JP-18+' or OfficialRating === 'JP-18+'
 
     const googleTranslateLanguage = 'ja';
     // put language to translate from (ja for Japanese) to Chinese. Leave '' to support any language
 
-
-    var item, actorName, directorName, viewnode, paly_mutation;
-
-    var adminUserId = '', googleApiKey = '', nameMap = {};
+    var item, actorName, directorName, viewnode;
+    var prefixDic = {};
+    //var adminUserId = ''; //Emby User ID
 
     await loadConfig();
 
-    var fetchJavDbFlag = javDbFlag, isResizeListenerAdded = false, isFanartResizeListenerAdded = false;
+    var isResizeListenerAdded = false, isFanartResizeListenerAdded = false;
+    
 
     const OS_current = getOS();
 
@@ -34,10 +27,9 @@
 
     // monitor dom changements
     document.addEventListener("viewbeforeshow", function (e) {
-        paly_mutation?.disconnect();
         if (e.detail.contextPath.startsWith("/item?id=")) {
             if (!e.detail.isRestored) {
-                !document.getElementById("embyDetailCss") && CommonUtils.loadExtastyle(embyDetailCss, 'embyDetailCss');
+                !document.getElementById("embyDetailCss") && loadExtraStyle(embyDetailCss, 'embyDetailCss');
                 const mutation = new MutationObserver(async function () {
                     viewnode = e.target;
                     item = viewnode.controller?.currentItem;
@@ -66,6 +58,7 @@
                     actorName = getActorName();
                     directorName = getActorName(true);
                     setTimeout(() => {
+                        injectLinks();
                         javdbTitle();
                         adjustCardOffsets();
                         adjustSliderWidth();
@@ -83,36 +76,26 @@
         }
         const config = await response.json();
         if (config) {
-            adminUserId = config.adminUserId || adminUserId;
+            //adminUserId = config.adminUserId || adminUserId;
             googleApiKey = config.googleApiKey || googleApiKey;
             nameMap = config.nameMap || nameMap;
+            prefixDic = config.prefixDic || prefixDic;
         }  
     }
 
-    function moveTopDown() {
-        const topMain = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .topDetailsMain");
-
-        if (topMain) {
-            // Check if already adjusted
-            if (topMain.dataset.movedDown === "true") {
-                return; // Exit if already moved
-            }
-
-            const distanceFromTop = topMain.getBoundingClientRect().top + window.scrollY;
-            const height = topMain.offsetHeight;
-            const moveDownBy = window.innerHeight - height - distanceFromTop;
-
-            topMain.style.paddingTop = `${moveDownBy}px`;
-
-            // Mark as adjusted
-            topMain.dataset.movedDown = "true";
-        }
+    function loadExtraStyle(content, id) {
+        let style = document.createElement("style");
+        style.id = id; // Set the ID for the style element
+        style.innerHTML = content; // Set the CSS content
+        document.head.appendChild(style); // Append the style element to the document head
     }
 
     async function init() {
+        injectLinks();
         javdbTitle();
         //buttonInit();
-
+        reviewButtonInit();
+        
         await previewInject();
         modalInject();
 
@@ -133,134 +116,7 @@
         return false;
     }
 
-    function timeLength() {
-        // Select all visible div elements with the class "mediaInfoItem" inside a specific container
-        const mediaInfoItems = viewnode.querySelectorAll("div[is='emby-scroller']:not(.hide) .mediaInfoItem");
-
-        // Regular expressions to match "xxh xxm", "xxh", and "xxm"
-        const timeRegexWithHoursAndMinutes = /\b(\d{1,2})h\s*(\d{1,2})m\b/;
-        const timeRegexHoursOnly = /\b(\d{1,2})h\b/;
-        const timeRegexMinutesOnly = /\b(\d{1,2})m\b/;
-
-        // Loop through the elements to find the one that matches any of the regex patterns
-        mediaInfoItems.forEach((mediaItem) => {
-            if (mediaItem.querySelector('a')) {
-                // Skip this mediaItem and continue to the next
-                return;
-            }
-
-            const trimmedText = mediaItem.textContent.trim();
-
-            if (trimmedText === 'JP-18+') {
-                mediaItem.style.fontWeight = 'bold';
-                mediaItem.style.fontFamily = "'Georgia', serif";
-            } else if (timeRegexWithHoursAndMinutes.test(trimmedText)) {
-                const match = trimmedText.match(timeRegexWithHoursAndMinutes);
-                const hours = match[1];
-                const minutes = match[2];
-
-                // Change the text to the desired format with hours and minutes
-                mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时${minutes}分  •`;
-                //mediaItem.classList.add('mediaInfoItem-border');
-
-            } else if (timeRegexHoursOnly.test(trimmedText)) {
-                const match = trimmedText.match(timeRegexHoursOnly);
-                const hours = match[1];
-
-                // Change the text to the desired format with only hours
-                mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时  •`;
-                //mediaItem.classList.add('mediaInfoItem-border');
-
-            } else if (timeRegexMinutesOnly.test(trimmedText)) {
-                const match = trimmedText.match(timeRegexMinutesOnly);
-                const minutes = match[1];
-
-                // Change the text to the desired format with only minutes
-                mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${minutes}分  •`;
-                //mediaItem.classList.add('mediaInfoItem-border');
-            } else if (['endsAt', 'mediaInfoCriticRating'].some(className => mediaItem.classList.contains(className))) {
-                mediaItem.style.display = 'none';
-            } else if (/^\d{4}$/.test(trimmedText)) {
-                let resolutionLabel;
-
-                if (item.Height >= 4096) {
-                    resolutionLabel = "8K";
-                } else if (item.Height >= 2048) {
-                    resolutionLabel = "4K";
-                } else if (item.Height >= 1440) {
-                    resolutionLabel = "2K";
-                } else if (item.Height >= 1080) {
-                    resolutionLabel = "FHD";
-                } else if (item.Height >= 720) {
-                    resolutionLabel = "HD";
-                } else {
-                    resolutionLabel = item.Height + 'p'; // Default to the height in 'p'
-                }
-
-                mediaItem.textContent = resolutionLabel;
-
-                // Apply some font styling to the mediaItem element
-                mediaItem.style.fontFamily = "'Georgia', serif";  // Nicer font family
-                mediaItem.style.fontWeight = "bold";                 // Bold text
-
-                mediaItem.classList.add('mediaInfoItem-border');
-
-                let nextSibling = mediaItem.nextElementSibling; // Get the next sibling element
-
-                if (nextSibling && nextSibling.nextElementSibling) {
-                    // Insert mediaItem after its next sibling
-                    mediaItem.parentNode.insertBefore(mediaItem, nextSibling.nextElementSibling);
-                } else {
-                    // If there's no further sibling, append mediaItem to the end
-                    mediaItem.parentNode.appendChild(mediaItem);
-                }
-
-            } else if (mediaItem.classList.contains('starRatingContainer')) {
-
-                // Extract the rating number
-                let match = trimmedText.match(/\d+(\.\d+)?/);
-                if (match) {
-                    let rating = parseFloat(match[0]);
-
-                    // Adjust the rating if it's greater than 5
-                    if (rating > 5) {
-                        rating = rating / 2;
-                    }
-
-                    // Ensure the number of stars does not exceed 5
-                    let fullStars = Math.min(Math.floor(rating), 5);
-
-                    // Generate the stars with reduced space
-                    let starsHTML = '';
-                    for (let i = 0; i < fullStars; i++) {
-                        // Apply negative margin-right only to stars that are not the last one
-                        let margin = (i < fullStars - 1) ? '-5px' : '0';
-                        starsHTML += `<i class="md-icon md-icon-fill starIcon" style="margin-right: ${margin};"></i>`;
-                    }
-
-                    // Replace the content with the new format
-                    mediaItem.innerHTML = `<span style="font-weight: bold;">评分</span>:${starsHTML} ${rating}分  •`;
-                } else {
-                    console.warn('No valid rating number found in the mediaItem.');
-                }
-            }
-        });
-    }
-
-    function tagInsert(mediaInfoItem) {
-        const tagItems = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .itemTags");
-        const tagClones = tagItems.cloneNode(true);
-        // Remove the existing classes
-        tagClones.className = 'mediaInfoItem';
-        tagClones.style.marginTop = '';
-        tagClones.style.marginBottom = '';
-
-
-        // Set the desired inline styles
-        //tagClones.style.whiteSpace = 'normal';
-        mediaInfoItem.insertAdjacentElement('afterend', tagClones);
-        mediaInfoStyle(tagClones);
-    }
+    
 
     function javdbTitle() {
         if (!isJP18() || !fetchJavDbFlag || item.Type == 'BoxSet' || item.Type == 'Person') return
@@ -305,54 +161,32 @@
 
         if (OS_current == 'iphone' || OS_current == 'android') return
 
-        const noNumCode = code.replace(/^\d+(?=[A-Za-z])/, '');
-
-        const newLinks = [];
-
-        newLinks.push(createNewLinkElement('搜索 javdb.com', 'pink', `https://javdb.com/search?q=${code}&f=all`, 'javdb'));
-        newLinks.push(createNewLinkElement('搜索 javbus.com', 'red', `https://www.javbus.com/${code}`, 'javbus'));
-        newLinks.push(createNewLinkElement('搜索 javlibrary.com', 'rgb(191, 96, 166)', `https://www.javlibrary.com/cn/vl_searchbyid.php?keyword=${code}`, 'javlibrary'));
-
-
-        if (item.Genres.includes("无码")) {
-            if (/^n\d{4}$/.test(code)) {
-                newLinks.push(createNewLinkElement('搜索 tokyohot', 'red', 'https://my.tokyo-hot.com/product/?q=' + code.toLowerCase() + '&x=0&y=0', 'tokyohot'));
-            } else if (/^\d+-\d+$/.test(code)) {
-                newLinks.push(createNewLinkElement('搜索 caribbean', 'green', 'https://www.caribbeancom.com/moviepages/' + code.toLowerCase() + '/index.html', 'caribbean'));
-            } else if (/^\d+_\d+$/.test(code)) {
-                newLinks.push(createNewLinkElement('搜索 1pondo', 'rgb(230, 95, 167)', 'https://www.1pondo.tv/movies/' + code.toLowerCase() + '/', '1pondo'));
-            } else if (code.toLowerCase().includes('heyzo')) {
-                /*
-                const extractBetweenTildes = str => str ? (str.match(/～(.*?)～/) || [str, str])[1] : null;
-                const originalTitle = getPartAfter(item.OriginalTitle, ' ');
-                const heyzoTitle = extractBetweenTildes(originalTitle);
-                newLinks.push(createNewLinkElement('搜索 heyzo', 'pink', 'https://m.heyzo.com/search/' + heyzoTitle + '/1.html', 'heyzo'));
-                */
-               const heyzoNum = getPartAfter(code, "-");
-               newLinks.push(createNewLinkElement('搜索 heyzo', 'pink', 'https://www.heyzo.com/moviepages/' + heyzoNum + '/index.html', 'heyzo'));
-            } else {
-                newLinks.push(createNewLinkElement('搜索 ave', 'red', 'https://www.aventertainments.com/search_Products.aspx?languageID=1&dept_id=29&keyword=' + code + '&searchby=keyword', 'ave'));
-            }
-
-        } else if (item.Genres.includes("VR")) {
-            newLinks.push(createNewLinkElement('搜索 dmm.co.jp', 'red', 'https://www.dmm.co.jp/digital/videoa/-/list/search/=/device=vr/?searchstr=' + code.toLowerCase().replace("-", "00"), 'dmm'));
-            const modifyCode = (noNumCode.startsWith("DSVR") && /^\D+-\d{1,3}$/.test(code)) ? "3" + code : code;
-            newLinks.push(createNewLinkElement('搜索 jvrlibrary.com', 'lightyellow', `https://jvrlibrary.com/jvr?id=` + modifyCode, 'jvrlibrary'));
-        } else {
-            newLinks.push(createNewLinkElement('搜索 7mmtv.sx', 'rgb(225, 125, 190)', `https://7mmtv.sx/zh/searchform_search/all/index.html?search_keyword=${code}&search_type=searchall&op=search`, '7mmtv'));
-            newLinks.push(createNewLinkElement('搜索 dmm.co.jp', 'red', 'https://www.dmm.co.jp/mono/-/search/=/searchstr=' + code.toLowerCase() + '/', 'dmm'));
-            newLinks.push(createNewLinkElement('搜索 javsubtitled.com', 'rgb(149, 221, 49)', 'https://javsubtitled.com/zh/search?keywords=' + code, 'javsubtitled'));
-        }
-
-        if (!viewnode.querySelector("div[is='emby-scroller']:not(.hide) .btnPlayTrailer:not(.hide)")) {
-            newLinks.push(createNewLinkElement('搜索 javtrailers', 'red', 'https://javtrailers.com/search/' + noNumCode, 'javtrailers'));
-        }
-
-        newLinks.push(createNewLinkElement('搜索 subtitlecat.com', 'rgb(255, 191, 54)', `https://www.subtitlecat.com/index.php?search=` + noNumCode, 'subtitlecat'));
-
+        const newLinks = createLinks(code);
+        
         let itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
         if (itemsContainer) {
-            let mediaInfoItem = itemsContainer.querySelector('.mediaInfoItem[style="white-space:normal;"]');
+            handleMediaInfo(itemsContainer, newLinks);
+        } else {
+            let playMutation = new MutationObserver((mutations, observer) => {
+                let updatedContainer = viewnode.querySelector(
+                    "div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)"
+                );
+
+                if (updatedContainer) {
+                    observer.disconnect();
+                    handleMediaInfo(updatedContainer, newLinks);
+                }
+            });
+
+            playMutation.observe(viewnode.querySelector(".detailTextContainer"), {
+                childList: true,
+                subtree: true,
+                characterData: true,
+            });
+        }
+
+        function handleMediaInfo(container, newLinks) {
+            const mediaInfoItem = container.querySelector('.mediaInfoItem[style="white-space:normal;"]');
             if (mediaInfoItem) {
                 addNewLinks(mediaInfoItem, newLinks);
                 mediaInfoStyle(mediaInfoItem);
@@ -360,29 +194,229 @@
                 //tagInsert(mediaInfoItem);
                 moveTopDown();
             }
-        } else {
-            paly_mutation = new MutationObserver(function () {
-                let itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
-                if (itemsContainer) {
-                    let mediaInfoItem = itemsContainer.querySelector('.mediaInfoItem[style="white-space:normal;"]');
-                    if (mediaInfoItem) {
-                        paly_mutation.disconnect();
-                        addNewLinks(mediaInfoItem, newLinks);
-                        mediaInfoStyle(mediaInfoItem);
-                        timeLength();
-                        //tagInsert(mediaInfoItem);
-                        moveTopDown();
+        }
+
+        function createLinks(code) {
+            const noNumCode = code.replace(/^\d+(?=[A-Za-z])/, '');
+
+            const newLinks = [];
+
+            newLinks.push(createNewLinkElement('搜索 javdb.com', 'pink', getUrl(item.Overview, "===== 外部链接 =====", "JavDb") || `https://javdb.com/search?q=${noNumCode}&f=all`, 'javdb'));
+            newLinks.push(createNewLinkElement('搜索 javbus.com', 'red', `https://www.javbus.com/${code}`, 'javbus'));
+            newLinks.push(createNewLinkElement('搜索 javlibrary.com', 'rgb(191, 96, 166)', `https://www.javlibrary.com/cn/vl_searchbyid.php?keyword=${code}`, 'javlibrary'));
+            if (noNumCode != code) {
+                newLinks.push(createNewLinkElement('搜索 mgstage.com', 'red', `https://www.mgstage.com/search/cSearch.php?search_word=${code}&x=0&y=0&search_shop_id=&type=top`, 'prestige'));
+            }
+
+            if (item.Genres.includes("无码")) {
+                if (/^n\d{4}$/.test(code)) {
+                    newLinks.push(createNewLinkElement('搜索 tokyohot', 'red', 'https://my.tokyo-hot.com/product/?q=' + code.toLowerCase() + '&x=0&y=0', 'tokyohot'));
+                } else if (/^\d+-\d+$/.test(code)) {
+                    newLinks.push(createNewLinkElement('搜索 caribbean', 'green', 'https://www.caribbeancom.com/moviepages/' + code.toLowerCase() + '/index.html', 'caribbean'));
+                } else if (/^\d+_\d+$/.test(code)) {
+                    newLinks.push(createNewLinkElement('搜索 1pondo', 'rgb(230, 95, 167)', 'https://www.1pondo.tv/movies/' + code.toLowerCase() + '/', '1pondo'));
+                } else if (code.toLowerCase().includes('heyzo')) {
+                    const heyzoNum = getPartAfter(code, "-");
+                    newLinks.push(createNewLinkElement('搜索 heyzo', 'pink', 'https://www.heyzo.com/moviepages/' + heyzoNum + '/index.html', 'heyzo'));
+                } else {
+                    newLinks.push(createNewLinkElement('搜索 ave', 'red', 'https://www.aventertainments.com/search_Products.aspx?languageID=1&dept_id=29&keyword=' + code + '&searchby=keyword', 'ave'));
+                }
+
+            } else if (item.Genres.includes("VR")) {
+                newLinks.push(createNewLinkElement('搜索 dmm.co.jp', 'red', 'https://www.dmm.co.jp/digital/videoa/-/list/search/=/device=vr/?searchstr=' + updateCode(code), 'dmm'));
+                const modifyCode = (noNumCode.startsWith("DSVR") && /^\D+-\d{1,3}$/.test(code)) ? "3" + code : code;
+                newLinks.push(createNewLinkElement('搜索 jvrlibrary.com', 'lightyellow', `https://jvrlibrary.com/jvr?id=` + modifyCode, 'jvrlibrary'));
+            } else {
+                newLinks.push(createNewLinkElement('搜索 7mmtv.sx', 'rgb(225, 125, 190)', `https://7mmtv.sx/zh/searchform_search/all/index.html?search_keyword=${code}&search_type=searchall&op=search`, '7mmtv'));
+                newLinks.push(createNewLinkElement('搜索 dmm.co.jp', 'red', 'https://www.dmm.co.jp/mono/-/search/=/searchstr=' + code.toLowerCase() + '/', 'dmm'));
+                newLinks.push(createNewLinkElement('搜索 javsubtitled.com', 'rgb(149, 221, 49)', 'https://javsubtitled.com/zh/search?keywords=' + code, 'javsubtitled'));
+            }
+
+            if (!viewnode.querySelector("div[is='emby-scroller']:not(.hide) .btnPlayTrailer:not(.hide)")) {
+                newLinks.push(createNewLinkElement('搜索 javtrailers', 'red', 'https://javtrailers.com/search/' + noNumCode, 'javtrailers'));
+            }
+
+            newLinks.push(createNewLinkElement('搜索 subtitlecat.com', 'rgb(255, 191, 54)', `https://www.subtitlecat.com/index.php?search=` + noNumCode, 'subtitlecat'));
+
+            return newLinks;
+        }
+
+        function moveTopDown() {
+            const topMain = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .topDetailsMain");
+
+            if (topMain) {
+                // Check if already adjusted
+                if (topMain.dataset.movedDown === "true") {
+                    return; // Exit if already moved
+                }
+
+                const distanceFromTop = topMain.getBoundingClientRect().top + window.scrollY;
+                const height = topMain.offsetHeight;
+                const moveDownBy = window.innerHeight - height - distanceFromTop;
+
+                topMain.style.paddingTop = `${moveDownBy}px`;
+
+                // Mark as adjusted
+                topMain.dataset.movedDown = "true";
+            }
+        }
+
+        function tagInsert(mediaInfoItem) {
+            const tagItems = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .itemTags");
+            const tagClones = tagItems.cloneNode(true);
+            // Remove the existing classes
+            tagClones.className = 'mediaInfoItem';
+            tagClones.style.marginTop = '';
+            tagClones.style.marginBottom = '';
+
+
+            // Set the desired inline styles
+            //tagClones.style.whiteSpace = 'normal';
+            mediaInfoItem.insertAdjacentElement('afterend', tagClones);
+            mediaInfoStyle(tagClones);
+        }
+
+        function timeLength() {
+            // Select all visible div elements with the class "mediaInfoItem" inside a specific container
+            const mediaInfoItems = viewnode.querySelectorAll("div[is='emby-scroller']:not(.hide) .mediaInfoItem");
+
+            // Regular expressions to match "xxh xxm", "xxh", and "xxm"
+            const timeRegexWithHoursAndMinutes = /\b(\d{1,2})h\s*(\d{1,2})m\b/;
+            const timeRegexHoursOnly = /\b(\d{1,2})h\b/;
+            const timeRegexMinutesOnly = /\b(\d{1,2})m\b/;
+
+            // Loop through the elements to find the one that matches any of the regex patterns
+            mediaInfoItems.forEach((mediaItem) => {
+                if (mediaItem.querySelector('a')) {
+                    // Skip this mediaItem and continue to the next
+                    return;
+                }
+
+                const trimmedText = mediaItem.textContent.trim();
+
+                if (trimmedText === 'JP-18+') {
+                    mediaItem.style.fontWeight = 'bold';
+                    mediaItem.style.fontFamily = "'Georgia', serif";
+                } else if (timeRegexWithHoursAndMinutes.test(trimmedText)) {
+                    const match = trimmedText.match(timeRegexWithHoursAndMinutes);
+                    const hours = match[1];
+                    const minutes = match[2];
+
+                    // Change the text to the desired format with hours and minutes
+                    mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时${minutes}分  •`;
+                    //mediaItem.classList.add('mediaInfoItem-border');
+
+                } else if (timeRegexHoursOnly.test(trimmedText)) {
+                    const match = trimmedText.match(timeRegexHoursOnly);
+                    const hours = match[1];
+
+                    // Change the text to the desired format with only hours
+                    mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时  •`;
+                    //mediaItem.classList.add('mediaInfoItem-border');
+
+                } else if (timeRegexMinutesOnly.test(trimmedText)) {
+                    const match = trimmedText.match(timeRegexMinutesOnly);
+                    const minutes = match[1];
+
+                    // Change the text to the desired format with only minutes
+                    mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${minutes}分  •`;
+                    //mediaItem.classList.add('mediaInfoItem-border');
+                } else if (['endsAt', 'mediaInfoCriticRating'].some(className => mediaItem.classList.contains(className))) {
+                    mediaItem.style.display = 'none';
+                } else if (/^\d{4}$/.test(trimmedText)) {
+                    let resolutionLabel;
+
+                    if (item.Height >= 4096) {
+                        resolutionLabel = "8K";
+                    } else if (item.Height >= 2048) {
+                        resolutionLabel = "4K";
+                    } else if (item.Height >= 1440) {
+                        resolutionLabel = "2K";
+                    } else if (item.Height >= 1080) {
+                        resolutionLabel = "FHD";
+                    } else if (item.Height >= 720) {
+                        resolutionLabel = "HD";
+                    } else {
+                        resolutionLabel = item.Height + 'p'; // Default to the height in 'p'
+                    }
+
+                    mediaItem.textContent = resolutionLabel;
+
+                    // Apply some font styling to the mediaItem element
+                    mediaItem.style.fontFamily = "'Georgia', serif";  // Nicer font family
+                    mediaItem.style.fontWeight = "bold";                 // Bold text
+
+                    mediaItem.classList.add('mediaInfoItem-border');
+
+                    let nextSibling = mediaItem.nextElementSibling; // Get the next sibling element
+
+                    if (nextSibling && nextSibling.nextElementSibling) {
+                        // Insert mediaItem after its next sibling
+                        mediaItem.parentNode.insertBefore(mediaItem, nextSibling.nextElementSibling);
+                    } else {
+                        // If there's no further sibling, append mediaItem to the end
+                        mediaItem.parentNode.appendChild(mediaItem);
+                    }
+
+                } else if (mediaItem.classList.contains('starRatingContainer')) {
+
+                    // Extract the rating number
+                    let match = trimmedText.match(/\d+(\.\d+)?/);
+                    if (match) {
+                        let rating = parseFloat(match[0]);
+
+                        // Adjust the rating if it's greater than 5
+                        if (rating > 5) {
+                            rating = rating / 2;
+                        }
+
+                        // Ensure the number of stars does not exceed 5
+                        let fullStars = Math.min(Math.floor(rating), 5);
+
+                        // Generate the stars with reduced space
+                        let starsHTML = '';
+                        for (let i = 0; i < fullStars; i++) {
+                            // Apply negative margin-right only to stars that are not the last one
+                            let margin = (i < fullStars - 1) ? '-5px' : '0';
+                            starsHTML += `<i class="md-icon md-icon-fill starIcon" style="margin-right: ${margin};"></i>`;
+                        }
+
+                        // Replace the content with the new format
+                        mediaItem.innerHTML = `<span style="font-weight: bold;">评分</span>:${starsHTML} ${rating}分  •`;
+                    } else {
+                        console.warn('No valid rating number found in the mediaItem.');
                     }
                 }
             });
-            paly_mutation.observe(viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer"), {
-                childList: true,
-                characterData: true,
-                subtree: true,
-            });
+        }
+
+        function updateCode(code) {
+            // Convert the code to lowercase
+            code = code.toLowerCase();
+
+            // Use a regular expression to match the pattern: "-" followed by digits
+            const regex = /-(\d+)/;
+            const match = code.match(regex);
+
+            if (match) {
+                // Extract the digits after the "-"
+                const digits = match[1];
+
+                // Check the number of digits
+                if (digits.length === 4) {
+                    // If 4 digits, replace "-" with "0"
+                    code = code.replace(regex, `0${digits}`);
+                } else if (digits.length >= 1 && digits.length <= 3) {
+                    // If 1-3 digits, replace "-" with "00"
+                    code = code.replace(regex, `00${digits}`);
+                }
+            }
+
+            return code;
         }
     }
 
+    
     function mediaInfoStyle(mediaInfoItem) {
         // Apply the CSS class to the mediaInfoItem
         mediaInfoItem.classList.add('media-info-item');
@@ -440,7 +474,7 @@
 
     function buttonInit() {
         //removeExisting('embyCopyUrl');
-        if (OS_current != 'windows' || item.Type == 'Person') return;
+        if (OS_current != 'windows' && OS_current != 'macOS' || item.Type == 'Person') return;
         const itemPath = translatePath(item.Path);
         const itemFolderPath = itemPath.substring(0, itemPath.lastIndexOf('\\'));
 
@@ -502,22 +536,123 @@
         });
     }
 
-    // Function to fetch JSON data from a URL
-    /*
-    async function fetchJsonData(url) {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+    async function reviewButtonInit() {
+        if (!isJP18() || !fetchJavDbFlag || item.Type === 'Person') return;
+
+        const mainDetailButtons = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .mainDetailButtons");
+
+        const iconJavDB = `<img height="24" src="data:image/x-icon;base64,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zf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs2pZgDMD3sA6Tp7AOjvegDn/3kA5/94AOb/dwDm/3YA5f91AOX/dADk/3MA5P9yAOT/cgDj/3EA4/9wAOP/bwDi/24A4v9uAOH/bQDh/20A4P9sAOD/agDe/2gA3P9nAdn/ZgHX/2UB1f9lAtL/ZQLQ/2QCzv9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs7zZQDORHwA6Yx8AOj/ewDo/3oA5/95AOf/eADm/3cA5v92AOb/dQDl/3UA5f9zAOT/cwDk/3IA5P9xAOP/cADj/3AA4v9vAOL/bgDh/24A4f9tAOD/bADg/2oA3/9pAN3/ZwHa/2cB1/9mAdX/ZQLT/2UC0P9kAs7/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALMnH4A6ch9AOj/fADo/3sA6P96AOf/eQDn/3gA5/93AOb/dgDm/3UA5f91AOX/cwDk/3MA5P9yAOP/cQDj/3AA4/9wAOL/bwDi/24A4f9tAOH/bQDg/2wA4P9rAN//aQDc/2gB2v9mAdf/ZgHV/2UC0/9lAtD/ZALO/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/YwHM2IAA6t9+AOn/fgDo/3wA6P97AOj/ewDn/3kA5/94AOf/eADm/3YA5v91AOX/dQDl/3MA5P9zAOT/cgDj/3AD3f97Htr/hTPb/4k72/+MQdz/jkbc/5BI3P+PSdv/j0nb/41J2f+MSdf/i0nW/4lG1P+GQtH/gjzP/341zf9xIMn/YwXI/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZALN/2QCzf9kAs3/ZAHN8IEA6uJ/AOr/fwDp/34A6f98AOj/fADo/3sA6P95AOf/eQDn/3gA5v92AOb/dgDl/3UA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" />`;
+
+        const buttonhtml = createButtonHtml('injectReviews', '加载javdb.com短评', iconJavDB, '短评');
+
+        mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml);
+        const reviewButton = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #injectReviews");
+
+        reviewButton.addEventListener('click', async () => {
+            showToast({
+                text: 'javdb短评=>搜索中。。。',
+                icon: `<span class="material-symbols-outlined">mystery</span>`
+            });
+            reviewButton.style.color = 'green';
+            reviewButton.classList.add('melt-away');
+            setTimeout(() => {
+                reviewButton.style.display = 'none';
+                
+            }, 1000);
+            const reviews = await fetchDbReviews();
+            addReviews(reviews);
+        });
+
+        async function addReviews(reviews) {
+            if (reviews.length == 0) {
+                showToast({
+                    text: `暂无短评`,
+                    icon: `<span class="material-symbols-outlined">comments_disabled</span>`,
+                });
+                return;
             }
-            const jsonData = await response.json();
-            return jsonData;
-        } catch (error) {
-            console.error('Error fetching JSON data:', error);
-            return null;
+            const detailContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailMainContainer .detailTextContainer");      
+
+            const reviewhtml = `<div class="verticalFieldItem">
+                                    <h3 class="readOnlyContent">短评（来自JavDB）</h3>
+                                    ${createReviewContent(reviews)}
+                                </div>`;
+            
+            detailContainer.insertAdjacentHTML('beforeend', reviewhtml);
+
+            function createReviewContent(reviews) {
+                return reviews.map(review => 
+                    `<h4 class="secondaryText readOnlyContent">- ${review}</h4>`
+                ).join('');
+            }
+        }
+
+        async function fetchDbReviews() {
+            let movieUrl = getUrl(item.Overview, "===== 外部链接 =====", "JavDb");
+            if (!movieUrl) {
+                const code = getPartBefore(item.Name, " ");
+                const noNumCode = code.replace(/^\d+(?=[A-Za-z])/, '').toLowerCase();
+                const HOST = "https://javdb.com";
+                const url = `${HOST}/search?q=${noNumCode}&f=all`;
+
+                let searchData = await request(url);
+                if (searchData.length === 0) return [];
+
+                const parser = new DOMParser();
+
+                let parsedHtml = parser.parseFromString(searchData, 'text/html');
+                const firstItem = parsedHtml.querySelector(".movie-list .item");
+
+                if (!firstItem) {
+                    showToast({
+                        text: `短评加载失败`,
+                        icon: `<span class="material-symbols-outlined">search_off</span>`,
+                    });
+                    return [];
+                }
+
+                const href = firstItem.querySelector("a.box")?.getAttribute("href"); // Get href attribute
+                
+                const titleElement = firstItem.querySelector(".video-title strong"); // Get the strong tag inside video-title
+                const title = titleElement ? titleElement.textContent.trim().toLowerCase() : null; // Extract text content
+                if (title.includes(noNumCode) || noNumCode.includes(title)) {
+                    movieUrl = `${HOST}${href}`;
+                    addLink(item.Overview || '', "<br>===== 外部链接 =====", "JavDb", movieUrl);
+                    const tagElement = firstItem.querySelector(".tags .tag");
+                    const tagText = tagElement ? tagElement.textContent.trim() : null;
+                    if (tagText === '含中字磁鏈' || tagText === 'CnSub DL' && !item.Genres.includes("中文字幕")) {
+                        showToast({
+                            text: 'javdb含有中文字幕磁链',
+                            icon: `<span class="material-symbols-outlined">subtitles</span>`
+                        });
+                    }
+                }
+            }
+
+            if (movieUrl) {
+                const reviewUrl = `${movieUrl}/reviews/lastest`;
+
+                let searchData = await request(reviewUrl);
+                const parser = new DOMParser();
+                let parsedHtml = parser.parseFromString(searchData, 'text/html');
+
+                let reviews = [];
+
+                parsedHtml.querySelectorAll('.review-item p').forEach(p => {
+                    reviews.push(p.textContent.trim());
+                });
+
+                return reviews;
+            } else {
+                showToast({
+                    text: `短评加载失败`,
+                    icon: `<span class="material-symbols-outlined">search_off</span>`,
+                });
+                return [];
+            }         
         }
     }
-    */
+
 
 
     // Function to copy text to clipboard
@@ -637,7 +772,7 @@
 
     function createItemContainer(itemInfo, increment) {
         let distance, imgUrl, typeWord;
-        if (isTouchDevice() || ApiClient.getCurrentUserId() != adminUserId) {
+        if (isTouchDevice()) {
             distance = OS_current === 'ipad' ? 182 : OS_current === 'iphone' ? 120 : 200;
             imgUrl = ApiClient.getImageUrl(itemInfo.Id, { type: "Primary", tag: itemInfo.ImageTags.Primary, maxHeight: 330, maxWidth: 220 });
             typeWord = 'portrait';
@@ -1326,7 +1461,7 @@
     }
 
     async function addHoverEffect(slider) {
-        if (isTouchDevice() || ApiClient.getCurrentUserId() != adminUserId) return
+        if (isTouchDevice()) return
 
         const portraitCards = slider.querySelectorAll('.virtualScrollItem');
         if (!portraitCards) return;
@@ -1495,8 +1630,6 @@
                 child.style.left = `${child.previousElementSibling ? child.previousElementSibling.offsetLeft + totalCardWidth : 0}px`;
             }
             
-        } else {
-            console.warn("No children with the portraitCard class found in scrollerContainer!");
         }
     }
 
@@ -1557,6 +1690,7 @@
 
         if (javdbSeries.length > 0) {
             if (item.Type === 'BoxSet') {
+                addLink(item.Overview || '', "<br>===== 外部链接 =====", "JavDb", seriesUrl);
                 if (item.Name != javdbSeries) {
                     item.Name = javdbSeries;
                     showToast({
@@ -1683,21 +1817,6 @@
     }
 
     function addPrefix(input) {
-        const prefixDic = { 
-            "KIWVR": "408",
-            "MAAN": "300",
-            "DANDY": "104",
-            "STCV": "529",
-            "LUXU": "259",
-            "SUKE": "428",
-            "PAK": "483",
-            "MIUM": "300",
-            "NTK": "300",
-            "JAC": "390",
-            "SUKE": "428",
-            "TEN": "459",
-            "INSTV": "413"
-        };
 
         // Iterate over the keys in the prefix dictionary
         for (const key in prefixDic) {
@@ -2005,6 +2124,127 @@
         return null;
     }
 
+    function addLink(text, startLine, newKey, newValue) {
+        if (!startLine || !newKey || !newValue) {
+            console.error("Invalid input. Make sure text, startLine, newKey, and newValue are provided.");
+            return;
+        }
+
+        // Split the text into lines
+        var lines = text.trim().split('<br>');
+
+        // Find the section header
+        var startIndex = lines.findIndex(line => line.includes(startLine));
+
+        if (startIndex === -1) {
+            // Section header doesn't exist; add it at the bottom
+            lines.push(startLine);
+            startIndex = lines.length - 1; // Update the index to the new header position
+        }
+
+        // Check if the newKey already exists in the section
+        for (let i = startIndex + 1; i < lines.length; i++) {
+            if (lines[i].trim() === '' || lines[i].includes('=====')) {
+                break; // Stop checking at the end of the section
+            }
+            if (lines[i].startsWith(`${newKey}:`)) {
+                console.log(`The key "${newKey}" already exists. Skipping addition.`);
+                return; // Return original text without changes
+            }
+        }
+
+        // Find the end of the section
+        var insertIndex = startIndex + 1;
+        while (insertIndex < lines.length && lines[insertIndex].trim() !== '' && !lines[insertIndex].includes('=====')) {
+            insertIndex++;
+        }
+
+        // Insert the new link at the bottom of the section
+        lines.splice(insertIndex, 0, `${newKey}: ${newValue}`);
+
+        // Join the lines back together
+        const newOverview = lines.join('<br>');
+        item.Overview = newOverview;
+        ApiClient.updateItem(item);
+        setTimeout(() => {
+            javdbTitle();
+        }, 1000);
+        
+    }
+
+    function injectLinks() {
+        if (!isJP18() || !fetchJavDbFlag || item.Type === 'Person') return;
+
+        const aboutSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .aboutSection");
+        const linksSection = aboutSection.querySelector(".linksSection");
+        if (!linksSection) return
+        const itemLinks = linksSection.querySelector('.itemLinks');
+        const links = extractLinks(item.Overview || '', '===== 外部链接 =====');
+        if (Object.keys(links).length === 0) return
+        const linkKeys = Object.keys(links);
+        aboutSection.classList.remove('hide');
+        linksSection.classList.remove('hide');
+        linkKeys.forEach(function (key, index) {
+            var value = links[key];
+
+            // Check if key is 'TheMovieDb' and if itemLinks already contains 'MovieDb'
+            if (key === 'TheMovieDb' && Array.from(itemLinks.children).some(a => a.textContent.trim() === 'MovieDb')) {
+                return; // Skip inserting 'TheMovieDb'
+            }
+
+            // Create the anchor element
+            var linkButton = document.createElement("a");
+            linkButton.setAttribute("is", "emby-linkbutton");
+            linkButton.setAttribute("class", "button-link button-link-color-inherit button-link-fontweight-inherit nobackdropfilter emby-button");
+            linkButton.setAttribute("href", value);
+            linkButton.setAttribute("target", "_blank");
+            //linkButton.style.color = 'yellow'; 
+            if (index === 0 && (itemLinks.children.length == 0)) {
+                linkButton.textContent = key;
+            } else {
+                linkButton.textContent = key + ',';
+            }
+
+            // Insert the anchor element at the beginning of itemLinks
+            itemLinks.insertAdjacentElement('afterbegin', linkButton);
+        });
+
+        function extractLinks(text, startLine) {
+            if (!text || text.length == 0 || !text.includes('===== 外部链接 =====')) {
+                return {};
+            }
+
+            // Split the text into lines
+            var lines = text.trim().split('<br>');
+
+            // Object to store the links
+            var links = {};
+
+            // Flag to indicate when to start extracting links
+            var canExtract = false;
+
+            // Iterate through each line and extract the link if extraction is allowed
+            lines.forEach(function (line) {
+                if (canExtract) {
+                    // Split the line by ":"
+                    var parts = line.split(':');
+
+                    // Extract the key and value (link)
+                    var key = parts[0].trim();
+                    var value = parts.slice(1).join(':').trim();
+
+                    // Store the key-value pair in the links object
+                    links[key] = value;
+                } else if (line.includes(startLine)) {
+                    // Set the flag to start extracting links from the next line
+                    canExtract = true;
+                }
+            });
+
+            return links;
+        }
+    }
+
     function waitForRandomTime() {
         const minWaitTime = 500;
         const maxWaitTime = 1500;
@@ -2023,14 +2263,21 @@
         const movies = [];
         let seriesUrl = '';
         let javdbSeries = '';
+        let javdbData = '', parsedHtml = '';
         const HOST = "https://javdb.com";
         const url = `${HOST}/search?q=${seriesName}&f=series`;
-        let javdbData = await request(url);
-        if (javdbData.length > 0) {
-            const parser = new DOMParser();
+        const parser = new DOMParser();
+
+        if (item.Type === 'BoxSet') {
+            seriesUrl = getUrl(item.Overview, "===== 外部链接 =====", "JavDb");
+        }
+
+        if (seriesUrl.length === 0) {
+            javdbData = await request(url);
+            if (javdbData.length === 0) return [movies, seriesUrl, javdbSeries];
 
             // Parse the HTML data string
-            let parsedHtml = parser.parseFromString(javdbData, 'text/html');
+            parsedHtml = parser.parseFromString(javdbData, 'text/html');
             const seriesContainer = parsedHtml.getElementById('series');
 
             // Check if the container exists
@@ -2055,58 +2302,60 @@
                     const firstHref = firstAnchor.getAttribute('href');
                     seriesUrl = `${HOST}${firstHref}`;
                     await waitForRandomTime();
-                    javdbData = await request(seriesUrl);
-
-                    if (javdbData) {
-                        const itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
-                        if (itemsContainer && OS_current != 'iphone' && OS_current != 'android') {
-                            const mediaInfoItem = itemsContainer.querySelectorAll('.mediaInfoItem:has(a)')[0];
-                            if (mediaInfoItem) {
-                                if (item.Type != 'BoxSet') {
-                                    addNewLinks(mediaInfoItem, [createNewLinkElement(`跳转至javdb ${seriesName}`, '#ADD8E6', seriesUrl, seriesName)]);
-                                } 
-                                mediaInfoStyle(mediaInfoItem);
-                            }
-                        }
-
-                        parsedHtml = parser.parseFromString(javdbData, 'text/html');
-
-                        const paginationList = parsedHtml.querySelector('.pagination-list');
-                        if (paginationList && item.Type === 'BoxSet') {
-                            // Initialize an array to store page links
-                            const pageLinks = [];
-
-                            // Find all the page links within the pagination list
-                            const links = paginationList.querySelectorAll('a.pagination-link');
-
-                            // Iterate over each page link and extract the href attribute
-                            links.forEach(link => {
-                                const href = `${HOST}${link.getAttribute('href')}`;
-                                // Add the href to the pageLinks array
-                                pageLinks.push(href);
-                            });
-                            //seriesPageLinks = pageLinks;
-
-                            for (const link of pageLinks) {
-                                if (link !== seriesUrl) {
-                                    await waitForRandomTime();
-                                    javdbData = await request(link);
-                                    if (javdbData.length > 0) {
-                                        let parsedHtmlTemp = parser.parseFromString(javdbData, 'text/html');
-                                        let DBitemsTemp = parsedHtmlTemp.querySelectorAll('.movie-list .item');
-                                        arrangeDBitems(DBitemsTemp, movies);
-                                    }
-                                }
-                            }   
-                        }
-                        // Iterate over each item within the "movie-list"
-                        const DBitems = parsedHtml.querySelectorAll('.movie-list .item');
-                        arrangeDBitems(DBitems, movies);
-                    }
-
                 }
             }
         }
+        
+        if (seriesUrl.length === 0) return [movies, seriesUrl, javdbSeries];
+
+        javdbData = await request(seriesUrl);
+        if (javdbData.length === 0) return [movies, seriesUrl, javdbSeries];
+
+        const itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
+        if (itemsContainer && OS_current != 'iphone' && OS_current != 'android') {
+            const mediaInfoItem = itemsContainer.querySelectorAll('.mediaInfoItem:has(a)')[0];
+            if (mediaInfoItem) {
+                if (item.Type != 'BoxSet') {
+                    addNewLinks(mediaInfoItem, [createNewLinkElement(`跳转至javdb ${seriesName}`, '#ADD8E6', seriesUrl, seriesName)]);
+                } 
+                mediaInfoStyle(mediaInfoItem);
+            }
+        }
+
+        parsedHtml = parser.parseFromString(javdbData, 'text/html');
+
+        const paginationList = parsedHtml.querySelector('.pagination-list');
+        if (paginationList && item.Type === 'BoxSet') {
+            // Initialize an array to store page links
+            const pageLinks = [];
+
+            // Find all the page links within the pagination list
+            const links = paginationList.querySelectorAll('a.pagination-link');
+
+            // Iterate over each page link and extract the href attribute
+            links.forEach(link => {
+                const href = `${HOST}${link.getAttribute('href')}`;
+                // Add the href to the pageLinks array
+                pageLinks.push(href);
+            });
+            //seriesPageLinks = pageLinks;
+
+            for (const link of pageLinks) {
+                if (link !== seriesUrl) {
+                    await waitForRandomTime();
+                    javdbData = await request(link);
+                    if (javdbData.length > 0) {
+                        let parsedHtmlTemp = parser.parseFromString(javdbData, 'text/html');
+                        let DBitemsTemp = parsedHtmlTemp.querySelectorAll('.movie-list .item');
+                        arrangeDBitems(DBitemsTemp, movies);
+                    }
+                }
+            }   
+        }
+        // Iterate over each item within the "movie-list"
+        const DBitems = parsedHtml.querySelectorAll('.movie-list .item');
+        arrangeDBitems(DBitems, movies);
+        
         return [movies, seriesUrl, javdbSeries];  
     }
 
@@ -2280,7 +2529,6 @@
         // Return the original path if no match is found
         return linuxPath;
     }
-
 
 })();
 (function (global, factory) { typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) : typeof define === 'function' && define.amd ? define(['exports'], factory) : (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.OpenCC = {})) })(this, (function (exports) {
