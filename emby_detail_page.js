@@ -2261,7 +2261,7 @@
 
     async function fetchDbSeries(seriesName) {
         const movies = [];
-        let seriesUrl = '';
+        let seriesUrl = null;
         let javdbSeries = '';
         let javdbData = '', parsedHtml = '';
         const HOST = "https://javdb.com";
@@ -2272,7 +2272,7 @@
             seriesUrl = getUrl(item.Overview, "===== 外部链接 =====", "JavDb");
         }
 
-        if (seriesUrl.length === 0) {
+        if (!seriesUrl) {
             javdbData = await request(url);
             if (javdbData.length === 0) return [movies, seriesUrl, javdbSeries];
 
