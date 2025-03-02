@@ -548,20 +548,25 @@
         mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml);
         const reviewButton = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #injectReviews");
 
-        reviewButton.addEventListener('click', async () => {
+        reviewButton.addEventListener('click', handleReviewButtonClick);
+
+        async function handleReviewButtonClick() {
             showToast({
                 text: 'javdb短评=>搜索中。。。',
                 icon: `<span class="material-symbols-outlined">mystery</span>`
             });
+            const reviewButton = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #injectReviews");
+
             reviewButton.style.color = 'green';
             reviewButton.classList.add('melt-away');
+
             setTimeout(() => {
                 reviewButton.style.display = 'none';
-                
             }, 1000);
+
             const reviews = await fetchDbReviews();
             addReviews(reviews);
-        });
+        }
 
         async function addReviews(reviews) {
             if (reviews.length == 0) {
@@ -588,7 +593,19 @@
         }
 
         async function fetchDbReviews() {
-            let movieUrl = getUrl(item.Overview, "===== 外部链接 =====", "JavDb");
+            const cacheKey = `reviews_${item.Id}`;
+            const cachedData = localStorage.getItem(cacheKey);
+            const urlCacheKey = `movieUrl_${item.Id}`;
+            let movieUrl = localStorage.getItem(urlCacheKey);
+            
+
+            if (cachedData && movieUrl) {
+                fetchDbMore(movieUrl);
+                return JSON.parse(cachedData);
+            }
+
+            movieUrl = getUrl(item.Overview, "===== 外部链接 =====", "JavDb");
+            
             if (!movieUrl) {
                 const code = getPartBefore(item.Name, " ");
                 const noNumCode = code.replace(/^\d+(?=[A-Za-z])/, '').toLowerCase();
@@ -603,13 +620,7 @@
                 let parsedHtml = parser.parseFromString(searchData, 'text/html');
                 const firstItem = parsedHtml.querySelector(".movie-list .item");
 
-                if (!firstItem) {
-                    showToast({
-                        text: `短评加载失败`,
-                        icon: `<span class="material-symbols-outlined">search_off</span>`,
-                    });
-                    return [];
-                }
+                if (!firstItem) return [];
 
                 const href = firstItem.querySelector("a.box")?.getAttribute("href"); // Get href attribute
                 
@@ -618,6 +629,7 @@
                 if (title.includes(noNumCode) || noNumCode.includes(title)) {
                     movieUrl = `${HOST}${href}`;
                     addLink(item.Overview || '', "<br>===== 外部链接 =====", "JavDb", movieUrl);
+                    localStorage.setItem(urlCacheKey, JSON.stringify(movieUrl));
                     const tagElement = firstItem.querySelector(".tags .tag");
                     const tagText = tagElement ? tagElement.textContent.trim() : null;
                     if (tagText === '含中字磁鏈' || tagText === 'CnSub DL' && !item.Genres.includes("中文字幕")) {
@@ -630,28 +642,100 @@
             }
 
             if (movieUrl) {
+                fetchDbMore(movieUrl);
                 const reviewUrl = `${movieUrl}/reviews/lastest`;
 
-                let searchData = await request(reviewUrl);
-                const parser = new DOMParser();
-                let parsedHtml = parser.parseFromString(searchData, 'text/html');
+                try {
+                    let searchData = await request(reviewUrl);
+                    const parser = new DOMParser();
+                    let parsedHtml = parser.parseFromString(searchData, 'text/html');
 
-                let reviews = [];
+                    let reviews = [];
+                    parsedHtml.querySelectorAll('.review-item p').forEach(p => {
+                        reviews.push(p.textContent.trim());
+                    });
 
-                parsedHtml.querySelectorAll('.review-item p').forEach(p => {
-                    reviews.push(p.textContent.trim());
-                });
+                    // Save the result in localStorage
+                    localStorage.setItem(cacheKey, JSON.stringify(reviews));
 
-                return reviews;
+                    return reviews;
+                } catch (error) {
+                    console.error("Error fetching reviews:", error);
+                    return [];
+                }
             } else {
                 showToast({
                     text: `短评加载失败`,
                     icon: `<span class="material-symbols-outlined">search_off</span>`,
                 });
                 return [];
-            }         
+            }        
         }
     }
+
+    async function fetchDbMore(url) {
+        const cacheKey = `moreItems_${item.Id}`;
+        const cachedData = localStorage.getItem(cacheKey);
+
+        if (cachedData) {
+            return displayMoreItems(JSON.parse(cachedData));
+        }
+
+        const searchData = await request(url);
+        if (searchData.length === 0) return;
+
+        const parser = new DOMParser();
+        const parsedHtml = parser.parseFromString(searchData, 'text/html');
+        const moreSections = parsedHtml.querySelectorAll('.tile-small');
+        let moreItems = [];
+
+        moreSections.forEach(section => {
+            section.querySelectorAll('.tile-item').forEach(moreItem => {
+                const img = moreItem.querySelector('img');
+                const code = moreItem.querySelector('.video-number');
+                const name = moreItem.querySelector('.video-title');
+
+                if (code) {
+                    const codeText = code.textContent.trim();
+                    if (!moreItems.some(dbitem => dbitem.Code === codeText)) {
+                        moreItems.push({
+                            ImgSrc: img ? img.src : '',
+                            Code: codeText,
+                            Name: name ? name.textContent.trim() : '',
+                            Link: moreItem.getAttribute('href')
+                        });
+                    }
+                }
+            });
+        });
+
+        moreItems = await filterDbMovies(moreItems);
+
+        if (moreItems.length > 0) {
+            // Save the filtered items in localStorage
+            localStorage.setItem(cacheKey, JSON.stringify(moreItems));
+            displayMoreItems(moreItems);
+        }
+
+        function displayMoreItems(moreItems) {
+            let imgHtml = '';
+            for (let i = 0; i < moreItems.length; i++) {
+                imgHtml += createDbContainer(moreItems[i], i);
+            }
+            const slider = createSlider(`更多类似（来自JavDB，共${moreItems.length}部）`, imgHtml);
+            const sliderElement = document.createElement('div');
+            const sliderId = "mySimilarSlider";
+            sliderElement.id = sliderId;
+            sliderElement.innerHTML = slider;
+            const similarSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .similarSection");
+            similarSection.insertAdjacentElement('afterend', sliderElement);
+
+            addResizeListener();
+            adjustCardOffset(`#${sliderId}`, '.actorMoreItemsContainer', '.virtualScrollItem');
+        }
+    }
+
+
 
 
 
@@ -790,6 +874,32 @@
             <div data-id="${itemInfo.Id}" class="virtualScrollItem card ${typeWord}Card card-horiz ${typeWord}Card-horiz card-hoverable card-autoactive" tabindex="0" draggable="false" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
                 <div class="cardBox cardBox-touchzoom cardBox-bottompadded" bis_skin_checked="1">
                     <button onclick="Emby.Page.showItem('${itemInfo.Id}')" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-${typeWord} myCardImage">
+                        <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
+                    </button>
+                    <div class="cardText cardText-first cardText-first-padded" bis_skin_checked="1">
+                        <span title="${name}">${name}</span>
+                    </div>
+                    <div class="cardText cardText-secondary" bis_skin_checked="1">
+                        ${code}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        return itemContainer;
+    }
+
+    function createDbContainer(itemInfo, increment) {
+        const distance = OS_current === 'ipad' ? 182 : OS_current === 'iphone' ? 120 : 200;
+        const imgUrl = itemInfo.ImgSrc;
+        const code = itemInfo.Code;
+        const name = itemInfo.Name;
+        const link = `https://javdb.com${itemInfo.Link}?locale=zh`;
+
+        const itemContainer = `
+            <div  class="virtualScrollItem card portraitCard card-horiz portraitCard-horiz card-hoverable card-autoactive" tabindex="0" draggable="false" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
+                <div class="cardBox cardBox-touchzoom cardBox-bottompadded" bis_skin_checked="1">
+                    <button onclick="window.open('${link}', '_blank')" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-portrait myCardImage">
                         <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
                     </button>
                     <div class="cardText cardText-first cardText-first-padded" bis_skin_checked="1">
@@ -1639,7 +1749,8 @@
             '#myDirectorMoreSlider',
             '#myDbActorSlider',
             '#myDbDirectorSlider',
-            '#myDbSeriesSlider'
+            '#myDbSeriesSlider',
+            '#mySimilarSlider'
         ];
     
         const container = '.itemsContainer';
@@ -1989,102 +2100,101 @@
         const HOST = "https://javdb.com";
         const personType = isDirector ? 'director' : 'actor';
         const personName = javdbNameMap(javdbActorName);
-        const url = `${HOST}/search?f=${personType}&locale=zh&q=${personName}`;
-        let javdbActorData = await request(url);
-        if (javdbActorData.length > 0) {
-            // Create a new DOMParser instance
-            const parser = new DOMParser();
+        const urlCacheKey = `actorUrl_${javdbActorName}`;
 
-            // Parse the HTML data string
-            let parsedHtml = parser.parseFromString(javdbActorData, 'text/html');
-            let actorLink = null;
+        let actorUrl = localStorage.getItem(urlCacheKey);
+        if (!actorUrl) {
+            const url = `${HOST}/search?f=${personType}&locale=zh&q=${personName}`;
+            let javdbActorData = await request(url);
+            if (javdbActorData.length > 0) {
+                const parser = new DOMParser();
+                let parsedHtml = parser.parseFromString(javdbActorData, 'text/html');
+                let actorLink = null;
 
-            if (isDirector) {           
-                const directorBoxes = parsedHtml.querySelectorAll('#directors .box');
-                actorLink = Array.from(directorBoxes).find(box =>
-                    box.getAttribute('title')?.split(', ').includes(personName)
-                ) || null;
-            } else {
-                // Get the href attribute from the parsed HTML
-                actorLink = parsedHtml.querySelector('.box.actor-box a:first-of-type');
-                if (actorLink && !actorLink.getAttribute('title').split(', ').includes(personName)) {
-                    let actorBoxs = parsedHtml.querySelectorAll('.box.actor-box');
-                    for (let actorBox of actorBoxs) {
-                        let actorLink_temp = actorBox.querySelector('a');
-                        if (actorLink_temp.getAttribute('title').split(', ').includes(personName)) {
-                            actorLink = actorLink_temp;
-                            break;
-                        }
-                    }
-                }
-
-                //Get uncensored href
-                if (!isCensored) {
-                    let actorLink_temp = null;
-                    const infoElements = parsedHtml.querySelectorAll('.actors .box.actor-box .info');
-                    if (infoElements.length > 0) {
-                        for (let infoElement of infoElements) {
-                            if (infoElement.textContent.includes("Uncensored") && infoElement.closest("a").getAttribute('title').includes(personName)) {
-                                actorLink_temp = infoElement.closest("a");
+                if (isDirector) {
+                    const directorBoxes = parsedHtml.querySelectorAll('#directors .box');
+                    actorLink = Array.from(directorBoxes).find(box =>
+                        box.getAttribute('title')?.split(', ').includes(personName)
+                    ) || null;
+                } else {
+                    actorLink = parsedHtml.querySelector('.box.actor-box a:first-of-type');
+                    if (actorLink && !actorLink.getAttribute('title').split(', ').includes(personName)) {
+                        let actorBoxs = parsedHtml.querySelectorAll('.box.actor-box');
+                        for (let actorBox of actorBoxs) {
+                            let actorLink_temp = actorBox.querySelector('a');
+                            if (actorLink_temp.getAttribute('title').split(', ').includes(personName)) {
+                                actorLink = actorLink_temp;
                                 break;
                             }
                         }
-                        if (!actorLink_temp && infoElements[0].textContent.includes("Uncensored")) {
-                            actorLink_temp = infoElements[0].closest("a");
+                    }
+
+                    // Get uncensored href
+                    if (!isCensored) {
+                        let actorLink_temp = null;
+                        const infoElements = parsedHtml.querySelectorAll('.actors .box.actor-box .info');
+                        if (infoElements.length > 0) {
+                            for (let infoElement of infoElements) {
+                                if (infoElement.textContent.includes("Uncensored") &&
+                                    infoElement.closest("a").getAttribute('title').includes(personName)) {
+                                    actorLink_temp = infoElement.closest("a");
+                                    break;
+                                }
+                            }
+                            if (!actorLink_temp && infoElements[0].textContent.includes("Uncensored")) {
+                                actorLink_temp = infoElements[0].closest("a");
+                            }
                         }
-                    }
-                    if (actorLink_temp) {
-                        actorLink = actorLink_temp;
-                    }
-                }
-            }
-            
-            let actorUrl = actorLink ? `${HOST}${actorLink.getAttribute('href')}` : null;
-
-            if (!actorUrl) {
-                console.error(`${personType} link not found`);
-                const personInfo = await ApiClient.getPerson(javdbActorName, ApiClient.getCurrentUserId());
-                actorUrl = getUrl(personInfo.Overview, "===== 外部链接 =====", "JavDb");
-            }
-
-            if (!actorUrl) return [[], ''];
-
-            //wait for random time
-            await waitForRandomTime();
-            javdbActorData = await request(actorUrl);
-            if (javdbActorData.length > 0) {
-
-                const itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
-                if (itemsContainer && OS_current != 'iphone' && OS_current != 'android') {
-                    const mediaInfoItem = itemsContainer.querySelectorAll('.mediaInfoItem:has(a)')[0];
-                    if (mediaInfoItem) {
-                        addNewLinks(mediaInfoItem, [createNewLinkElement(`跳转至javdb ${personName}`, '#ADD8E6', actorUrl, personName)]);
-                        mediaInfoStyle(mediaInfoItem);
-                    }
-                }
-
-                parsedHtml = parser.parseFromString(javdbActorData, 'text/html');
-                const paginationList = parsedHtml.querySelector('.pagination-list');
-                if (paginationList) {
-                    const pageLinks = [...paginationList.querySelectorAll('a.pagination-link')].map(link => `${HOST}${link.getAttribute('href')}`);
-
-                    const pickLink = pickRandomLink(pageLinks);
-                    if (pickLink != actorUrl) {
-                        await waitForRandomTime();
-                        javdbActorData = await request(pickLink);
-                        if (javdbActorData.length > 0) {
-                            parsedHtml = parser.parseFromString(javdbActorData, 'text/html');
+                        if (actorLink_temp) {
+                            actorLink = actorLink_temp;
                         }
                     }
                 }
-                const movies = [];
 
-                // Iterate over each item within the "movie-list"
-                const DBitems = parsedHtml.querySelectorAll('.movie-list .item');
-                arrangeDBitems(DBitems, movies);
-                return [movies, actorUrl];
+                actorUrl = actorLink ? `${HOST}${actorLink.getAttribute('href')}` : null;
+
+                if (!actorUrl) {
+                    console.error(`${personType} link not found`);
+                    const personInfo = await ApiClient.getPerson(javdbActorName, ApiClient.getCurrentUserId());
+                    actorUrl = getUrl(personInfo.Overview, "===== 外部链接 =====", "JavDb");
+                }
+
+                if (actorUrl) {
+                    localStorage.setItem(urlCacheKey, actorUrl); // Cache actor URL
+                }
             }
         }
+
+        if (!actorUrl) return [[], ''];
+
+        // Wait for random time
+        await waitForRandomTime();
+        let javdbActorData = await request(actorUrl);
+        if (javdbActorData.length > 0) {
+            const parser = new DOMParser();
+            let parsedHtml = parser.parseFromString(javdbActorData, 'text/html');
+
+            const paginationList = parsedHtml.querySelector('.pagination-list');
+            if (paginationList) {
+                const pageLinks = [...paginationList.querySelectorAll('a.pagination-link')].map(link => `${HOST}${link.getAttribute('href')}`);
+
+                const pickLink = pickRandomLink(pageLinks);
+                if (pickLink !== actorUrl) {
+                    await waitForRandomTime();
+                    javdbActorData = await request(pickLink);
+                    if (javdbActorData.length > 0) {
+                        parsedHtml = parser.parseFromString(javdbActorData, 'text/html');
+                    }
+                }
+            }
+            const movies = [];
+
+            // Iterate over each item within the "movie-list"
+            const DBitems = parsedHtml.querySelectorAll('.movie-list .item');
+            arrangeDBitems(DBitems, movies);
+            return [movies, actorUrl];
+        }
+
         return [[], ''];
     }
 
@@ -2270,6 +2380,8 @@
 
         if (item.Type === 'BoxSet') {
             seriesUrl = getUrl(item.Overview, "===== 外部链接 =====", "JavDb");
+        } else {
+            seriesUrl = localStorage.getItem(`seriesUrl_${seriesName}`);
         }
 
         if (!seriesUrl) {
@@ -2286,7 +2398,7 @@
                 const seriesLinks = seriesContainer.querySelectorAll('a');
                 let firstAnchor;
                 for (const link of seriesLinks) {
-                    const movieCountText = link.querySelector('span').textContent; // Get the text content of the <span> element
+                    const movieCountText = link.querySelector('span').textContent;
                     const movieCount = parseInt(movieCountText.match(/\((\d+)\)/)[1]);
 
                     if (movieCount > 0) {
@@ -2295,50 +2407,42 @@
                     }
                 }
 
-                // Check if the anchor tag exists
                 if (firstAnchor) {
-                    javdbSeries = firstAnchor.querySelector('strong').textContent;
-                    // Get the href attribute of the anchor tag
-                    const firstHref = firstAnchor.getAttribute('href');
-                    seriesUrl = `${HOST}${firstHref}`;
+                    //javdbSeries = firstAnchor.querySelector('strong').textContent;
+                    seriesUrl = `${HOST}${firstAnchor.getAttribute('href')}`;
                     await waitForRandomTime();
                 }
             }
         }
-        
-        if (seriesUrl.length === 0) return [movies, seriesUrl, javdbSeries];
+
+        if (!seriesUrl) return [movies, seriesUrl, javdbSeries];
+
+        // Cache seriesUrl in localStorage if item.Type !== 'BoxSet'
+        if (item.Type !== 'BoxSet') {
+            localStorage.setItem(`seriesUrl_${seriesName}`, seriesUrl);
+        }
 
         javdbData = await request(seriesUrl);
         if (javdbData.length === 0) return [movies, seriesUrl, javdbSeries];
 
+
         const itemsContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer .mediaInfoItems:not(.hide)");
-        if (itemsContainer && OS_current != 'iphone' && OS_current != 'android') {
+        if (itemsContainer && OS_current !== 'iphone' && OS_current !== 'android') {
             const mediaInfoItem = itemsContainer.querySelectorAll('.mediaInfoItem:has(a)')[0];
             if (mediaInfoItem) {
-                if (item.Type != 'BoxSet') {
+                if (item.Type !== 'BoxSet') {
                     addNewLinks(mediaInfoItem, [createNewLinkElement(`跳转至javdb ${seriesName}`, '#ADD8E6', seriesUrl, seriesName)]);
-                } 
+                }
                 mediaInfoStyle(mediaInfoItem);
             }
         }
 
         parsedHtml = parser.parseFromString(javdbData, 'text/html');
+        javdbSeries = parsedHtml.querySelector('.section-name').textContent;
 
         const paginationList = parsedHtml.querySelector('.pagination-list');
         if (paginationList && item.Type === 'BoxSet') {
-            // Initialize an array to store page links
-            const pageLinks = [];
-
-            // Find all the page links within the pagination list
-            const links = paginationList.querySelectorAll('a.pagination-link');
-
-            // Iterate over each page link and extract the href attribute
-            links.forEach(link => {
-                const href = `${HOST}${link.getAttribute('href')}`;
-                // Add the href to the pageLinks array
-                pageLinks.push(href);
-            });
-            //seriesPageLinks = pageLinks;
+            const pageLinks = [...paginationList.querySelectorAll('a.pagination-link')].map(link => `${HOST}${link.getAttribute('href')}`);
 
             for (const link of pageLinks) {
                 if (link !== seriesUrl) {
@@ -2350,13 +2454,13 @@
                         arrangeDBitems(DBitemsTemp, movies);
                     }
                 }
-            }   
+            }
         }
-        // Iterate over each item within the "movie-list"
+
         const DBitems = parsedHtml.querySelectorAll('.movie-list .item');
         arrangeDBitems(DBitems, movies);
-        
-        return [movies, seriesUrl, javdbSeries];  
+
+        return [movies, seriesUrl, javdbSeries];
     }
 
     function arrangeDBitems(DBitems, movies) {
