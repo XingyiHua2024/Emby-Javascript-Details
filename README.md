@@ -14,7 +14,7 @@ Add some features for Emby detail page
       - 如有超过12部作品，则随机选择12部展示。
       - ![Screenshot](images/actorMore.png)
    3. 翻译标题和详情功能。
-      - 需自行添加 google API key (in config.json)
+      - 需自行添加 google API key
    4. 加载Javdb内容。
       - 在文件开头修改user config (不再依赖config.json)
       - 结合 MDCx 使用：https://github.com/sqzw-x/mdcx
