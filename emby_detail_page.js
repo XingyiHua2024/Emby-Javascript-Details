@@ -1573,7 +1573,8 @@
     }
 
     function isTouchDevice() {
-        return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        //return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+	return ['iphone', 'ipad', 'android'].includes(OS_current);
     }
 
     async function addHoverEffect(slider) {
