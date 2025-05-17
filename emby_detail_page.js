@@ -634,7 +634,7 @@
                 const title = titleElement ? titleElement.textContent.trim().toLowerCase() : null; // Extract text content
                 if (title.includes(noNumCode) || noNumCode.includes(title)) {
                     movieUrl = `${HOST}${href}`;
-                    addLink(item.Overview || '', "<br>===== 外部链接 =====", "JavDb", movieUrl);
+                    addLink(item.Overview || '', "===== 外部链接 =====", "JavDb", movieUrl);
                     localStorage.setItem(urlCacheKey, JSON.stringify(movieUrl));
                     const tagElement = firstItem.querySelector(".tags .tag");
                     const tagText = tagElement ? tagElement.textContent.trim() : null;
@@ -1808,7 +1808,7 @@
 
         if (javdbSeries.length > 0) {
             if (item.Type === 'BoxSet') {
-                addLink(item.Overview || '', "<br>===== 外部链接 =====", "JavDb", seriesUrl);
+                addLink(item.Overview || '', "===== 外部链接 =====", "JavDb", seriesUrl);
                 if (item.Name != javdbSeries) {
                     item.Name = javdbSeries;
                     showToast({
