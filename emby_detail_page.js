@@ -1262,7 +1262,7 @@
                 showToast({
                     text: '已到最后',
                     icon: `<span class="material-symbols-outlined">last_page</span>`,
-                })
+                });
                 resetImageStyles();
                 return
             }
@@ -1295,7 +1295,7 @@
                 showToast({
                     text: '已到最前',
                     icon: `<span class="material-symbols-outlined">first_page</span>`
-                })
+                });
                 resetImageStyles();
                 return
             }
@@ -1829,6 +1829,20 @@
                             secondaryText: javdbSeries
                         });
                     }    
+                } else {
+                    const collectionMovies = await getCollectionMovies(collectionId);
+                    if (tagMovies.length > collectionMovies.length) {
+                        const extraMovies = tagMovies.filter(movie => !collectionMovies.includes(movie));
+                        for (let extraMovie of extraMovies) {
+                            let extraItem = await checkEmbyExist(extraMovie);
+                            await ApiClient.addToList(ApiClient.getCurrentUserId(), 'BoxSet', collectionId, [extraItem.Id], null);
+                            showToast({
+                                text: "新作品加入合集",
+                                icon: `<span class="material-symbols-outlined">docs_add_on</span>`,
+                                secondaryText: extraItem.Name
+                            });
+                        }
+                    }
                 }
             }
         }
@@ -1859,7 +1873,7 @@
                         text: "新作品加入合集",
                         icon: `<span class="material-symbols-outlined">docs_add_on</span>`,
                         secondaryText: insertItem.Name
-                    })
+                    });
                 }
                 continue;
             }
@@ -2583,7 +2597,7 @@
             showToast({
                 text: '翻译成功',
                 icon: `<span class="material-symbols-outlined">fact_check</span>`
-            })
+            });
 
             const myTranslate = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myTranslate");
             myTranslate.style.color = 'green';
@@ -2611,7 +2625,7 @@
             showToast({
                 text: '翻译成功',
                 icon: `<span class="material-symbols-outlined">fact_check</span>`
-            })
+            });
             const myTranslate = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myTranslate2");
             myTranslate.style.color = 'green';
             myTranslate.classList.add('melt-away');
