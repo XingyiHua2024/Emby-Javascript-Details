@@ -4,6 +4,7 @@ Add some features for Emby detail page
 ## 功能：
 ### emby_detail_page.js
    1. 新功能：“更多类似”内容增加随机性
+      - 每次刷新后的推荐内容随机
    2. 展示剧照
       - 部分代码来自于：https://github.com/newday-life/emby-front-end-mod/tree/main/fanart_show
       - 感谢作者：https://github.com/newday-life
