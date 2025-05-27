@@ -91,6 +91,7 @@
     }
 
     async function init() {
+    	updateSimilarFetch();
         injectLinks();
         javdbTitle();
         //buttonInit();
@@ -116,7 +117,44 @@
         return false;
     }
 
-    
+    function updateSimilarFetch() {
+        if (item.Type == 'BoxSet' || item.Type == 'Person') return
+        const view = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .similarItemsContainer");
+        if (!view) return
+        view.fetchData = () => {
+            const options = {
+                    Limit: 50,
+                    UserId: ApiClient.getCurrentUserId(),
+                    ImageTypeLimit: 1,
+                    Fields: "BasicSyncInfo,CanDelete,PrimaryImageAspectRatio,ProductionYear,Status,EndDate",
+                    EnableTotalRecordCount: !1
+            };
+
+            return ApiClient.getSimilarItems(item.Id, options).then(result => {
+                const items = result.Items || [];
+
+                if (items.length > 12) {
+                    // Fisher–Yates shuffle
+                    for (let i = items.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [items[i], items[j]] = [items[j], items[i]];
+                    }
+
+                    // Return 12 random items
+                    return {
+                        Items: items.slice(0, 12),
+                        TotalRecordCount: 12
+                    };
+                }
+
+                // Return original if 12 or fewer
+                return {
+                    Items: items,
+                    TotalRecordCount: items.length
+                };
+            });
+        };
+    }
 
     function javdbTitle() {
         if (!isJP18() || !fetchJavDbFlag || item.Type == 'BoxSet' || item.Type == 'Person') return
