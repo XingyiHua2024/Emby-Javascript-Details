@@ -105,6 +105,10 @@
 
         translateInject();
         javdbButtonInit();
+
+        setTimeout(() => {
+            addHoverEffect();
+        }, 2000);
     }
 
 
@@ -1615,14 +1619,14 @@
 	return ['iphone', 'ipad', 'android'].includes(OS_current);
     }
 
-    async function addHoverEffect(slider) {
-        if (isTouchDevice()) return
+    async function addHoverEffect(slider = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .similarItemsContainer")) {
+        if (isTouchDevice() || !slider) return
 
         const portraitCards = slider.querySelectorAll('.virtualScrollItem');
         if (!portraitCards) return;
 
         for (let card of portraitCards) {
-            let itemId = card.dataset.id;
+            let itemId = card.dataset.id ?? getItemIdFromCard(card);
 
             const localTrailers = await ApiClient.getLocalTrailers(ApiClient.getCurrentUserId(), itemId);
 
@@ -1633,6 +1637,7 @@
             //const trailerUrl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
 
             const imageContainer = card.querySelector('.cardImageContainer');
+            const cardOverlay = card.querySelector('.cardOverlayContainer');
             imageContainer.classList.remove('myCardImage');
             const img = imageContainer.querySelector('.cardImage');
             let isHovered = false;
@@ -1642,11 +1647,11 @@
             // Add mouseenter event to change image, width, and layering immediately
             card.addEventListener('mouseenter', async () => {
                 if (isHovered) return;
-                isHovered = true; 
+                isHovered = true;
                 // Create video element
                 let videoElement = createVideoElement(trailerUrl);
+                (cardOverlay || imageContainer).appendChild(videoElement);
 
-                imageContainer.appendChild(videoElement); // Add video to the container
                 img.style.filter = 'blur(5px)';
 
                 setTimeout(() => {
@@ -1658,8 +1663,8 @@
                 videoElement.addEventListener('ended', () => {
                     videoElement.style.opacity = '0'; // Remove the video element
                     img.style.filter = ''; // Remove blur effect
-                });                      
-                 
+                });
+
             });
 
             // Add mouseleave event to reset the image, width, and layering immediately
@@ -1671,6 +1676,14 @@
                 allVideos.forEach(video => video.remove());
             });
         }
+    }
+
+    function getItemIdFromCard(card) {
+        const imgContainer = card.querySelector('.cardImageContainer');
+        const img = imgContainer?.querySelector('.cardImage');
+        if (!img) return null;
+        const match = img.src.match(/\/Items\/(\d+)\//);
+        return match ? match[1] : null;
     }
 
     async function getTrailerUrl(trailerItem) {
