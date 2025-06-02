@@ -105,10 +105,6 @@
 
         translateInject();
         javdbButtonInit();
-
-        setTimeout(() => {
-            addHoverEffect();
-        }, 2000);
     }
 
 
@@ -122,9 +118,34 @@
     }
 
     function updateSimilarFetch() {
-        if (item.Type == 'BoxSet' || item.Type == 'Person') return
+        if (item.Type == 'BoxSet' || item.Type == 'Person') return;
         const view = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .similarItemsContainer");
-        if (!view) return
+        if (!view) return;
+
+        if (!isTouchDevice()) {
+            const originalGetListOptions = view.getListOptions;
+
+            view.getListOptions = function (item) {
+                const result = originalGetListOptions(item);
+                result.options.preferThumb = !0;
+                return result;
+            };
+
+            const observer = new MutationObserver((mutationsList) => {
+                for (const mutation of mutationsList) {
+                    if (mutation.type === 'childList' && (mutation.addedNodes.length || mutation.removedNodes.length)) {
+                        addHoverEffect();
+                        break; // Only need to run once per mutation batch
+                    }
+                }
+            });
+
+            observer.observe(view, {
+                childList: true,   // Watch for additions
+                subtree: false     // Only watch direct children of slider
+            });
+        }
+
         view.fetchData = () => {
             const options = {
                     Limit: 50,
@@ -1620,12 +1641,16 @@
     }
 
     async function addHoverEffect(slider = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .similarItemsContainer")) {
-        if (isTouchDevice() || !slider) return
+        if (isTouchDevice() || !slider) return;
 
         const portraitCards = slider.querySelectorAll('.virtualScrollItem');
         if (!portraitCards) return;
 
         for (let card of portraitCards) {
+            const imageContainer = card.querySelector('.cardImageContainer');
+
+            if (imageContainer.classList.contains("has-trailer")) continue;
+
             let itemId = card.dataset.id ?? getItemIdFromCard(card);
 
             const localTrailers = await ApiClient.getLocalTrailers(ApiClient.getCurrentUserId(), itemId);
@@ -1635,8 +1660,7 @@
             const trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
             const trailerUrl = await getTrailerUrl(trailerItem);
             //const trailerUrl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
-
-            const imageContainer = card.querySelector('.cardImageContainer');
+            
             const cardOverlay = card.querySelector('.cardOverlayContainer');
             imageContainer.classList.remove('myCardImage');
             const img = imageContainer.querySelector('.cardImage');
