@@ -112,40 +112,46 @@
         if (!img) return;
         const itemId = getItemIdFromUrl(img.src);
         if (!itemId || itemId.length === 0) return;
+        let cacheKey = `trailerUrl_${itemId}`;
+        let trailerUrl = localStorage.getItem(cacheKey);
 
-        const item = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemId);
-        let trailerUrl;
+        if (!trailerUrl) {
+            const item = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemId);
 
-        if (item.LocalTrailerCount > 0) {
-            const localTrailers = await ApiClient.getLocalTrailers(ApiClient.getCurrentUserId(), itemId);
-            const trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
-            trailerUrl = await getTrailerUrl(trailerItem);
-            //trailerUrl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
-        } else if (item.RemoteTrailers && item.RemoteTrailers.length > 0) {
-            trailerUrl = item.RemoteTrailers[0].Url;
-            if (trailerUrl.includes('youtube.com') || trailerUrl.includes('youtu.be')) {
-                // Load YouTube IFrame API
-                if (!window.YT) {
-                    const tag = document.createElement('script');
-                    tag.src = "https://www.youtube.com/iframe_api";
-                    const firstScriptTag = document.getElementsByTagName('script')[0];
-                    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+            if (item.LocalTrailerCount > 0) {
+                const localTrailers = await ApiClient.getLocalTrailers(ApiClient.getCurrentUserId(), itemId);
+                const trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
+                trailerUrl = await getTrailerUrl(trailerItem);
+                //trailerUrl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
+            } else if (item.RemoteTrailers && item.RemoteTrailers.length > 0) {
+                trailerUrl = item.RemoteTrailers[0].Url;
+                if (trailerUrl.includes('youtube.com') || trailerUrl.includes('youtu.be')) {
+                    // Load YouTube IFrame API
+                    if (!window.YT) {
+                        const tag = document.createElement('script');
+                        tag.src = "https://www.youtube.com/iframe_api";
+                        const firstScriptTag = document.getElementsByTagName('script')[0];
+                        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                    }
+
+                    // Wait for API to load
+                    await new Promise((resolve) => {
+                        const checkYT = () => {
+                            if (window.YT && window.YT.Player) resolve();
+                            else setTimeout(checkYT, 50);
+                        };
+                        checkYT();
+                    });
+                } else {
+                    return;
                 }
-
-                // Wait for API to load
-                await new Promise((resolve) => {
-                    const checkYT = () => {
-                        if (window.YT && window.YT.Player) resolve();
-                        else setTimeout(checkYT, 50);
-                    };
-                    checkYT();
-                });
             } else {
                 return;
-            }            
-        } else {
-            return;
+            }
         }
+       
+
+        localStorage.setItem(cacheKey, trailerUrl);
 
         imgContainer.classList.add('has-trailer');
         const cardOverlay = cardBox.querySelector('.cardOverlayContainer');
@@ -159,7 +165,7 @@
             isHovered = false;
             imgContainer.classList.add('has-trailer');
             img.style.filter = ''; // Remove blur effect
-        
+
             const playerContainer = imgContainer.querySelector(`#player-${itemId}`);
             if (playerContainer) {
                 const player = window.YT.get(playerContainer.id);
@@ -170,23 +176,23 @@
                 allVideos.forEach(video => video.remove());
             }
         });
-        
+
         node.addEventListener('mouseenter', () => {
             if (isHovered) return; // Prevent duplicate mouseenter logic
             isHovered = true;
             imgContainer.classList.remove('has-trailer');
-        
+
             // Check if the trailer is a YouTube URL
-            if (item.LocalTrailerCount == 0 && trailerUrl.includes('youtube.com') || trailerUrl.includes('youtu.be')) {
+            if (trailerUrl.includes('youtube.com') || trailerUrl.includes('youtu.be')) {
                 const embedUrl = trailerUrl.includes('watch')
                     ? trailerUrl.replace('watch?v=', 'embed/')
                     : trailerUrl.replace('youtu.be/', 'youtube.com/embed/');
-        
+
                 const playerContainer = document.createElement('div');
                 playerContainer.classList.add('video-element');
                 playerContainer.id = `player-${itemId}`;
                 imgContainer.appendChild(playerContainer);
-        
+
                 const player = new YT.Player(playerContainer.id, {
                     videoId: new URL(embedUrl).pathname.split('/').pop(),
                     playerVars: {
@@ -207,13 +213,12 @@
                 videoElement.autoplay = true;
                 videoElement.muted = true;
                 videoElement.classList.add('video-element');
-        
+
                 cardOverlay.appendChild(videoElement);
                 img.style.filter = 'blur(5px)';
             }
         });
     }
-
 
     function getItemIdFromUrl(url) {
         const match = url.match(/\/Items\/(\d+)\//);
