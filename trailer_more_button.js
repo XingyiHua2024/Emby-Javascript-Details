@@ -3,9 +3,7 @@
     var item, viewnode, parentItem, paly_mutation1, isUpdatingImageUrls = false;
     var paly_mutation2;
     document.addEventListener("viewbeforeshow", function (e) {
-        paly_mutation1?.disconnect();
-        paly_mutation2?.disconnect();
-        isUpdatingImageUrls = false;
+        
         if (e.detail.type === "video-osd") {
             viewnode = e.target;
             if (!e.detail.isRestored) {
@@ -13,6 +11,9 @@
                     item = viewnode.controller?.osdController?.currentItem || viewnode.controller?.currentPlayer?.streamInfo?.item;
                     if (item) {
                         mutation.disconnect();
+                        paly_mutation1?.disconnect();
+                        paly_mutation2?.disconnect();
+                        isUpdatingImageUrls = false;
                         (item.Type === 'Trailer') && insertMoreButton();
                     }
                 });
@@ -178,8 +179,7 @@
         function runUpdate() {
             const trailerCards = Array.from(itemsContainer.querySelectorAll('.cardBox')).filter(cardBox => {
                 const textEl = cardBox.querySelector('.cardText');
-                const icon = cardBox.querySelector('.cardImageIcon');
-                return textEl && textEl.textContent.trim() === 'trailer' && icon;
+                return textEl && textEl.textContent.trim() === 'trailer';
             });
 
             const count = trailerCards.length;
