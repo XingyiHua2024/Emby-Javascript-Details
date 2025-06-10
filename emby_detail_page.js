@@ -973,7 +973,7 @@
         let name = itemInfo.Name;
 
         const itemContainer = `
-            <div data-id="${itemInfo.Id}" data-localtrailer-count="${itemInfo.LocalTrailerCount}" class="virtualScrollItem card ${typeWord}Card card-horiz ${typeWord}Card-horiz card-hoverable card-autoactive" tabindex="0" draggable="false" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
+            <div data-id="${itemInfo.Id}" data-localtrailer-count="${itemInfo.LocalTrailerCount || 0}" class="virtualScrollItem card ${typeWord}Card card-horiz ${typeWord}Card-horiz card-hoverable card-autoactive" tabindex="0" draggable="false" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
                 <div class="cardBox cardBox-touchzoom cardBox-bottompadded" bis_skin_checked="1">
                     <button onclick="Emby.Page.showItem('${itemInfo.Id}')" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-${typeWord} myCardImage">
                         <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
@@ -1690,11 +1690,13 @@
 
             let itemId = card.dataset.id ?? getItemIdFromSlider(card._dataItemIndex, slider._itemSourceMap) ?? getItemIdFromCard(card);
 
-            let localTrailerCount = card.dataset.localtrailerCount ?? getTrailerCount(card._dataItemIndex, slider._itemSource);
+            let localTrailerCount = Number(card.dataset.localtrailerCount ?? getTrailerCount(card._dataItemIndex, slider._itemSource) ?? 0);
 
-            if (localTrailerCount == 0) continue;
-
-            
+            if (localTrailerCount === 0
+                && getItemType(card._dataItemIndex, slider._itemSource) != 'Trailer') {
+                continue;
+            }
+  
             const cardOverlay = card.querySelector('.cardOverlayContainer');
             imageContainer.classList.remove('myCardImage');
             const img = imageContainer.querySelector('.cardImage');
@@ -1749,6 +1751,14 @@
         return items[index].LocalTrailerCount;
     }
 
+    function getItemType(index, items) {
+        if (typeof index !== 'number' || !Array.isArray(items) || !items[index]) {
+            return null;
+        }
+
+        return items[index].Type;
+    }
+
     function getItemIdFromCard(card) {
         const imgContainer = card.querySelector('.cardImageContainer');
         const img = imgContainer?.querySelector('.cardImage');
@@ -1771,7 +1781,14 @@
 
         let videourl = localStorage.getItem(cacheKey);
         if (!videourl) {
-            const localTrailers = await ApiClient.getLocalTrailers(ApiClient.getCurrentUserId(), itemId);
+            let localTrailers = await ApiClient.getLocalTrailers(ApiClient.getCurrentUserId(), itemId);
+            if (localTrailers && localTrailers.length === 0) {
+                const thisItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemId);
+                if (thisItem.Type === 'Trailer') {
+                    localTrailers = [thisItem];
+                } 
+            }
+
             if (localTrailers && localTrailers.length > 0) {
                 let trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
 
