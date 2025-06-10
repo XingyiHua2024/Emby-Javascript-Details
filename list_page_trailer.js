@@ -123,6 +123,8 @@
                 const trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
                 trailerUrl = await getTrailerUrl(trailerItem);
                 //trailerUrl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
+            } else if (item.Type === 'Trailer') {
+                trailerUrl = await getTrailerUrl(item);
             } else if (item.RemoteTrailers && item.RemoteTrailers.length > 0) {
                 trailerUrl = item.RemoteTrailers[0].Url;
                 if (trailerUrl.includes('youtube.com') || trailerUrl.includes('youtu.be')) {
