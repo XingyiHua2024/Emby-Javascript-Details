@@ -17,32 +17,44 @@
     const OS_current = getOS();
 
     const embyDetailCss = `.has-trailer{position:relative;box-shadow:0 0 10px 3px rgb(255 255 255 / .8);transition:box-shadow 0.3s ease-in-out;border-radius:8px}.has-trailer:hover{box-shadow:0 0 10px 3px rgb(255 0 150 / .3);transition:box-shadow 0.2s ease-in-out}.injectJavdb{opacity:1;transition:color 0.3s,transform 0.3s,box-shadow 0.3s,filter 0.3s}.injectJavdb:hover{transform:scale(1.05);background:linear-gradient(135deg,rgb(255 0 150 / .3),rgb(0 150 255 / .3));box-shadow:0 4px 15px rgb(0 0 0 / .2),0 0 10px rgb(0 150 255 / .5)}.injectJavdb .button-text,.injectJavdb .button-icon{color:pink;transition:color 0.3s,filter 0.3s}.injectJavdb:hover .button-text,.injectJavdb:hover .button-icon{color:black!important}.injectJavbus .button-text,.injectJavbus .button-icon{color:#ff8181!important}.noUncensored{opacity:1;transition:color 0.3s,transform 0.3s,box-shadow 0.3s,filter 0.3s}.noUncensored .button-text,.noUncensored .button-icon{color:grey!important}.melt-away{animation:sandMeltAnimation 1s ease-out forwards}@keyframes sandMeltAnimation{0%{opacity:1}100%{opacity:0}}.my-fanart-image{display:inline-block;margin:8px 10px 8px 10px;vertical-align:top;border-radius:8px;height:27vh;transition:transform 0.3s ease,filter 0.3s ease;min-height:180px}.my-fanart-image-slider{height:20vh!important}.my-fanart-image:hover{transform:scale(1.03);filter:brightness(80%)}.modal{display:none;position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;overflow:hidden;background-color:rgb(0 0 0 / .8);justify-content:center;align-items:center}.modal-content{margin:auto;max-width:70%;max-height:70%;overflow:hidden;opacity:0}@media (max-width:768px){.modal-content{max-width:80%;max-height:80%}}.modal-closing .modal-content{animation-name:shrinkAndRotate;animation-duration:0.3s;animation-timing-function:ease-out}.close{color:#fff;position:absolute;width:45px;height:45px;display:flex;justify-content:center;align-items:center;top:30px;right:30px;font-size:30px;font-weight:700;cursor:pointer;transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:0;background-color:rgb(0 0 0 / .5);user-select:none;caret-color:#fff0}.prev,.next{position:absolute;width:40px;height:40px;line-height:40px;justify-content:center;align-items:center;display:flex;top:50%;background-color:rgb(0 0 0 / .5);color:#fff;border:none;cursor:pointer;font-size:35px;font-weight:700;transform:translateY(-50%) translateX(-50%);transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:35px}.prev{left:80px}.next{right:20px}.prev:hover,.next:hover{background-color:rgb(255 255 255 / .3);padding:35px}.close:hover{background-color:rgb(255 255 255 / .3);padding:10px}@keyframes shrinkAndRotate{0%{transform:scale(1)}100%{transform:scale(0)}}.click-smaller{transform:scale(.9) translate(-50%,-50%);transition:transform 0.2s}.prev.disabled,.next.disabled{color:grey!important;cursor:default}@keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-10px)}50%{transform:translateX(10px)}75%{transform:translateX(-10px)}100%{transform:translateX(0)}}.modal-caption{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);text-align:center;font-size:16px;color:#fff;background-color:rgb(0 0 0 / .6);padding:5px 10px;border-radius:5px}@media screen and (max-width:480px){.modal-caption{bottom:100px}}.video-element{position:absolute;width:100%;height:100%;object-fit:contain;z-index:3;pointer-events:auto;transition:opacity 0.5s ease}.copy-link{color:lightblue;cursor:pointer;display:inline-block;transition:transform 0.1s ease}.copy-link:active{transform:scale(.95)}.media-info-item{display:block;width:100%;margin-top:10px;text-align:left}.media-info-item a{padding:5px 10px;background:rgb(255 255 255 / .15);margin-bottom:5px;margin-right:5px;-webkit-backdrop-filter:blur(5em);backdrop-filter:blur(5em);font-weight:600;font-family:'Poppins',sans-serif;transition:transform 0.2s ease,background-color 0.3s ease,box-shadow 0.3s ease,color 0.3s ease;text-decoration:none;color:#fff}.media-info-item a:hover{transform:scale(1.05);background:linear-gradient(135deg,rgb(255 0 150 / .3),rgb(0 150 255 / .3));box-shadow:0 4px 15px rgb(0 0 0 / .2),0 0 10px rgb(0 150 255 / .5)}.pageButton{cursor:pointer;padding:6px 16px;background:rgb(255 255 255 / 15%);border-radius:5px;box-shadow:0 2px 4px rgb(0 0 0 / .2);transition:background-color 0.3s ease,box-shadow 0.3s ease}.pageButton:hover{background:rgb(255 255 255 / 85%);color:#000;box-shadow:0 4px 8px rgb(0 0 0 / .4)}#pageInput-actorPage::-webkit-inner-spin-button,#pageInput-actorPage::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}#pageInput-actorPage{-moz-appearance:textfield;appearance:none;height:auto;text-align:center;padding:5px;font-family:inherit;font-size:inherit;font-weight:inherit;line-height:inherit}#filterDropdown{width:auto;backdrop-filter:blur(5px);color:#fff;transition:background-color 0.3s ease,box-shadow 0.3s ease;margin-left:20px;font-family:inherit;padding:6px 16px;font-weight:inherit;line-height:inherit;border:none}#filterDropdown:hover{background:rgb(255 255 255 / 85%);color:#000;box-shadow:0 4px 8px rgb(0 0 0 / .4)}#filterDropdown:focus{outline:none;box-shadow:0 0 4px 2px rgb(255 255 255 / .8)}#filterDropdown option{font-family:inherit;color:#000;background:#fff;border:none;padding:5px;font-weight:inherit}#filterDropdown option:hover{background:#c8c8c8}.myCardImage{transition:filter 0.2s ease}.myCardImage:hover{filter:brightness(70%)}#toggleFanart{padding:10px 20px;font-size:18px;background:rgb(255 255 255 / .15);margin-top:15px;margin-bottom:15px;border:none;border-radius:8px;font-weight:700;font-family:'Poppins',sans-serif;color:#fff;text-decoration:none;cursor:pointer;display:block;margin-left:auto;margin-right:auto;-webkit-backdrop-filter:blur(5em);backdrop-filter:blur(5em);transition:transform 0.2s ease,background-color 0.3s ease,box-shadow 0.3s ease,color 0.3s ease}#toggleFanart:hover{transform:scale(1.1);background:linear-gradient(135deg,rgb(255 0 150 / .4),rgb(0 150 255 / .4));box-shadow:0 6px 20px rgb(0 0 0 / .3),0 0 15px rgb(0 150 255 / .6);color:#fff}#toggleFanart:active{transform:scale(.95);box-shadow:0 3px 12px rgb(0 0 0 / .3)}.bg-style{background:linear-gradient(to right top,rgb(0 0 0 / .98),rgb(0 0 0 / .2)),url(https://assets.nflxext.com/ffe/siteui/vlv3/058eee37-6c24-403a-95bd-7d85d3260ae1/5030300f-ed0c-473a-9795-a5123d1dd81d/US-en-20240422-POP_SIGNUP_TWO_WEEKS-perspective_WEB_0941c399-f3c4-4352-8c6d-0a3281e37aa0_large.jpg);background-attachment:fixed;background-repeat:no-repeat;background-position:center;background-size:cover}@media (max-width:50em){.swiper-thumbs{display:none!important}}`;
-    
+ 
     document.addEventListener("viewbeforeshow", function (e) {
-        paly_mutation?.disconnect(); // Disconnect previous observer if exists
-
+        
         // Filter specific context paths
         if (e.detail.contextPath.startsWith("/list/") ||
             e.detail.contextPath.startsWith("/videos?") ||
             e.detail.contextPath.startsWith("/tv?") &&
             !e.detail.contextPath.includes("type=Person")) {
-            !document.getElementById("embyDetailCss") && CommonUtils.loadExtastyle(embyDetailCss, 'embyDetailCss');
+            !document.getElementById("embyDetailCss") && loadExtraStyle(embyDetailCss, 'embyDetailCss');
+
+            paly_mutation?.disconnect(); // Disconnect previous observer if exists
 
             applyBackgroundStyle();
 
+            const selectorStr = e.detail.contextPath.startsWith("/videos?") ? `[data-index="1"].itemsTab .virtualItemsContainer` : "div[is='emby-scroller']:not(.hide) .virtualItemsContainer";
             //const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints;
             //if (isTouchDevice) return;
             if (OS_current === 'ipad' || OS_current === 'iphone') return
 
+
             const setupObserver = (itemsContainer) => {
                 if (!itemsContainer) return;
 
-                paly_mutation = new MutationObserver(async (mutationsList) => {
+                let currentCancelToken = null;
+
+                paly_mutation = new MutationObserver((mutationsList) => {
                     for (let mutation of mutationsList) {
-                        for (let node of mutation.addedNodes) {
-                            if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('virtualScrollItem')) {
-                                await addTrailer(node); // Wait for addTrailer to finish before moving on to the next one
-                            }
+                        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                            // Cancel previous run
+                            if (currentCancelToken) currentCancelToken.cancelled = true;
+
+                            // Create new token
+                            const token = { cancelled: false };
+                            currentCancelToken = token;
+
+                            // Start new processing
+                            processAllChildren(itemsContainer, token);
+                            break;
                         }
                     }
                 });
@@ -52,13 +64,24 @@
                     childList: true,
                     subtree: false,
                 });
+
+                async function processAllChildren(container, token) {
+                    const children = Array.from(container.children);
+                    for (let node of children) {
+                        if (token.cancelled) return; // Stop if cancelled
+                        if (node.classList.contains('virtualScrollItem')) {
+                            await addTrailer(node);
+                        }
+                    }
+                }
             };
 
             const mutation = new MutationObserver(() => {
                 const viewnode = e.target;
-                const itemsContainer = viewnode?.querySelector(`[data-index="1"].itemsTab .virtualItemsContainer`);
+                const itemsContainer = viewnode?.querySelector(selectorStr);
                 if (itemsContainer) {
                     mutation.disconnect(); // Stop observing once the container is found
+                    //itemsContainer.refreshItemsInternal();
                     setupObserver(itemsContainer);
                 }
             });
@@ -72,7 +95,7 @@
             } else {
                 //loadCSSFile('./style.css');
                 const viewnode = e.target;
-                const itemsContainer = viewnode?.querySelector(`[data-index="1"].itemsTab .virtualItemsContainer`);
+                const itemsContainer = viewnode?.querySelector(selectorStr);
                 setupObserver(itemsContainer); // Reattach observer for restored views
             }
         }
@@ -88,6 +111,13 @@
         if (config) {
             adminUserId = config.adminUserId || adminUserId;
         }     
+    }
+
+    function loadExtraStyle(content, id) {
+        let style = document.createElement("style");
+        style.id = id; // Set the ID for the style element
+        style.innerHTML = content; // Set the CSS content
+        document.head.appendChild(style); // Append the style element to the document head
     }
 
     async function applyBackgroundStyle() {
@@ -108,6 +138,7 @@
     async function addTrailer(node) {
         const cardBox = node.querySelector('.cardBox');
         const imgContainer = cardBox?.querySelector('.cardImageContainer');
+        if (imgContainer?.classList.contains("has-trailer")) return;
         const img = imgContainer?.querySelector('.cardImage');
         if (!img) return;
         const itemId = getItemIdFromUrl(img.src);
@@ -222,6 +253,7 @@
         });
     }
 
+
     function getItemIdFromUrl(url) {
         const match = url.match(/\/Items\/(\d+)\//);
         return match ? match[1] : null; // Return the ID if found, otherwise null
@@ -265,6 +297,5 @@
             return 'other'
         }
     }
-
 
 })();
