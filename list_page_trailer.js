@@ -56,7 +56,7 @@
 
             const mutation = new MutationObserver(() => {
                 const viewnode = e.target;
-                const itemsContainer = viewnode?.querySelector("div[is='emby-scroller']:not(.hide) .virtualItemsContainer");
+                const itemsContainer = viewnode?.querySelector(`[data-index="1"].itemsTab .virtualItemsContainer`);
                 if (itemsContainer) {
                     mutation.disconnect(); // Stop observing once the container is found
                     setupObserver(itemsContainer);
@@ -72,7 +72,7 @@
             } else {
                 //loadCSSFile('./style.css');
                 const viewnode = e.target;
-                const itemsContainer = viewnode?.querySelector("div[is='emby-scroller']:not(.hide) .virtualItemsContainer");
+                const itemsContainer = viewnode?.querySelector(`[data-index="1"].itemsTab .virtualItemsContainer`);
                 setupObserver(itemsContainer); // Reattach observer for restored views
             }
         }
