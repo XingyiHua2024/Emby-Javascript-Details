@@ -3,7 +3,7 @@
 (function () {
     "use strict";
 
-    var paly_mutation, adminUserId = '';
+    var paly_mutation, adminUserId = '', getTrailerFromCache = true;
 
     const OS_current = getOS();
 
@@ -25,7 +25,7 @@
             const selectorStr = e.detail.contextPath.startsWith("/videos?") ? `[data-index="1"].itemsTab .virtualItemsContainer` : "div[is='emby-scroller']:not(.hide) .virtualItemsContainer";
             //const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints;
             //if (isTouchDevice) return;
-            if (OS_current === 'ipad' || OS_current === 'iphone') return
+            if (OS_current === 'iphone' || OS_current === 'ipad') return
 
 
             const setupObserver = (itemsContainer) => {
@@ -36,13 +36,18 @@
                 paly_mutation = new MutationObserver((mutationsList) => {
                     for (let mutation of mutationsList) {
                         if (mutation.type === 'childList' || mutation.type === 'attributes') {
-                            // Cancel previous run
-                            if (currentCancelToken) currentCancelToken.cancelled = true;
 
-                            const token = { cancelled: false };
-                            currentCancelToken = token;
+                            const refresh = mutation.type === 'attributes';
+                            const delay = refresh ? 1000 : 0;
 
-                            processAllChildren(itemsContainer, token);
+                            setTimeout(() => {
+                                // Cancel previous run
+                                if (currentCancelToken) currentCancelToken.cancelled = true;
+
+                                const token = { cancelled: false };
+                                currentCancelToken = token;
+                                processAllChildren(itemsContainer, token, refresh);
+                            }, delay);
                             break;
                         }
                     }
@@ -50,16 +55,16 @@
 
                 paly_mutation.observe(itemsContainer, {
                     childList: true,
-                    attributes: false,         // enable if relevant
+                    attributes: true,         // enable if relevant
                     subtree: false,            // or true if children’s children matter
                 });
 
-                async function processAllChildren(container, token) {
+                async function processAllChildren(container, token, refresh) {
                     const children = Array.from(container.children);
                     for (let node of children) {
                         if (token.cancelled) return; // Stop if cancelled
                         if (node.classList.contains('virtualScrollItem')) {
-                            await addTrailer(node);
+                            await addTrailer(node, refresh);
                         }
                     }
                 }
@@ -70,7 +75,8 @@
                 const itemsContainer = viewnode?.querySelector(selectorStr);
                 if (itemsContainer) {
                     mutation.disconnect(); // Stop observing once the container is found
-                    //itemsContainer.refreshItemsInternal();
+                    //itemsContainer.updateElement();
+                    
                     setupObserver(itemsContainer);
                 }
             });
@@ -124,16 +130,17 @@
     }
 
 
-    async function addTrailer(node) {
+    async function addTrailer(node, refresh = false) {
         const cardBox = node.querySelector('.cardBox');
         const imgContainer = cardBox?.querySelector('.cardImageContainer');
-        if (imgContainer?.classList.contains("has-trailer")) return;
+        if (imgContainer?.classList.contains("has-trailer") && !refresh) return;
         const img = imgContainer?.querySelector('.cardImage');
         if (!img) return;
         const itemId = getItemIdFromUrl(img.src);
         if (!itemId || itemId.length === 0) return;
         let cacheKey = `trailerUrl_${itemId}`;
-        let trailerUrl = localStorage.getItem(cacheKey);
+        //let trailerUrl = localStorage.getItem(cacheKey);
+        let trailerUrl = getTrailerFromCache? localStorage.getItem(cacheKey) : null;
 
         if (!trailerUrl) {
             const item = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemId);
@@ -152,6 +159,8 @@
                 return;
             }
         }
+
+        if (!trailerUrl || trailerUrl === '') return;
        
 
         localStorage.setItem(cacheKey, trailerUrl);
@@ -182,29 +191,23 @@
 
         let isHovered = false; // Flag to track hover status
 
-        node.addEventListener('mouseleave', () => {
-            if (!isHovered) return; // Exit if not hovered
-            isHovered = false;
-            imgContainer.classList.add('has-trailer');
-            img.style.filter = ''; // Remove blur effect
 
-            const playerContainer = imgContainer.querySelector(`#player-${itemId}`);
-            if (playerContainer) {
-                const player = window.YT.get(playerContainer.id);
-                if (player) player.destroy();
-                playerContainer.remove();
-            } else {
-                const allVideos = cardOverlay.querySelectorAll('video');
-                allVideos.forEach(video => video.remove());
-            }
-        });
 
-        node.addEventListener('mouseenter', () => {
-            if (isHovered) return; // Prevent duplicate mouseenter logic
+        if (refresh) {
+            ['mouseenter', 'mouseleave'].forEach(type => {
+                const key = `_${type}Handler`;
+                if (node[key]) {
+                    node.removeEventListener(type, node[key]);
+                    node[key] = null;
+                }
+            });
+        }
+
+        const mouseenterHandler = () => {
+            if (isHovered) return;
             isHovered = true;
             imgContainer.classList.remove('has-trailer');
 
-            // Check if the trailer is a YouTube URL
             if (trailerUrl.includes('youtube.com') || trailerUrl.includes('youtu.be')) {
                 const embedUrl = trailerUrl.includes('watch')
                     ? trailerUrl.replace('watch?v=', 'embed/')
@@ -219,9 +222,9 @@
                     videoId: new URL(embedUrl).pathname.split('/').pop(),
                     playerVars: {
                         autoplay: 1,
-                        mute: 1, // Mute the video
-                        controls: 0, // Hide player controls
-                        modestbranding: 1, // Remove YouTube logo
+                        mute: 1,
+                        controls: 0,
+                        modestbranding: 1,
                     },
                     events: {
                         onReady: (event) => {
@@ -239,7 +242,30 @@
                 cardOverlay.appendChild(videoElement);
                 img.style.filter = 'blur(5px)';
             }
-        });
+        };
+
+        const mouseleaveHandler = () => {
+            if (!isHovered) return;
+            isHovered = false;
+            imgContainer.classList.add('has-trailer');
+            img.style.filter = '';
+
+            const playerContainer = imgContainer.querySelector(`#player-${itemId}`);
+            if (playerContainer) {
+                const player = window.YT.get(playerContainer.id);
+                if (player) player.destroy();
+                playerContainer.remove();
+            } else {
+                const allVideos = cardOverlay.querySelectorAll('video');
+                allVideos.forEach(video => video.remove());
+            }
+        };
+
+        // Add and store the new handler
+        node.addEventListener('mouseenter', mouseenterHandler);
+        node._mouseenterHandler = mouseenterHandler;
+        node.addEventListener('mouseleave', mouseleaveHandler);
+        node._mouseleaveHandler = mouseleaveHandler;
     }
 
 
@@ -253,13 +279,26 @@
         //return `${ApiClient._serverAddress}/emby/videos/${item.Id}/original.${item.MediaSources[0].Container}?DeviceId=${ApiClient._deviceId}&MediaSourceId=${item.MediaSources[0].Id}&api_key=${ApiClient.accessToken()}`;
 
         let videourl = '';
-        const trailerurl = (await ApiClient.getPlaybackInfo(item.Id, {},
+        const trailerurls = (await ApiClient.getPlaybackInfo(item.Id, {},
             { "MaxStaticBitrate": 140000000, "MaxStreamingBitrate": 140000000, "MusicStreamingTranscodingBitrate": 192000, "DirectPlayProfiles": [{ "Container": "mp4,m4v", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "mkv", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "flv", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "aac,mp3" }, { "Container": "mov", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "opus", "Type": "Audio" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3" }, { "Container": "mp2,mp3", "Type": "Audio", "AudioCodec": "mp2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac" }, { "Container": "m4a", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "mp4", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "flac", "Type": "Audio" }, { "Container": "webma,webm", "Type": "Audio" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "PCM_S16LE,PCM_S24LE" }, { "Container": "ogg", "Type": "Audio" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis,opus", "VideoCodec": "av1,VP8,VP9" }], "TranscodingProfiles": [{ "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mkv", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "Context": "Static", "MaxAudioChannels": "2", "CopyTimestamps": true }, { "Container": "m4s,ts", "Type": "Video", "AudioCodec": "ac3,mp3,aac", "VideoCodec": "h264,h265,hevc", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true, "ManifestSubtitles": "vtt" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis", "VideoCodec": "vpx", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp4", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264", "Context": "Static", "Protocol": "http" }], "ContainerProfiles": [], "CodecProfiles": [{ "Type": "VideoAudio", "Codec": "aac", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "VideoAudio", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "Video", "Codec": "h264", "Conditions": [{ "Condition": "EqualsAny", "Property": "VideoProfile", "Value": "high|main|baseline|constrained baseline|high 10", "IsRequired": false }, { "Condition": "LessThanEqual", "Property": "VideoLevel", "Value": "62", "IsRequired": false }] }, { "Type": "Video", "Codec": "hevc", "Conditions": [] }], "SubtitleProfiles": [{ "Format": "vtt", "Method": "Hls" }, { "Format": "eia_608", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "eia_708", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "vtt", "Method": "External" }, { "Format": "ass", "Method": "External" }, { "Format": "ssa", "Method": "External" }], "ResponseProfiles": [{ "Type": "Video", "Container": "m4v", "MimeType": "video/mp4" }] }
-        )).MediaSources[0];
+        ));
+        const trailerurl = trailerurls.MediaSources[0];
+
 
         if (trailerurl.Protocol == "File") {
-            //videourl = `${ApiClient.serverAddress()}/emby${trailerurl.DirectStreamUrl}`;
-            videourl = await ApiClient.getItemDownloadUrl(item.Id, item.MediaSources[0].Id, item.serverId);
+            if (OS_current === 'windows') {
+                videourl = await ApiClient.getItemDownloadUrl(item.Id, item.MediaSources[0].Id, item.serverId);
+            } else {
+                videourl = `${ApiClient.serverAddress()}/emby${trailerurl.DirectStreamUrl}`;
+            }
+            /*
+            videourl = `${ApiClient.serverAddress()}/emby${trailerurl.DirectStreamUrl}`;
+            if (videourl.includes('.m3u8')) {
+                //videourl = await ApiClient.getItemDownloadUrl(item.Id, item.MediaSources[0].Id, item.serverId);
+                videourl = `${ApiClient._serverAddress}/emby/videos/${item.Id}/original.${item.MediaSources[0].Container}?DeviceId=${ApiClient._deviceId}&MediaSourceId=${item.MediaSources[0].Id}&PlaySessionId=${trailerurls.PlaySessionId}&api_key=${ApiClient.accessToken()}`;
+            }
+            */
+            //videourl = `${ApiClient._serverAddress}/emby/videos/${item.Id}/original.${item.MediaSources[0].Container}?DeviceId=${ApiClient._deviceId}&MediaSourceId=${item.MediaSources[0].Id}&PlaySessionId=${trailerurls.PlaySessionId}&api_key=${ApiClient.accessToken()}`;
 
         } else if (trailerurl.Protocol == "Http") {
             videourl = trailerurl.Path;
@@ -267,7 +306,6 @@
         return videourl;
     }
 
- 
     function getOS() {
         let u = navigator.userAgent
         if (!!u.match(/compatible/i) || u.match(/Windows/i)) {
