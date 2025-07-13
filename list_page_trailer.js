@@ -20,6 +20,8 @@
 
             paly_mutation?.disconnect(); // Disconnect previous observer if exists
 
+            clearExpiredCache();
+
             applyBackgroundStyle();
 
             const selectorStr = e.detail.contextPath.startsWith("/videos?") ? `[data-index="1"].itemsTab .virtualItemsContainer` : "div[is='emby-scroller']:not(.hide) .virtualItemsContainer";
@@ -96,6 +98,26 @@
         }
     });
 
+    function clearExpiredCache() {
+        const CACHE_PREFIX = "trailerUrl";
+        const EXPIRY_KEY = "trailerUrl_cacheExpiry";
+        const expiry = localStorage.getItem(EXPIRY_KEY);
+        const now = Date.now();
+
+        if (!expiry || now > Number(expiry)) {
+            // Time to clear cached items with prefix
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith(CACHE_PREFIX)) {
+                    localStorage.removeItem(key);
+                }
+            });
+
+            // Set next expiry time (24h from now)
+            const nextExpiry = now + 24 * 60 * 60 * 1000; // 24 hours in ms
+            localStorage.setItem(EXPIRY_KEY, nextExpiry.toString());
+        }
+    }
+
     async function loadConfig() {
         const response = await fetch('./config.json');
         if (!response.ok) {
@@ -161,9 +183,13 @@
         }
 
         if (!trailerUrl || trailerUrl === '') return;
-       
-
-        localStorage.setItem(cacheKey, trailerUrl);
+       /*
+        try {
+            localStorage.setItem(cacheKey, trailerUrl);
+        } catch (e) {
+            console.warn("Failed to cache trailerUrl", e);
+        }
+        */
 
         if (trailerUrl.includes('youtube.com') || trailerUrl.includes('youtu.be')) {
             // Load YouTube IFrame API
@@ -286,18 +312,19 @@
 
 
         if (trailerurl.Protocol == "File") {
+            /*
             if (OS_current === 'windows') {
                 videourl = await ApiClient.getItemDownloadUrl(item.Id, item.MediaSources[0].Id, item.serverId);
             } else {
                 videourl = `${ApiClient.serverAddress()}/emby${trailerurl.DirectStreamUrl}`;
             }
-            /*
+            */
             videourl = `${ApiClient.serverAddress()}/emby${trailerurl.DirectStreamUrl}`;
-            if (videourl.includes('.m3u8')) {
+            if (videourl.includes('.m3u8') && OS_current === 'windows') {
                 //videourl = await ApiClient.getItemDownloadUrl(item.Id, item.MediaSources[0].Id, item.serverId);
                 videourl = `${ApiClient._serverAddress}/emby/videos/${item.Id}/original.${item.MediaSources[0].Container}?DeviceId=${ApiClient._deviceId}&MediaSourceId=${item.MediaSources[0].Id}&PlaySessionId=${trailerurls.PlaySessionId}&api_key=${ApiClient.accessToken()}`;
             }
-            */
+
             //videourl = `${ApiClient._serverAddress}/emby/videos/${item.Id}/original.${item.MediaSources[0].Container}?DeviceId=${ApiClient._deviceId}&MediaSourceId=${item.MediaSources[0].Id}&PlaySessionId=${trailerurls.PlaySessionId}&api_key=${ApiClient.accessToken()}`;
 
         } else if (trailerurl.Protocol == "Http") {
@@ -306,6 +333,7 @@
         return videourl;
     }
 
+ 
     function getOS() {
         let u = navigator.userAgent
         if (!!u.match(/compatible/i) || u.match(/Windows/i)) {
@@ -324,5 +352,5 @@
             return 'other'
         }
     }
-
+    
 })();
