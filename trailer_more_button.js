@@ -65,6 +65,7 @@
         }
 
         // Save to localStorage
+        /*
         if (parentItem) {
             try {
                 localStorage.setItem(cacheKey, JSON.stringify(parentItem));
@@ -72,6 +73,7 @@
                 console.warn("Failed to cache parentItem", e);
             }
         }
+        */
     }
 
     async function insertMoreButton() {
