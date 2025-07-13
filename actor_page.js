@@ -213,7 +213,7 @@
 
     async function javDbInit() {
         if (!fetchJavDbFlag) return;
-        if (!containsJapanese(item.Name) && (item.Name.includes(' ') || item.Name.includes('·'))) return;
+        if (!item.Overview?.includes('===== 外部链接 =====') && (!containsJapanese(item.Name) && (item.Name.includes(' ') || item.Name.includes('·')))) return;
         if (personType != 'director' && !isAVIdol()) return;
          
         pageLinks = [];
@@ -230,10 +230,8 @@
                 imgHtml += createItemContainerLarge(javDbMovies[i], i);
             }
 
-            const slider = createSliderLarge(`更多作品（来自JavDB，共${javDbMovies.length}部）`, imgHtml, "actorMoreSection-actorPage", "myitemsContainer-actorPage");
-            const sliderElement = document.createElement('div');
+            const sliderElement = createSliderLarge(`更多作品（来自JavDB，共${javDbMovies.length}部）`, imgHtml, "actorMoreSection-actorPage", "myitemsContainer-actorPage");
             sliderElement.id = 'myDbActorSlider-actorPage';
-            sliderElement.innerHTML = slider;
             linkedItems.insertAdjacentElement('afterend', sliderElement);
 
             const prevPageButton = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #prevPage-actorPage");
@@ -289,10 +287,13 @@
             });
         }
 
-        let h2Element = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .linkedItems .sectionTitle-cards");
-        if (h2Element && h2Element.textContent === '电影') {
-            const actorMovieNames = await getActorMovies(item.Name);
-            h2Element.textContent += `（共${actorMovieNames.length}部）`;
+        const movieSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .linkedItems .linked-Movie-section");
+        const h2Element = movieSection.querySelector(".sectionTitle-cards");
+        const itemsContainer = movieSection.querySelector(".itemsContainer");
+
+        if (h2Element && itemsContainer) {
+            //const actorMovieNames = await getActorMovies(item.Name);
+            h2Element.textContent += `（共${itemsContainer._itemSource.length}部）`;
         }
     }
 
@@ -370,16 +371,17 @@
         }
     }
 
-
     function createSliderLarge(text, html, sectionId, itemsContainerId) {
-        const slider = `
-            <div id=${sectionId} class="linked-Movie-section verticalSection verticalSection-cards">
+        const wrapper = document.createElement('div');
+
+        const sliderHtml = `
+            <div id="${sectionId}" class="linked-Movie-section verticalSection verticalSection-cards">
                 <div class="sectionTitleContainer padded-left padded-left-page padded-right sectionTitleContainer-cards focusable" data-focusabletype="nearest">
                     <h2 class="sectionTitle sectionTitle-cards">
                         <span id="text-actorPage">${text}</span>
                     </h2>
                 </div>
-                <div id=${itemsContainerId} is="emby-itemscontainer" class="itemsContainer focuscontainer-x padded-left padded-left-page padded-right vertical-wrap">
+                <div id="${itemsContainerId}" is="emby-itemscontainer" class="itemsContainer focuscontainer-x padded-left padded-left-page padded-right vertical-wrap">
                     ${html}
                 </div>
                 <h3 class="flex sectionTitle aline-items-center itemsViewSettingsContainer">
@@ -390,8 +392,8 @@
                             type="number" 
                             min="1" 
                             max="${pageLinks.length}" 
-                            value="1" 
-                          >/${pageLinks.length}页
+                            value="1"
+                        >/${pageLinks.length}页
                     </span>
                     <span id="nextPage-actorPage" class="pageButton">下一页</span>
                     <select id="filterDropdown" class="emby-select-wrapper emby-select-wrapper-inline pageButton" name="filterDropdown">
@@ -402,7 +404,9 @@
                 </h3>
             </div>
         `;
-        return slider
+
+        wrapper.innerHTML = sliderHtml.trim();
+        return wrapper.firstElementChild;
     }
 
     function createItemContainerLarge(itemInfo, increment) {
@@ -432,7 +436,7 @@
         return itemContainer;
     }
 
-
+    /*
     async function getActorMovies(actorName) {
         const actorMoreMovies = await ApiClient.getItems(
             ApiClient.getCurrentUserId(),
@@ -452,6 +456,7 @@
             return null;
         }   
     }
+    */
 
     function javdbNameMap(name) {
         if (!name) return "";
@@ -742,7 +747,7 @@
     function extractLinks(text, startLine) {
         if (text && text.length > 0 && !text.includes('===== 个人资料 =====') && !text.includes('===== 外部链接 =====') && personType === 'actor') {
             item.Overview = '';
-            //ApiClient.updateItem(item);
+            ApiClient.updateItem(item);
             return {};
         }
 
@@ -946,7 +951,6 @@
 
         return japaneseRegex.test(text);
     }
-
 
 })();
 
