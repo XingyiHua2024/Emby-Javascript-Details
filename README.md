@@ -39,7 +39,6 @@ Add some features for Emby detail page
 
 ### actor_page.js
    1. 加载javdb演员/导演结果
-   2. Emby User ID 必须匹配 (在文件开头修改user config。不再依赖config.json)
 
 ### emby-swiper-trailer.js
    1. 来自：https://github.com/newday-life/emby-web-mod/blob/main/emby-swiper/emby-swiper-trailer
@@ -48,17 +47,15 @@ Add some features for Emby detail page
 ### config.json
    1. save configs. 必须放在index.html同级目录中
    2. google API key （选填。不添加不会触发翻译功能）
-   3. Emby User ID （选填。不添加不会触发JavDb功能）
-   4. 也可以直接在js文件中修改相应config
+   3. 也可以直接在js文件中修改相应config
 
-### no need css anymore
 
 ## 部署服务器方法 1：
 1. 在客户端或网页的 `index.html` <body></body> 标签最后，插入以下内容：
    ```
    <script type="text/javascript" src="trailer_more_button.js"></script>
    <script type="text/javascript" src="emby_detail_page.js"></script>
-   <script type="text/javascript" src="list_page.js"></script>
+   <script type="text/javascript" src="list_page_trailer.js"></script>
    <script type="text/javascript" src="actor_page.js"></script>
    ```
 2. 将 `XXX.js` 文件下载放在index.html同级目录中，非window记得授权可读。
@@ -66,6 +63,17 @@ Add some features for Emby detail page
 
 ## 部署服务器方法 2：
 配合Emby自定义JavaScript及Css项目：https://github.com/Shurelol/Emby.CustomCssJS 
+
+## 部署服务器方法 3（仅适用于 Docker 用户）：
+1. 确保 Docker 容器正在运行，并记住容器名称（默认是 linuxserver_emby）
+2. 在你的 Linux 服务器上运行以下命令（正确修改自定义参数，如容器名、容器web路径、JS列表、配置文件等）：
+   ```
+   CONTAINER_NAME=linuxserver_emby \
+   CONTAINER_WEB_FOLDER=/app/emby/system/dashboard-ui \
+   JS_FILES="emby_detail_page.js list_page_trailer.js actor_page.js trailer_more_button.js" \
+   CONFIG_FILE=./my_config.json \
+   bash <(curl -s https://raw.githubusercontent.com/XingyiHua2024/Emby-Javascript-Details/main/install/patch.sh)
+   ```
    
 
 
