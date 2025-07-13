@@ -77,7 +77,7 @@
     }
 
     async function init() {
-        fetchJavDbFlag = (ApiClient.getCurrentUserId() === adminUserId) ? javDbFlag : false;
+        //fetchJavDbFlag = (ApiClient.getCurrentUserId() === adminUserId) ? javDbFlag : false;
         isDirector();
         await javDbInit();
         injectLinks();
