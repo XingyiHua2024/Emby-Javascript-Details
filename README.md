@@ -66,7 +66,11 @@ Add some features for Emby detail page
 
 ## 部署服务器方法 3（仅适用于 Docker 用户）：
 1. 确保 Docker 容器正在运行，并记住容器名称（默认是 linuxserver_emby）
-2. 在你的 Linux 服务器上运行以下命令（正确修改自定义参数，如容器名、容器web路径、JS列表、配置文件等）：
+2. 在你的 Linux 服务器上运行以下命令
+   ```
+   bash <(curl -s https://raw.githubusercontent.com/XingyiHua2024/Emby-Javascript-Details/main/install/patch.sh)
+   ```
+3. 如添加失败，须加入自定义参数运行（正确修改自定义参数，如容器名、容器web路径、JS列表、配置文件等）：
    ```
    CONTAINER_NAME=linuxserver_emby \
    CONTAINER_WEB_FOLDER=/app/emby/system/dashboard-ui \
