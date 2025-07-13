@@ -14,7 +14,7 @@
     // put language to translate from (ja for Japanese) to Chinese. Leave '' to support any language
 
     var item, actorName, directorName, viewnode;
-    var prefixDic = {};
+    var prefixDic = {}, mountMatch = {};
     //var adminUserId = ''; //Emby User ID
 
     await loadConfig();
@@ -100,6 +100,7 @@
             googleApiKey = config.googleApiKey || googleApiKey;
             nameMap = config.nameMap || nameMap;
             prefixDic = config.prefixDic || prefixDic;
+            mountMatch = config.mountMatch || mountMatch;
         }
     }
 
@@ -115,7 +116,7 @@
         updateSimilarFetch();
         injectLinks();
         javdbTitle();
-        //buttonInit();
+        buttonInit();
         reviewButtonInit();
 
         await previewInject();
@@ -667,7 +668,7 @@
 
     function buttonInit() {
         //removeExisting('embyCopyUrl');
-        if (OS_current != 'windows' || item.Type == 'Person') return;
+        if (OS_current != 'windows' || item.Type == 'Person' || Object.keys(mountMatch).length === 0) return;
         const itemPath = translatePath(item.Path);
         const itemFolderPath = itemPath.substring(0, itemPath.lastIndexOf('\\'));
 
@@ -2982,6 +2983,15 @@
     }
 
     function translatePath(linuxPath) {
+        // Iterate through the mountMatch dictionary
+        for (const [linuxPrefix, windowsPrefix] of Object.entries(mountMatch)) {
+            if (linuxPath.startsWith(linuxPrefix)) {
+                // Replace the Linux prefix with the Windows prefix
+                const relativePath = linuxPath.slice(linuxPrefix.length);
+                return windowsPrefix + relativePath.replace(/\//g, '\\');
+            }
+        }
+        // Return the original path if no match is found
         return linuxPath;
     }
 
