@@ -14,7 +14,7 @@ Add some features for Emby detail page
    3. 在“更多类似”下面增加此演员及导演其他作品展示。
       - 如有多个演员，则随机选择其中一个；
       - 如有超过12部作品，则随机选择12部展示。
-      - ![Screenshot](images/actorMore.png)
+      - ![Screenshot](images/actorMore_new.png)
    4. 翻译标题和详情功能。
       - 需自行添加 google API key
    5. 加载Javdb内容。
