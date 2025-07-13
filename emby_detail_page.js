@@ -5,7 +5,7 @@
     var googleApiKey = ''; //Google API Key
     var nameMap = {};
     var fetchJavDbFlag = true; //enable javdb scrap 
-    var getTrailerFromCache = false; //enable reading from cache
+    var getTrailerFromCache = true; //enable reading from cache
     /*****************************************************/
 
     const show_pages = ["Movie", "Series", "Season", "BoxSet", "Person"];
@@ -26,7 +26,7 @@
 
     const embyDetailCss = `.has-trailer{position:relative;box-shadow:0 0 10px 3px rgb(255 255 255 / .8);transition:box-shadow 0.3s ease-in-out;border-radius:8px}.has-trailer:hover{box-shadow:0 0 10px 3px rgb(255 0 150 / .3);transition:box-shadow 0.2s ease-in-out}.injectJavdb{opacity:1;transition:color 0.3s,transform 0.3s,box-shadow 0.3s,filter 0.3s}.injectJavdb:hover{transform:scale(1.05);background:linear-gradient(135deg,rgb(255 0 150 / .3),rgb(0 150 255 / .3));box-shadow:0 4px 15px rgb(0 0 0 / .2),0 0 10px rgb(0 150 255 / .5)}.injectJavdb .button-text,.injectJavdb .button-icon{color:pink;transition:color 0.3s,filter 0.3s}.injectJavdb:hover .button-text,.injectJavdb:hover .button-icon{color:black!important}.injectJavbus .button-text,.injectJavbus .button-icon{color:#ff8181!important}.noUncensored{opacity:1;transition:color 0.3s,transform 0.3s,box-shadow 0.3s,filter 0.3s}.noUncensored .button-text,.noUncensored .button-icon{color:grey!important}.melt-away{animation:sandMeltAnimation 1s ease-out forwards}@keyframes sandMeltAnimation{0%{opacity:1}100%{opacity:0}}.my-fanart-image{display:inline-block;margin:8px 10px 8px 10px;vertical-align:top;border-radius:8px;height:27vh;transition:transform 0.3s ease,filter 0.3s ease;min-height:180px}.my-fanart-image-slider{height:20vh!important}.my-fanart-image:hover{transform:scale(1.03);filter:brightness(80%)}.modal{display:none;position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;overflow:hidden;background-color:rgb(0 0 0 / .8);justify-content:center;align-items:center}.modal-content{margin:auto;max-width:70%;max-height:70%;overflow:hidden;opacity:0}@media (max-width:768px){.modal-content{max-width:80%;max-height:80%}}.modal-closing .modal-content{animation-name:shrinkAndRotate;animation-duration:0.3s;animation-timing-function:ease-out}.close{color:#fff;position:absolute;width:45px;height:45px;display:flex;justify-content:center;align-items:center;top:30px;right:30px;font-size:30px;font-weight:700;cursor:pointer;transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:0;background-color:rgb(0 0 0 / .5);user-select:none;caret-color:#fff0}.prev,.next{position:absolute;width:40px;height:40px;line-height:40px;justify-content:center;align-items:center;display:flex;top:50%;background-color:rgb(0 0 0 / .5);color:#fff;border:none;cursor:pointer;font-size:35px;font-weight:700;transform:translateY(-50%) translateX(-50%);transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:35px}.prev{left:80px}.next{right:20px}.prev:hover,.next:hover{background-color:rgb(255 255 255 / .3);padding:35px}.close:hover{background-color:rgb(255 255 255 / .3);padding:10px}@keyframes shrinkAndRotate{0%{transform:scale(1)}100%{transform:scale(0)}}.click-smaller{transform:scale(.9) translate(-50%,-50%);transition:transform 0.2s}.prev.disabled,.next.disabled{color:grey!important;cursor:default}@keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-10px)}50%{transform:translateX(10px)}75%{transform:translateX(-10px)}100%{transform:translateX(0)}}.modal-caption{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);text-align:center;font-size:16px;color:#fff;background-color:rgb(0 0 0 / .6);padding:5px 10px;border-radius:5px}@media screen and (max-width:480px){.modal-caption{bottom:100px}}.video-element{position:absolute;width:100%;height:100%;object-fit:contain;z-index:3;pointer-events:auto;transition:opacity 0.5s ease}.copy-link{color:lightblue;cursor:pointer;display:inline-block;transition:transform 0.1s ease}.copy-link:active{transform:scale(.95)}.media-info-item{display:block;width:100%;margin-top:10px;text-align:left}.media-info-item a{padding:5px 10px;background:rgb(255 255 255 / .15);margin-bottom:5px;margin-right:5px;-webkit-backdrop-filter:blur(5em);backdrop-filter:blur(5em);font-weight:600;font-family:'Poppins',sans-serif;transition:transform 0.2s ease,background-color 0.3s ease,box-shadow 0.3s ease,color 0.3s ease;text-decoration:none;color:#fff}.media-info-item a:hover{transform:scale(1.05);background:linear-gradient(135deg,rgb(255 0 150 / .3),rgb(0 150 255 / .3));box-shadow:0 4px 15px rgb(0 0 0 / .2),0 0 10px rgb(0 150 255 / .5)}.pageButton{cursor:pointer;padding:6px 16px;background:rgb(255 255 255 / 15%);border-radius:5px;box-shadow:0 2px 4px rgb(0 0 0 / .2);transition:background-color 0.3s ease,box-shadow 0.3s ease}.pageButton:hover{background:rgb(255 255 255 / 85%);color:#000;box-shadow:0 4px 8px rgb(0 0 0 / .4)}#pageInput-actorPage::-webkit-inner-spin-button,#pageInput-actorPage::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}#pageInput-actorPage{-moz-appearance:textfield;appearance:none;height:auto;text-align:center;padding:5px;font-family:inherit;font-size:inherit;font-weight:inherit;line-height:inherit}#filterDropdown{width:auto;backdrop-filter:blur(5px);color:#fff;transition:background-color 0.3s ease,box-shadow 0.3s ease;margin-left:20px;font-family:inherit;padding:6px 16px;font-weight:inherit;line-height:inherit;border:none}#filterDropdown:hover{background:rgb(255 255 255 / 85%);color:#000;box-shadow:0 4px 8px rgb(0 0 0 / .4)}#filterDropdown:focus{outline:none;box-shadow:0 0 4px 2px rgb(255 255 255 / .8)}#filterDropdown option{font-family:inherit;color:#000;background:#fff;border:none;padding:5px;font-weight:inherit}#filterDropdown option:hover{background:#c8c8c8}.myCardImage{transition:filter 0.2s ease}.myCardImage:hover{filter:brightness(70%)}#toggleFanart{padding:10px 20px;font-size:18px;background:rgb(255 255 255 / .15);margin-top:15px;margin-bottom:15px;border:none;border-radius:8px;font-weight:700;font-family:'Poppins',sans-serif;color:#fff;text-decoration:none;cursor:pointer;display:block;margin-left:auto;margin-right:auto;-webkit-backdrop-filter:blur(5em);backdrop-filter:blur(5em);transition:transform 0.2s ease,background-color 0.3s ease,box-shadow 0.3s ease,color 0.3s ease}#toggleFanart:hover{transform:scale(1.1);background:linear-gradient(135deg,rgb(255 0 150 / .4),rgb(0 150 255 / .4));box-shadow:0 6px 20px rgb(0 0 0 / .3),0 0 15px rgb(0 150 255 / .6);color:#fff}#toggleFanart:active{transform:scale(.95);box-shadow:0 3px 12px rgb(0 0 0 / .3)}.bg-style{background:linear-gradient(to right top,rgb(0 0 0 / .98),rgb(0 0 0 / .2)),url(https://assets.nflxext.com/ffe/siteui/vlv3/058eee37-6c24-403a-95bd-7d85d3260ae1/5030300f-ed0c-473a-9795-a5123d1dd81d/US-en-20240422-POP_SIGNUP_TWO_WEEKS-perspective_WEB_0941c399-f3c4-4352-8c6d-0a3281e37aa0_large.jpg);background-attachment:fixed;background-repeat:no-repeat;background-position:center;background-size:cover}@media (max-width:50em){.swiper-thumbs{display:none!important}}`;
 
-       // monitor dom changements
+    // monitor dom changements
     document.addEventListener("viewbeforeshow", function (e) {
         if (e.detail.contextPath.startsWith("/item?id=")) {
             if (!e.detail.isRestored) {
@@ -68,6 +68,26 @@
         }
     });
 
+    function clearExpiredCache() {
+        const CACHE_PREFIX = "trailerUrl";
+        const EXPIRY_KEY = "trailerUrl_cacheExpiry";
+        const expiry = localStorage.getItem(EXPIRY_KEY);
+        const now = Date.now();
+
+        if (!expiry || now > Number(expiry)) {
+            // Time to clear cached items with prefix
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith(CACHE_PREFIX)) {
+                    localStorage.removeItem(key);
+                }
+            });
+
+            // Set next expiry time (24h from now)
+            const nextExpiry = now + 24 * 60 * 60 * 1000; // 24 hours in ms
+            localStorage.setItem(EXPIRY_KEY, nextExpiry.toString());
+        }
+    }
+
     async function loadConfig() {
         const response = await fetch('./config.json');
         if (!response.ok) {
@@ -91,6 +111,7 @@
     }
 
     async function init() {
+        clearExpiredCache();
         updateSimilarFetch();
         injectLinks();
         javdbTitle();
@@ -364,16 +385,20 @@
             newLinks.push(createNewLinkElement('搜索 javdb.com', 'pink', getUrl(item.Overview, "===== 外部链接 =====", "JavDb") || `https://javdb.com/search?q=${noNumCode}&f=all`, 'javdb'));
             newLinks.push(createNewLinkElement('搜索 javbus.com', 'red', `https://www.javbus.com/${code}`, 'javbus'));
             newLinks.push(createNewLinkElement('搜索 javlibrary.com', 'rgb(191, 96, 166)', `https://www.javlibrary.com/cn/vl_searchbyid.php?keyword=${code}`, 'javlibrary'));
-            newLinks.push(createNewLinkElement('搜索 missav.ws', 'rgb(238, 152, 215)', `https://missav.ws/cn/search/${code}`, 'missav'));
-
 
             if (item.Genres.includes("无码")) {
+                newLinks.push(createNewLinkElement('搜索 7mmtv.sx', 'rgb(225, 125, 190)', `https://7mmtv.sx/zh/searchform_search/all/index.html?search_keyword=${code}&search_type=searchall&op=search`, '7mmtv'));
+                newLinks.push(createNewLinkElement('搜索 missav.ws', 'rgb(238, 152, 215)', `https://missav.ws/cn/search/${code}`, 'missav'));
                 if (/^n\d{4}$/.test(code)) {
                     newLinks.push(createNewLinkElement('搜索 tokyohot', 'red', 'https://my.tokyo-hot.com/product/?q=' + code.toLowerCase() + '&x=0&y=0', 'tokyohot'));
                 } else if (/^\d+-\d+$/.test(code)) {
                     newLinks.push(createNewLinkElement('搜索 caribbean', 'green', 'https://www.caribbeancom.com/moviepages/' + code.toLowerCase() + '/index.html', 'caribbean'));
                 } else if (/^\d+_\d+$/.test(code)) {
-                    newLinks.push(createNewLinkElement('搜索 1pondo', 'rgb(230, 95, 167)', 'https://www.1pondo.tv/movies/' + code.toLowerCase() + '/', '1pondo'));
+                    if (item.ProviderIds?.MetaTube?.includes('CaribbeancomPR')) {
+                        newLinks.push(createNewLinkElement('搜索 caribbeancompr', 'orange', 'https://www.caribbeancompr.com/moviepages/' + code.toLowerCase() + '/index.html', 'caribbeancompr'));
+                    } else {
+                        newLinks.push(createNewLinkElement('搜索 1pondo', 'rgb(230, 95, 167)', 'https://www.1pondo.tv/movies/' + code.toLowerCase() + '/', '1pondo'));
+                    }
                 } else if (code.toLowerCase().includes('heyzo')) {
                     const heyzoNum = getPartAfter(code, "-");
                     newLinks.push(createNewLinkElement('搜索 heyzo', 'pink', 'https://www.heyzo.com/moviepages/' + heyzoNum + '/index.html', 'heyzo'));
@@ -386,8 +411,9 @@
                 const modifyCode = (noNumCode.startsWith("DSVR") && /^\D+-\d{1,3}$/.test(code)) ? "3" + code : code;
                 newLinks.push(createNewLinkElement('搜索 jvrlibrary.com', 'lightyellow', `https://jvrlibrary.com/jvr?id=` + modifyCode, 'jvrlibrary'));
             } else {
-                newLinks.push(createNewLinkElement('搜索 tktube.com', 'blue', `https://tktube.com/search/${code.replace(/-/g, "--")}/`, 'tktube'));
                 newLinks.push(createNewLinkElement('搜索 7mmtv.sx', 'rgb(225, 125, 190)', `https://7mmtv.sx/zh/searchform_search/all/index.html?search_keyword=${code}&search_type=searchall&op=search`, '7mmtv'));
+                newLinks.push(createNewLinkElement('搜索 missav.ws', 'rgb(238, 152, 215)', `https://missav.ws/cn/search/${code}`, 'missav'));
+                newLinks.push(createNewLinkElement('搜索 tktube.com', 'blue', `https://tktube.com/search/${code.replace(/-/g, "--")}/`, 'tktube'));
                 newLinks.push(createNewLinkElement('搜索 dmm.co.jp', 'red', 'https://www.dmm.co.jp/mono/-/search/=/searchstr=' + code.toLowerCase() + '/', 'dmm'));
                 if (noNumCode != code) {
                     newLinks.push(createNewLinkElement('搜索 mgstage.com', 'red', `https://www.mgstage.com/search/cSearch.php?search_word=${code}&x=0&y=0&search_shop_id=&type=top`, 'prestige'));
@@ -796,7 +822,13 @@
                 if (title.includes(noNumCode) || noNumCode.includes(title)) {
                     movieUrl = `${HOST}${href}`;
                     addLink(item.Overview || '', "===== 外部链接 =====", "JavDb", movieUrl);
-                    localStorage.setItem(urlCacheKey, JSON.stringify(movieUrl));
+                    /*
+                    try {
+                        localStorage.setItem(urlCacheKey, JSON.stringify(movieUrl));
+                    } catch (e) {
+                        console.warn("Failed to cache", e);
+                    }
+                    */
                     const tagElement = firstItem.querySelector(".tags .tag");
                     const tagText = tagElement ? tagElement.textContent.trim() : null;
                     if (tagText === '含中字磁鏈' || tagText === 'CnSub DL' && !item.Genres.includes("中文字幕")) {
@@ -823,7 +855,7 @@
                     });
 
                     // Save the result in localStorage
-                    localStorage.setItem(cacheKey, JSON.stringify(reviews));
+                    //localStorage.setItem(cacheKey, JSON.stringify(reviews));
 
                     return reviews;
                 } catch (error) {
@@ -880,7 +912,7 @@
 
         if (moreItems.length > 0) {
             // Save the filtered items in localStorage
-            localStorage.setItem(cacheKey, JSON.stringify(moreItems));
+            //localStorage.setItem(cacheKey, JSON.stringify(moreItems));
             displayMoreItems(moreItems);
         }
 
@@ -1710,7 +1742,7 @@
     }
 
     async function actorMoreInject(isDirector = false, excludeIds = []) {
-        if (item.Type == 'Person') return
+        if (item.Type == 'Person') return [];
         const name = getActorName(isDirector);
         isDirector ? (directorName = name) : (actorName = name);
 
@@ -1925,7 +1957,11 @@
                     videourl = trailerurl.Path;
                 }
 
-                localStorage.setItem(cacheKey, videourl); // Store in localStorage
+                try {
+                    localStorage.setItem(cacheKey, videourl);
+                } catch (e) {
+                    console.warn("Failed to cache", e);
+                }
             }
         }
 
@@ -2070,14 +2106,7 @@
             tagMovies = await getCollectionMovies(item.Id);
         }
 
-        let seriesName_jp;
-
-        if (typeof OpenCC !== 'undefined' && typeof OpenCC.Converter === 'function') {
-            const converter = OpenCC.Converter({ from: 'cn', to: 'jp' });
-            seriesName_jp = converter(seriesName);
-        } else {
-            seriesName_jp = seriesName;
-        }
+        let seriesName_jp = translateJP(seriesName, 'cn', 'jp');
 
         await waitForRandomTime();
         let [javDbMovies, seriesUrl, javdbSeries] = await fetchDbSeries(seriesName_jp.replace("%", ""));
@@ -2466,10 +2495,16 @@
                     const personInfo = await ApiClient.getPerson(javdbActorName, ApiClient.getCurrentUserId());
                     actorUrl = getUrl(personInfo.Overview, "===== 外部链接 =====", "JavDb");
                 }
-
+                /*
                 if (actorUrl) {
-                    localStorage.setItem(urlCacheKey, actorUrl); // Cache actor URL
+                    //localStorage.setItem(urlCacheKey, actorUrl); // Cache actor URL
+                    try {
+                        localStorage.setItem(urlCacheKey, actorUrl);
+                    } catch (e) {
+                        console.warn("Failed to cache", e);
+                    }
                 }
+                */
             }
         }
 
@@ -2735,9 +2770,15 @@
         if (!seriesUrl) return [movies, seriesUrl, javdbSeries];
 
         // Cache seriesUrl in localStorage if item.Type !== 'BoxSet'
+        /*
         if (item.Type !== 'BoxSet') {
-            localStorage.setItem(`seriesUrl_${seriesName}`, seriesUrl);
+            try {
+                localStorage.setItem(`seriesUrl_${seriesName}`, seriesUrl);
+            } catch (e) {
+                console.warn("Failed to cache", e);
+            }
         }
+        */
 
         javdbData = await request(seriesUrl);
         if (javdbData.length === 0) return [movies, seriesUrl, javdbSeries];
@@ -2852,9 +2893,7 @@
     async function translateOnly(text) {
         if (googleApiKey.length === 0) { return text; }
         const apiUrl = `https://translation.googleapis.com/language/translate/v2?key=${googleApiKey}`;
-        let text_jp = (googleTranslateLanguage === 'ja' && typeof OpenCC !== 'undefined' && typeof OpenCC.Converter === 'function')
-            ? OpenCC.Converter({ from: 'cn', to: 'jp' })(text)
-            : text;
+        let text_jp = googleTranslateLanguage === 'ja' ? translateJP(text, 'cn', 'jp') : text;
 
         let response = await fetch(apiUrl, {
             method: 'POST',
@@ -2933,6 +2972,14 @@
         }
     }
 
+    function translateJP(text, lan1, lan2) {
+        if (typeof OpenCC !== 'undefined' && typeof OpenCC.Converter === 'function') {
+            const converter = OpenCC.Converter({ from: lan1, to: lan2 });
+            return converter(text);
+        } else {
+            return text;
+        }
+    }
 
     function translatePath(linuxPath) {
         return linuxPath;
