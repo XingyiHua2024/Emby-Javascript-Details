@@ -1,3 +1,4 @@
+# 新增Docker一键部署 （见最下）
 # Emby-Javascript-Details
 Add some features for Emby detail page
 
