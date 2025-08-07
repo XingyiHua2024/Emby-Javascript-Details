@@ -8,13 +8,13 @@
     var getTrailerFromCache = true; //enable reading from cache
     /*****************************************************/
 
-    const show_pages = ["Movie", "Series", "Season", "BoxSet", "Person"];
+    const show_pages = ["Movie", "Series", "Season", "BoxSet", "Person", "Trailer"];
 
     const googleTranslateLanguage = 'ja';
     // put language to translate from (ja for Japanese) to Chinese. Leave '' to support any language
 
     var item, actorName, directorName, viewnode;
-    var prefixDic = {}, mountMatch = {};
+    var prefixDic = {}, mountMatch = {}, deviceProfile = {};
     //var adminUserId = ''; //Emby User ID
 
     await loadConfig();
@@ -89,12 +89,18 @@
     }
 
     async function loadConfig() {
-        const response = await fetch('./config.json');
-        if (!response.ok) {
-            console.error(`Failed to fetch config.json: ${response.status} ${response.statusText}`);
-            return; // Exit the function if the file is not found or another error occurs
+        let config = null;
+        if (window.cachedConfig) {
+            config = window.cachedConfig;
+        } else {
+            const response = await fetch('./config.json');
+            if (!response.ok) {
+                console.error(`Failed to fetch config.json: ${response.status} ${response.statusText}`);
+                return; // Exit the function if the file is not found or another error occurs
+            }
+            config = await response.json();
+            window.cachedConfig = config;
         }
-        const config = await response.json();
         if (config) {
             //adminUserId = config.adminUserId || adminUserId;
             googleApiKey = config.googleApiKey || googleApiKey;
@@ -111,19 +117,18 @@
         document.head.appendChild(style); // Append the style element to the document head
     }
 
-    async function init() {
+    function init() {
         clearExpiredCache();
+        handleAddition();
         updateSimilarFetch();
         injectLinks();
         javdbTitle();
         buttonInit();
         reviewButtonInit();
 
-        await previewInject();
-        modalInject();
+        previewInject().then(modalInject);
 
-        const excludeIds = await actorMoreInject();
-        actorMoreInject(true, excludeIds);
+        actorMoreInject().then(excludeIds => actorMoreInject(true, excludeIds));
 
         translateInject();
         javdbButtonInit();
@@ -138,7 +143,7 @@
 
     function showFlag() {
         for (let show_page of show_pages) {
-            if (item.Type == show_page) {
+            if (item.Type === show_page) {
                 return true;
             }
         }
@@ -149,49 +154,66 @@
         return !isTouchDevice() && isJP18();
     }
 
+    function changePreferThumb(view) {
+        const originalGetListOptions = view.getListOptions;
+
+        view.getListOptions = function (items) {
+            const result = originalGetListOptions(items);
+            result.options.preferThumb = !0;
+            return result;
+        };
+    } 
+
+    function handleAddition() {
+        if (item.Type === 'BoxSet' || item.Type === 'Person') return;
+        const view = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .additionalPartsSection .itemsContainer");
+        if (!view) return;
+        changePreferThumb(view);
+    }
+
     function updateSimilarFetch() {
-        if (item.Type == 'BoxSet' || item.Type == 'Person') return;
-        const view = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .similarItemsContainer");
+        if (item.Type === 'BoxSet' || item.Type === 'Person') return;
+
+        const similarSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .similarSection");
+        const view = similarSection?.querySelector(".similarItemsContainer");
         if (!view) return;
 
         if (isPreferThumb()) {
-            const originalGetListOptions = view.getListOptions;
-
-            view.getListOptions = function (item) {
-                const result = originalGetListOptions(item);
-                result.options.preferThumb = !0;
-                return result;
-            };
+            changePreferThumb(view);
         }
 
         if (!isTouchDevice() && item.Type === 'Movie') {
 
             const observer = new MutationObserver((mutationsList) => {
                 for (const mutation of mutationsList) {
+                    /*
                     if (mutation.type === 'childList' && (mutation.addedNodes.length || mutation.removedNodes.length)) {
+                        //view.updateElement();
                         addHoverEffect();
-                        (view.children.length == 12) && observer.disconnect(); 
-                        /*
-                        addHoverEffect();
-
-                        // Create a wrapper function that preserves bound arguments and behavior
-                        if (!view._updateElementWrapped) {
-                            const originalUpdateElement = view.updateElement;
-
-                            view.updateElement = function (...args) {
-                                const result = originalUpdateElement.apply(this, args);
-
-                                addHoverEffect();
-                                return result;
-                            };
-
-                            view._updateElementWrapped = true; // mark as wrapped
-                        }
-
-                        observer.disconnect(); 
-                        */
-
+                        (view.children.length === 12) && observer.disconnect(); 
+                        //observer.disconnect(); 
                         break; // Only need to run once per mutation batch
+                    }
+                    */
+                    if (mutation.type === 'childList' && (mutation.addedNodes.length || mutation.removedNodes.length)  && typeof view.updateElement === 'function') {
+                        observer.disconnect(); 
+                        
+                        const originalUpdateElement = view.updateElement;
+
+                        view.updateElement = function (...args) {
+                            const result = originalUpdateElement.apply(this, args);
+
+                            // If original is sync, wrap it into a Promise
+                            return Promise.resolve(result).then(() => {
+                                addHoverEffect();
+                            });
+                        };
+
+                        setTimeout(() => {
+                            addHoverEffect();
+                        }, 1000);
+
+                        break;
                     }
                 }
             });
@@ -201,6 +223,7 @@
                 subtree: false     // Only watch direct children of slider
             });
         }
+
 
         view.fetchData = () => {
             const options = {
@@ -214,27 +237,55 @@
             return ApiClient.getSimilarItems(item.Id, options).then(result => {
                 const items = result.Items || [];
 
-                if (items.length > 12) {
-                    // Fisher–Yates shuffle
-                    for (let i = items.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [items[i], items[j]] = [items[j], items[i]];
-                    }
+                const weightFactor = -0.1; // Adjust this to control how biased toward the front it is
 
-                    // Return 12 random items
-                    return {
-                        Items: items.slice(0, 12),
-                        TotalRecordCount: 12
-                    };
-                }
+                // Assign biased score and sort
+                const shuffled = items
+                    .map((item, index) => ({
+                        item,
+                        sortKey: Math.random() + index * weightFactor
+                    }))
+                    .sort((a, b) => a.sortKey - b.sortKey)
+                    .map(entry => entry.item);
 
-                // Return original if 12 or fewer
                 return {
-                    Items: items,
-                    TotalRecordCount: items.length
+                    Items: shuffled.slice(0, 12),
+                    TotalRecordCount: Math.min(items.length, 12)
                 };
             });
         };
+
+        let title = similarSection.querySelector('.sectionTitle');
+        title = updateH2(title);
+
+        title.addEventListener('click', () => {
+            view.fetchData()
+                .then(view.bound_onDataFetchedInitial, view.bound_onGetItemsFailed)
+                .then(() => addHoverEffect());
+        });
+
+        function updateH2(oldH2) {
+            // Clone the h2 to move it safely
+            const clonedH2 = oldH2.cloneNode(true);
+            clonedH2.className = 'sectionTitle sectionTitle-cards'; // remove extra padding classes
+
+            // Create the <a> element
+            const a = document.createElement('a');
+            a.className = 'noautofocus button-link button-link-color-inherit sectionTitleTextButton sectionTitleTextButton-link sectionTitleTextButton-more emby-button emby-button-backdropfilter';
+            a.setAttribute('is', 'emby-sectiontitle');
+            a.appendChild(clonedH2);
+
+            // Create the wrapper div
+            const wrapper = document.createElement('div');
+            wrapper.className = 'sectionTitleContainer sectionTitleContainer-cards padded-left padded-left-page padded-right';
+            wrapper.setAttribute('bis_skin_checked', '1');
+            wrapper.appendChild(a);
+            wrapper.title = "刷新数据";
+
+            // Replace old h2 with the new wrapper
+            oldH2.replaceWith(wrapper);
+            return wrapper;
+        }
     }
 
     function addBoxsetTrailer() {
@@ -248,13 +299,7 @@
                 //console.log("Slider found:", slider);
                 observer.disconnect(); // Stop observing once found
 
-                const originalGetListOptions = slider.getListOptions;
-
-                slider.getListOptions = function () {
-                    const result = originalGetListOptions();
-                    result.options.preferThumb = !0;
-                    return result;
-                };
+                changePreferThumb(slider);
 
                 slider.fetchData = () => {
                     const query = {
@@ -300,7 +345,7 @@
     }
 
     function javdbTitle() {
-        if (!isJP18() || !fetchJavDbFlag || item.Type == 'BoxSet' || item.Type == 'Person') return
+        if (!isJP18() || !fetchJavDbFlag || item.Type === 'BoxSet' || item.Type === 'Person') return
 
         const detailMainContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailMainContainerParent");
 
@@ -342,7 +387,7 @@
             return link;
         }
 
-        if (OS_current == 'iphone' || OS_current == 'android') return
+        if (OS_current === 'iphone' || OS_current === 'android') return
 
         const newLinks = createLinks(code);
 
@@ -488,7 +533,7 @@
 
                 const trimmedText = mediaItem.textContent.trim();
 
-                if (trimmedText === 'JP-18+') {
+                if (trimmedText === 'JP-18+' || trimmedText === 'NC-17') {
                     mediaItem.style.fontWeight = 'bold';
                     mediaItem.style.fontFamily = "'Georgia', serif";
                 } else if (timeRegexWithHoursAndMinutes.test(trimmedText)) {
@@ -635,7 +680,7 @@
 
 
     function addNewLinks(mediaInfoItem, newLinks) {
-        if (item.Type == 'BoxSet') return;
+        if (item.Type === 'BoxSet') return;
         newLinks.forEach((link, index) => {
             mediaInfoItem.appendChild(document.createTextNode(', '));
             mediaInfoItem.appendChild(link);
@@ -643,7 +688,7 @@
     }
 
     function createNewLinkElement(title, color, url, text) {
-        if (item.Type == 'BoxSet') return null;
+        if (item.Type === 'BoxSet') return null;
         const newLink = document.createElement('a');
         //newLink.className = 'button-link button-link-color-inherit emby-button';
         newLink.className = 'button-link-color-inherit emby-button';
@@ -668,7 +713,7 @@
 
     function buttonInit() {
         //removeExisting('embyCopyUrl');
-        if (OS_current != 'windows' || item.Type == 'Person' || Object.keys(mountMatch).length === 0) return;
+        if (OS_current != 'windows' || item.Type === 'Person' || Object.keys(mountMatch).length === 0) return;
         const itemPath = translatePath(item.Path);
         const itemFolderPath = itemPath.substring(0, itemPath.lastIndexOf('\\'));
 
@@ -678,7 +723,7 @@
         mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml);
         viewnode.querySelector("div[is='emby-scroller']:not(.hide) #embyCopyUrl").onclick = embyCopyUrl;
 
-        async function embyCopyUrl() {
+        function embyCopyUrl() {
             const itemPath = translatePath(item.Path);
             const folderPath = itemPath.substring(0, itemPath.lastIndexOf('\\'));
             copyTextToClipboard(folderPath);
@@ -697,7 +742,7 @@
     }
 
     function javdbButtonInit() {
-        if (!isJP18() || !fetchJavDbFlag || item.Type == 'Person') return;
+        if (!isJP18() || !fetchJavDbFlag || item.Type === 'Person') return;
 
         const mainDetailButtons = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .mainDetailButtons");
 
@@ -762,8 +807,8 @@
             addReviews(reviews);
         }
 
-        async function addReviews(reviews) {
-            if (reviews.length == 0) {
+        function addReviews(reviews) {
+            if (reviews.length === 0) {
                 showToast({
                     text: `暂无短评`,
                     icon: `<span class="material-symbols-outlined">comments_disabled</span>`,
@@ -1005,7 +1050,11 @@
         const wrapper = document.createElement('div');
         wrapper.innerHTML = `
             <div class="verticalSection verticalSection-cards actorMoreSection emby-scrollbuttons-scroller" bis_skin_checked="1">
-                <h2 class="sectionTitle sectionTitle-cards padded-left padded-left-page padded-right">${titleText}</h2>
+                <div class="sectionTitleContainer sectionTitleContainer-cards padded-left padded-left-page padded-right" bis_skin_checked="1">
+                    <a is="emby-sectiontitle" class="noautofocus button-link button-link-color-inherit sectionTitleTextButton sectionTitleTextButton-link sectionTitleTextButton-more emby-button emby-button-backdropfilter">
+                        <h2 class="sectionTitle sectionTitle-cards">${titleText}</h2>
+                    </a>
+                </div>
                 <div is="emby-scroller" class="emby-scroller padded-top-focusscale padded-bottom-focusscale padded-left padded-left-page padded-right scrollX hiddenScrollX scrollFrameX" data-mousewheel="false" data-focusscroll="true" data-horizontal="true" bis_skin_checked="1">
                     <div is="emby-itemscontainer" class="scrollSlider focuscontainer-x itemsContainer focusable actorMoreItemsContainer scrollSliderX emby-scrollbuttons-scrollSlider virtualItemsContainer virtual-scroller-overflowvisible virtual-scroller" data-focusabletype="nearest" data-virtualscrolllayout="horizontal-grid" bis_skin_checked="1" style="white-space: nowrap; min-width: 2412px; height: 351px;" data-minoverhang="1" layout="horizontal-grid">
                         ${html}
@@ -1027,7 +1076,6 @@
                 <div class="sectionTitleContainer sectionTitleContainer-cards padded-left padded-left-page padded-right" bis_skin_checked="1">
                     <a onclick="window.open('${linkUrl}', '_blank')" is="emby-sectiontitle" class="noautofocus button-link button-link-color-inherit sectionTitleTextButton sectionTitleTextButton-link sectionTitleTextButton-more emby-button emby-button-backdropfilter">
                         <h2 class="sectionTitle sectionTitle-cards">${text}</h2>
-                        <i class="md-icon sectionTitleMoreIcon secondaryText"></i>
                     </a>
                 </div>
                 <div is="emby-scroller" data-mousewheel="false" data-focusscroll="true" class="padded-top-focusscale padded-bottom-focusscale padded-left padded-left-page padded-right emby-scroller scrollX hiddenScrollX scrollFrameX" bis_skin_checked="1">
@@ -1043,7 +1091,6 @@
                 <div class="sectionTitleContainer padded-left padded-left-page padded-right sectionTitleContainer-cards focusable" data-focusabletype="nearest">
                     <a onclick="window.open('${linkUrl}', '_blank')" is="emby-sectiontitle" class="noautofocus button-link button-link-color-inherit sectionTitleTextButton sectionTitleTextButton-link sectionTitleTextButton-more emby-button emby-button-backdropfilter">
                         <h2 class="sectionTitle sectionTitle-cards sectionTitleText-withseeall">${text}</h2>
-                        <i class="md-icon sectionTitleMoreIcon secondaryText"></i>
                     </a>
                 </div>
                 <div is="emby-itemscontainer" class="itemsContainer focuscontainer-x padded-left padded-left-page padded-right vertical-wrap">
@@ -1261,7 +1308,7 @@
             `;
         }
 
-        const banner = createBanner("剧照", html, addSlider);
+        const banner = createBanner(item.Type === "Person"? "照片" : "剧照", html, addSlider);
         peopleSection.insertAdjacentHTML("afterend", banner);
 
         if (addSlider) {
@@ -1743,35 +1790,96 @@
     }
 
     async function actorMoreInject(isDirector = false, excludeIds = []) {
-        if (item.Type == 'Person') return [];
-        const name = getActorName(isDirector);
+        if (item.Type === 'Person') return [];
+        let name = getActorName(isDirector);
         isDirector ? (directorName = name) : (actorName = name);
 
-        if (name.length > 0) {
-            const moreItems = await getActorMovies(name, excludeIds);
-            const aboutSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .aboutSection");
+        let moreItems = await getActorMovies(name, excludeIds);
+
+        const maxRetries = item.People?.length || 5;
+        let attempts = 1;
+
+        while (moreItems.length === 0 && !isDirector && attempts < maxRetries) {
+            name = getActorName(isDirector);
+            actorName = name; // update global actorName
+            moreItems = await getActorMovies(name, excludeIds);
+            attempts++;
+        }
+
+        const aboutSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .aboutSection");
 
 
-            if (moreItems.length > 0) {
+        if (moreItems.length > 0 && aboutSection) {
 
-                const sliderElement = createSlider(name, actorMoreHtml(moreItems), !isDirector);
+            const sliderElement = createSlider(name, actorMoreHtml(moreItems), !isDirector);
 
-                const sliderId = isDirector ? "myDirectorMoreSlider" : "myActorMoreSlider";
-                sliderElement.id = sliderId;
+            const sliderId = isDirector ? "myDirectorMoreSlider" : "myActorMoreSlider";
+            sliderElement.id = sliderId;
 
-                aboutSection.insertAdjacentElement('beforebegin', sliderElement);
+            aboutSection.insertAdjacentElement('beforebegin', sliderElement);
 
-                addResizeListener();
+            addResizeListener();
 
-                adjustCardOffset(`#${sliderId}`, '.actorMoreItemsContainer', '.virtualScrollItem');
+            adjustCardOffset(`#${sliderId}`, '.actorMoreItemsContainer', '.virtualScrollItem');
 
-                addHoverEffect(sliderElement.querySelector(".itemsContainer"));
+            addHoverEffect(sliderElement.querySelector(".itemsContainer"));
 
-                return moreItems.map(moreItem => moreItem.Id);
-
+            if (!(isDirector && moreItems.length === 1)) {
+                const title = sliderElement.querySelector(".sectionTitleTextButton");
+                title.title = "刷新数据";
+                title.addEventListener('click', () => {
+                    refreshActorMore(isDirector);
+                });
             }
+
+            return moreItems.map(moreItem => moreItem.Id);
+
         }
         return [];
+    }
+
+    async function refreshActorMore(isDirector) {
+        
+        const sliderId = isDirector ? "myDirectorMoreSlider" : "myActorMoreSlider";
+
+        const slider = viewnode.querySelector(`div[is='emby-scroller']:not(.hide) #${sliderId}`);
+        
+        if (!slider) return;
+
+        let name = isDirector ? directorName : refreshActorName();
+        let moreItems = await getActorMovies(name);
+
+
+        const maxRetries = item.People?.length || 5; // Fallback to 5 if undefined
+        let attempts = 1;
+
+        while (moreItems.length === 0 && !isDirector && attempts < maxRetries) {
+            name = refreshActorName();
+            moreItems = await getActorMovies(name);
+            attempts++;
+        }
+
+        if (moreItems.length === 0) {
+            showToast({
+                text: `${name} 更多作品加载失败`,
+                icon: `<span class="material-symbols-outlined">search_off</span>`,
+            });
+            return;
+        }
+
+        if (!isDirector) {
+            actorName = name;
+            const title = slider.querySelector(".sectionTitle");
+            title.textContent = `${name} 其他作品`;
+        } 
+
+        const itemsContainer = slider.querySelector(".actorMoreItemsContainer");
+        itemsContainer.innerHTML = '';
+
+        const html = actorMoreHtml(moreItems);
+        itemsContainer.innerHTML = html;
+        adjustCardOffset(`#${sliderId}`, '.actorMoreItemsContainer', '.virtualScrollItem');
+        addHoverEffect(itemsContainer);
     }
 
     function actorMoreHtml(moreItems) {
@@ -1795,12 +1903,12 @@
         return ['iphone', 'ipad', 'android'].includes(OS_current);
     }
 
-    async function addHoverEffect(slider = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .similarItemsContainer")) {
+    function addHoverEffect(slider = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .similarItemsContainer")) {
 
         if (isTouchDevice() || !slider) return;
 
         const portraitCards = slider.children;
-        if (!portraitCards) return;
+        if (portraitCards.length === 0) return;
 
         for (let card of portraitCards) {
             const imageContainer = card.querySelector('.cardImageContainer');
@@ -1932,13 +2040,28 @@
             if (localTrailers && localTrailers.length > 0) {
                 let trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
 
-                const trailerurls = (await ApiClient.getPlaybackInfo(trailerItem.Id, {},
-                    { "MaxStaticBitrate": 140000000, "MaxStreamingBitrate": 140000000, "MusicStreamingTranscodingBitrate": 192000, "DirectPlayProfiles": [{ "Container": "mp4,m4v", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "mkv", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "flv", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "aac,mp3" }, { "Container": "mov", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "opus", "Type": "Audio" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3" }, { "Container": "mp2,mp3", "Type": "Audio", "AudioCodec": "mp2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac" }, { "Container": "m4a", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "mp4", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "flac", "Type": "Audio" }, { "Container": "webma,webm", "Type": "Audio" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "PCM_S16LE,PCM_S24LE" }, { "Container": "ogg", "Type": "Audio" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis,opus", "VideoCodec": "av1,VP8,VP9" }], "TranscodingProfiles": [{ "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mkv", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "Context": "Static", "MaxAudioChannels": "2", "CopyTimestamps": true }, { "Container": "m4s,ts", "Type": "Video", "AudioCodec": "ac3,mp3,aac", "VideoCodec": "h264,h265,hevc", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true, "ManifestSubtitles": "vtt" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis", "VideoCodec": "vpx", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp4", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264", "Context": "Static", "Protocol": "http" }], "ContainerProfiles": [], "CodecProfiles": [{ "Type": "VideoAudio", "Codec": "aac", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "VideoAudio", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "Video", "Codec": "h264", "Conditions": [{ "Condition": "EqualsAny", "Property": "VideoProfile", "Value": "high|main|baseline|constrained baseline|high 10", "IsRequired": false }, { "Condition": "LessThanEqual", "Property": "VideoLevel", "Value": "62", "IsRequired": false }] }, { "Type": "Video", "Codec": "hevc", "Conditions": [] }], "SubtitleProfiles": [{ "Format": "vtt", "Method": "Hls" }, { "Format": "eia_608", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "eia_708", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "vtt", "Method": "External" }, { "Format": "ass", "Method": "External" }, { "Format": "ssa", "Method": "External" }], "ResponseProfiles": [{ "Type": "Video", "Container": "m4v", "MimeType": "video/mp4" }] }
-                ));
+                if (Object.keys(deviceProfile).length === 0) {
+                    deviceProfile = await getDeviceProfile(trailerItem);
+                }
 
-                const trailerurl = trailerurls.MediaSources[0];
+                if (!deviceProfile || Object.keys(deviceProfile).length === 0) {
+                    deviceProfile = { "MaxStaticBitrate": 140000000, "MaxStreamingBitrate": 140000000, "MusicStreamingTranscodingBitrate": 192000, "DirectPlayProfiles": [{ "Container": "mp4,m4v", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "mkv", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "flv", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "aac,mp3" }, { "Container": "mov", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "opus", "Type": "Audio" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3" }, { "Container": "mp2,mp3", "Type": "Audio", "AudioCodec": "mp2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac" }, { "Container": "m4a", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "mp4", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "flac", "Type": "Audio" }, { "Container": "webma,webm", "Type": "Audio" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "PCM_S16LE,PCM_S24LE" }, { "Container": "ogg", "Type": "Audio" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis,opus", "VideoCodec": "av1,VP8,VP9" }], "TranscodingProfiles": [{ "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mkv", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "Context": "Static", "MaxAudioChannels": "2", "CopyTimestamps": true }, { "Container": "m4s,ts", "Type": "Video", "AudioCodec": "ac3,mp3,aac", "VideoCodec": "h264,h265,hevc", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true, "ManifestSubtitles": "vtt" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis", "VideoCodec": "vpx", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp4", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264", "Context": "Static", "Protocol": "http" }], "ContainerProfiles": [], "CodecProfiles": [{ "Type": "VideoAudio", "Codec": "aac", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "VideoAudio", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "Video", "Codec": "h264", "Conditions": [{ "Condition": "EqualsAny", "Property": "VideoProfile", "Value": "high|main|baseline|constrained baseline|high 10", "IsRequired": false }, { "Condition": "LessThanEqual", "Property": "VideoLevel", "Value": "62", "IsRequired": false }] }, { "Type": "Video", "Codec": "hevc", "Conditions": [] }], "SubtitleProfiles": [{ "Format": "vtt", "Method": "Hls" }, { "Format": "eia_608", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "eia_708", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "vtt", "Method": "External" }, { "Format": "ass", "Method": "External" }, { "Format": "ssa", "Method": "External" }], "ResponseProfiles": [{ "Type": "Video", "Container": "m4v", "MimeType": "video/mp4" }] };
+                }
 
-                if (trailerurl.Protocol == "File") {
+                const trailerurls = await ApiClient.getPlaybackInfo(trailerItem.Id, {}, deviceProfile);
+
+                let trailerurl = trailerurls.MediaSources.find(ms => ms.Protocol === "File");
+
+                if (!trailerurl) {
+                    trailerurl = trailerurls.MediaSources.find(ms => ms.Protocol === "Http");
+                }
+
+                if (!trailerurl) {
+                    console.warn("No valid MediaSource found.");
+                    return null;
+                }
+
+                if (trailerurl.Protocol === "File") {
                     /*
                     if (OS_current === 'windows') {
                         videourl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
@@ -1954,7 +2077,7 @@
                     }
 
                     //videourl = `${ApiClient._serverAddress}/emby/videos/${trailerItem.Id}/original.${trailerItem.MediaSources[0].Container}?DeviceId=${ApiClient._deviceId}&MediaSourceId=${trailerItem.MediaSources[0].Id}&PlaySessionId=${trailerurls.PlaySessionId}&api_key=${ApiClient.accessToken()}`;
-                } else if (trailerurl.Protocol == "Http") {
+                } else if (trailerurl.Protocol === "Http") {
                     videourl = trailerurl.Path;
                 }
 
@@ -1967,6 +2090,13 @@
         }
 
         return videourl;
+    }
+
+    async function getDeviceProfile(trailerItem) {
+        const playbackManager = await Emby.importModule("./modules/common/playback/playbackmanager.js");
+        const player = playbackManager.getPlayers().find(p => p.id === "htmlvideoplayer");
+        //const playbackMediaSources = await playbackManager.getPlaybackMediaSources(item, {});
+        return await player.getDeviceProfile(trailerItem);
     }
 
     function createVideoElement(trailerUrl) {
@@ -1997,7 +2127,7 @@
             const personTypeText = isDirector ? '导演' : '演员';
             if (javDbMovies && javDbMovies.length > 0) {
                 javDbMovies = await filterDbMovies(javDbMovies);
-                if (javDbMovies.length == 0) return
+                if (javDbMovies.length === 0) return
 
                 javDbMovies.sort(() => Math.random() - 0.5);
                 /*
@@ -2088,7 +2218,8 @@
     }
 
     function isJP18() {
-        return (item.CustomRating ?? item.OfficialRating) === 'JP-18+';
+        const rating = item.CustomRating ?? item.OfficialRating;
+        return rating === 'JP-18+' || rating === 'NC-17';
     }
 
     async function seriesInject() {
@@ -2121,7 +2252,7 @@
             javDbMovies = await fetchDbSeries(seriesName);
         }
         */
-        if (javDbMovies.length == 0) return
+        if (javDbMovies.length === 0) return
 
         if (javdbSeries.length > 0) {
             if (item.Type === 'BoxSet') {
@@ -2137,7 +2268,7 @@
                 }
             } else if (tagMovies.length >= 4) {
                 const collectionId = await getCollectionId(javdbSeries);
-                if (collectionId.length == 0) {
+                if (collectionId.length === 0) {
                     const newCollectionId = await collectionCreate(javdbSeries, tagMovieIds);
                     if (newCollectionId.length > 0) {
                         showToast({
@@ -2165,7 +2296,7 @@
         }
 
         tagMovies.length > 0 && (javDbMovies = javDbMovies.filter(movie => !tagMovies.some(tagMovie => tagMovie.includes(movie.Code))));
-        if (javDbMovies.length == 0) {
+        if (javDbMovies.length === 0) {
             showToast({
                 text: `javdb系列已全部下载`,
                 icon: `<span class="material-symbols-outlined">download_done</span>`
@@ -2293,6 +2424,11 @@
         const actorNames = item.People?.filter(person => person.Type === personType).map(person => person.Name) || [];
 
         return actorNames.length ? pickRandomLink(actorNames) : '';
+    }
+
+    function refreshActorName() {
+        const actorNames = item.People?.filter(person => person.Type === 'Actor').map(person => person.Name) || [];
+        return actorNames.length > 1 ? pickRandomLink(actorNames.filter(name => name !== actorName)) : actorName;
     }
 
     async function getActorMovies(name = actorName, excludeIds = []) {
@@ -2662,7 +2798,7 @@
             linkButton.setAttribute("href", value);
             linkButton.setAttribute("target", "_blank");
             //linkButton.style.color = 'yellow'; 
-            if (index === 0 && (itemLinks.children.length == 0)) {
+            if (index === 0 && (itemLinks.children.length === 0)) {
                 linkButton.textContent = key;
             } else {
                 linkButton.textContent = key + ',';
@@ -2673,7 +2809,7 @@
         });
 
         function extractLinks(text, startLine) {
-            if (!text || text.length == 0 || !text.includes('===== 外部链接 =====')) {
+            if (!text || text.length === 0 || !text.includes('===== 外部链接 =====')) {
                 return {};
             }
 
@@ -2859,7 +2995,7 @@
     }
 
     async function translateInject() {
-        if ((OS_current === 'iphone') || (OS_current === 'android') || (googleApiKey.length == 0) || item.Type === 'Person') return;
+        if ((OS_current === 'iphone') || (OS_current === 'android') || (googleApiKey.length === 0) || item.Type === 'Person') return;
 
         // Select the element using document.querySelector
         const titleElement = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .itemName-primary");
