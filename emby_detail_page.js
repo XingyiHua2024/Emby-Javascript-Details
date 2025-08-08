@@ -1792,7 +1792,7 @@
     async function actorMoreInject(isDirector = false, excludeIds = []) {
         if (item.Type === 'Person') return [];
         let name = getActorName(isDirector);
-		if (name.length === 0) return 
+        if (name.length === 0) return [];
         isDirector ? (directorName = name) : (actorName = name);
 
         let moreItems = await getActorMovies(name, excludeIds);
@@ -3133,4 +3133,5 @@
     }
 
 })();
+
 
