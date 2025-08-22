@@ -1,6 +1,6 @@
 (function () {
     "use strict";
-    var item, viewnode, parentItem, paly_mutation1, isUpdatingImageUrls = false;
+    var item, viewnode, paly_mutation1, isUpdatingImageUrls = false, parentItems = {};
     var paly_mutation2;
     document.addEventListener("viewbeforeshow", function (e) {
         
@@ -10,11 +10,11 @@
                 const mutation = new MutationObserver(async function () {
                     item = viewnode.controller?.osdController?.currentItem || viewnode.controller?.currentPlayer?.streamInfo?.item;
                     if (item) {
+                        isUpdatingImageUrls = false;
+                        (item.Type === 'Trailer') && insertMoreButton();
                         mutation.disconnect();
                         paly_mutation1?.disconnect();
                         paly_mutation2?.disconnect();
-                        isUpdatingImageUrls = false;
-                        (item.Type === 'Trailer') && insertMoreButton();
                     }
                 });
                 mutation.observe(document.body, {
@@ -24,124 +24,190 @@
                 });
             }
             else {
-                item = viewnode.controller.osdController.currentItem;
+                item = viewnode.controller?.osdController?.currentItem;
             }
 
         }
     });
 
 
-    async function getParentItem() {
-        const userId = ApiClient.getCurrentUserId();
-        const itemId = item.Id || item.ParentThumbItemId;
+    async function getParentItem(itemThis) {
+        
+        let parentItem;
+        if (itemThis.Id) {
+            //parentItem = parentItems[itemThis.Id];
+            //if (parentItem) return parentItem;
 
-        if (!itemId) return;
-
-        // Try to load from localStorage
-        const cacheKey = `parentItem-${itemId}`;
-        const cached = localStorage.getItem(cacheKey);
-
-        if (cached) {
-            try {
-                parentItem = JSON.parse(cached);
-                return;
-            } catch (e) {
-                console.warn("Failed to parse cached parentItem", e);
-            }
-        }
-
-        // Fetch and cache if not cached
-        if (item.Id) {
-            if (!item.Name.includes('trailer')) {
-                parentItem = item;
+            if (!itemThis.Name.includes('trailer')) {
+                parentItem = itemThis;
             } else {
-                if (!item.ParentId) {
-                    item = await ApiClient.getItem(userId, item.Id);
-                }
-                parentItem = await ApiClient.getItem(userId, item.ParentId);
+                if (itemThis.ParentId || itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId) {
+                    parentItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemThis.ParentId || itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId);
+                    
+                } else {
+                    const userId = ApiClient.getCurrentUserId();
+                    itemThis = await ApiClient.getItem(userId, itemThis.Id);
+                    parentItem = await ApiClient.getItem(userId, itemThis.ParentId);
+                    (itemThis.Id === item.Id) && (item = itemThis);
+                } 
             }
-        } else {
-            parentItem = await ApiClient.getItem(userId, item.ParentThumbItemId);
+        } else if (itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId) {
+            //parentItem = parentItems[itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId];
+            //if (parentItem) return parentItem;
+            parentItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId);
         }
-
-        // Save to localStorage
-        /*
-        if (parentItem) {
-            try {
-                localStorage.setItem(cacheKey, JSON.stringify(parentItem));
-            } catch (e) {
-                console.warn("Failed to cache parentItem", e);
-            }
-        }
-        */
+        return parentItem;
     }
 
-    async function insertMoreButton() {
-        const bottomSection = viewnode.querySelector('.videoOsdBottom');
-        if (!bottomSection) return
+    function getParentItemLite(itemThis) {
+        let parentItem;
+        if (itemThis.Id) {
+            parentItem = parentItems[itemThis.Id];
+        } else if (itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId) {
+            parentItem = parentItems[itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId];
+        }
+        return parentItem;
+    }
 
-        await getParentItem();
-
-        let videoElement = document.querySelector(".htmlVideoPlayerContainer video");
-
-        videoElement && videoElement.addEventListener('play', handleStreamInfoChange);
-
-        updateTitle();
-
-        //setTimeout(() => {
-        //    unhidePeople();
-        //}, 500);
-
-        const tabContainers = bottomSection.querySelector('.videoosd-tabcontainers');
-
-        const videoosdTab0 = tabContainers.querySelector('[data-index="0"].videoosd-tab');
-        const videoosdTab3 = tabContainers.querySelector('[data-index="3"].videoosd-tab');
-
-        paly_mutation1 = new MutationObserver(function () {
-            let itemsContainer = videoosdTab0.querySelector('.itemsContainer');
-            if (itemsContainer) {
-                paly_mutation1.disconnect();
-                itemsContainer.fetchData = fetchItem;
+    function updateParentItems(parentItem, itemThis) {
+        if (itemThis.Id) {
+            if (!(itemThis.Id in parentItems)) {
+                parentItems[itemThis.Id] = parentItem;
             }
-        });
-        paly_mutation1.observe(videoosdTab0, {
-            childList: true,
-            characterData: true,
-            subtree: true,
-        });
+        } else if (itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId) {
+            const itemId = itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId
+            if (!(itemId in parentItems)) {
+                parentItems[itemId] = parentItem;
+            }
+        }
+    }
 
-        paly_mutation2 = new MutationObserver(function () {
-            (async () => {
-                let itemsContainer = videoosdTab3.querySelector('.itemsContainer');
+    function insertMoreButton() {
+        parentItems = {};
+        const bottomSection = viewnode.querySelector('.videoOsdBottom');
+        if (!bottomSection) return;
+
+        getParentItem(item).then(parentItem => {
+            updateTitle(parentItem);
+
+            //let videoElement = document.querySelector(".htmlVideoPlayerContainer video");
+            //videoElement && videoElement.addEventListener('play', handleStreamInfoChange);
+
+            const osdController = viewnode.controller.osdController;
+
+            if (!osdController._updateFunctionWrapped) {
+                osdController._updateFunctionWrapped = true;
+                // Save reference to the original function
+                const originalUpdateDisplayItem = osdController.updateDisplayItem;
+
+                // Redefine with wrapper
+                osdController.updateDisplayItem = function (state, item, displayItem) {
+                    // Call the original function with correct context and arguments
+                    const result = originalUpdateDisplayItem.apply(this, arguments);
+
+                    // Run your extra logic after it
+                    handleStreamInfoChange();
+
+                    // Return whatever the original function returned (if anything)
+                    return result;
+                };
+            }
+
+            const tabContainers = bottomSection.querySelector('.videoosd-tabcontainers');
+
+            const videoosdTab0 = tabContainers.querySelector('[data-index="0"].videoosd-tab');
+            const videoosdTab3 = tabContainers.querySelector('[data-index="3"].videoosd-tab');
+
+            paly_mutation1 = new MutationObserver(function () {
+                let itemsContainer = videoosdTab0.querySelector('.itemsContainer');
                 if (itemsContainer) {
-                   
-                    const parentImages = await updateImageUrls(itemsContainer);
-                    if (parentImages) {
-                        paly_mutation2.disconnect();
+                    paly_mutation1.disconnect();
+                    itemsContainer.fetchData = function () {
+                        let parentItem = getParentItemLite(item);
+                        if (!parentItem) parentItem = item;
 
-                        if (parentImages.length > 0) {
-                            setTimeout(() => {
-                                updateNextImage(itemsContainer, parentImages);
-                            }, 50);
-                            
-                            const originalFetchData = itemsContainer.fetchData;
-                            itemsContainer.fetchData = function (query) {
-                                const result = originalFetchData.call(this, query);
-                                setTimeout(() => {
-                                    updateNextImage(itemsContainer, parentImages);
-                                }, 50);
-                                return result;
-                            };
-                        }
-                    }
+                        // schedule updateAttribute() to run later
+                        Promise.resolve().then(() => updateAttribute());
+
+                        return Promise.resolve({
+                            Items: [parentItem],
+                            TotalRecordCount: 1
+                        });
+                    };
                 }
-            })();
+            });
+            paly_mutation1.observe(videoosdTab0, {
+                childList: true,
+                characterData: true,
+                subtree: true,
+            });
+
+            fetchPlaylist().then(playlist => {
+                if (playlist?.TotalRecordCount > 1) {
+                    updateParentItemsFromPlaylist(playlist.Items);
+
+                    paly_mutation2 = new MutationObserver(function () {
+                        let itemsContainer = videoosdTab3.querySelector('.itemsContainer');
+                        if (itemsContainer && itemsContainer._itemSource && itemsContainer._itemSource.length > 0) {
+                            paly_mutation2.disconnect();
+                            updateImageUrls(itemsContainer).then(parentImages => {
+                                if (parentImages) {
+
+                                    if (parentImages.length > 0) {
+
+                                        updateNextImage(itemsContainer, parentImages);
+
+
+                                        if (!itemsContainer._fetchDataWrapped) {
+                                            itemsContainer._fetchDataWrapped = true;
+
+                                            const originalOnDataFetched = itemsContainer.bound_onDataFetched;
+
+                                            itemsContainer.bound_onDataFetched = function (result) {
+                                                // Call the original function first
+                                                const promise = originalOnDataFetched.call(this, result);
+
+                                                // Attach our own follow-up
+                                                return Promise.resolve(promise).then(() => {
+                                                    updateNextImage(itemsContainer, parentImages);
+                                                });
+                                            };
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    });
+
+                    paly_mutation2.observe(videoosdTab3, {
+                        childList: true,
+                        characterData: true,
+                        subtree: true,
+                    });
+                } else {
+                    paly_mutation2?.disconnect();
+                }
+            });      
         });
-        paly_mutation2.observe(videoosdTab3, {
-            childList: true,
-            characterData: true,
-            subtree: true,
-        });
+    }
+
+    function fetchPlaylist() {
+        return Emby.importModule("./modules/common/playback/playbackmanager.js")
+            .then(playbackManager =>
+                playbackManager.getPlaylist({ Limit: 12 }, viewnode.controller.currentPlayer)
+            );
+    }
+
+    async function updateParentItemsFromPlaylist(items) {
+        const trailerItems = items.filter(thisItem => (thisItem.Type === "Trailer"));
+
+        for (const trailerItem of trailerItems) {
+            let parentItem = getParentItemLite(trailerItem);
+            if (!parentItem) {
+                parentItem = await getParentItem(trailerItem);
+                updateParentItems(parentItem, trailerItem);
+            }
+        }
     }
 
     async function updateImageUrls(itemsContainer) {
@@ -150,11 +216,16 @@
 
         let parentImages = [];
 
-        const data = await itemsContainer.fetchData({Limit: 12});
-        const trailerItems = data.Items.filter(thisItem => (thisItem.Type === "Trailer" && thisItem.Name.includes('trailer')));
+        const trailerItems = itemsContainer._itemSource.filter(thisItem => (thisItem.Type === "Trailer"));
 
         for (const trailerItem of trailerItems) {
-            const imageUrl = await getParentImageUrl(trailerItem.Id);
+            let parentItem = getParentItemLite(trailerItem);
+            if (!parentItem) {
+                parentItem = await getParentItem(trailerItem);
+                updateParentItems(parentItem, trailerItem);
+            }
+           
+            const imageUrl = getImageUrl(parentItem);
             if (imageUrl && !parentImages.includes(imageUrl)) {
                 parentImages.push(imageUrl);
             }
@@ -163,6 +234,7 @@
         return parentImages;
     }
 
+    /*
     async function getParentImageUrl(trailerId) {
         const userId = ApiClient.getCurrentUserId();
         const tItem = await ApiClient.getItem(userId, trailerId);
@@ -173,16 +245,20 @@
             return null
         }
     }
+    */
 
-    function updateNextImage(itemsContainer = viewnode.querySelector('[data-index="0"].videoosd-tab'), parentImages) {
+    function getImageUrl(pItem) {
+        if (!pItem) return null;
+        return ApiClient.getImageUrl(pItem.Id, { type: "Primary", tag: pItem.ImageTags.Primary, maxHeight: 330, maxWidth: 220 });
+    }
+
+    function updateNextImage(itemsContainer, parentImages) {
 
         let runCount = 0;
 
         function runUpdate() {
-            const trailerCards = Array.from(itemsContainer.querySelectorAll('.cardBox')).filter(cardBox => {
-                const textEl = cardBox.querySelector('.cardText');
-                return textEl && textEl.textContent.trim() === 'trailer';
-            });
+            const trailerCards = Array.from(itemsContainer.querySelectorAll('.cardBox'))
+                .filter((cardBox, i) => itemsContainer._itemSource[i]?.Type === "Trailer");
 
             const count = trailerCards.length;
 
@@ -198,6 +274,11 @@
                                  loading="lazy" decoding="async" src="${imageUrl}">
                         `;
                     }
+                    const title = cardBox.querySelector('.cardText-first');
+                    if (title) {
+                        const parentItem = getParentItemLite(itemsContainer._itemSource[i]);
+                        title.textContent = 'trailer: ' + parentItem.Name;
+                    }
                 }
             }
 
@@ -211,24 +292,25 @@
     }
 
 
-    async function updateTitle() {
+    function updateTitle(parentItem) {
 
         if (viewnode.controller.osdController.currentDisplayItem) {
             viewnode.controller.osdController.currentDisplayItem.Name = 'trailer: ' + parentItem.Name;
-        }  
-
-        if (viewnode.controller.osdController.currentDisplayItem) {
-            viewnode.controller.osdController.currentDisplayItem.People = parentItem.People;
-        }  
+            viewnode.controller.osdController.currentDisplayItem.People = viewnode.controller.osdController.currentDisplayItem.People || parentItem.People;
+        }
 
         //viewnode.controller.osdController.currentDisplayItem.Id = parentItem.Id;
         //viewnode.controller.osdController.currentDisplayItem.ImageTags = parentItem.ImageTags;
 
-        const titleElement = viewnode.querySelectorAll('.videoOsdBottom .videoOsdParentTitleContainer .videoOsdParentTitle')[0];
-        if (titleElement) {
-            titleElement.textContent = `trailer: ${parentItem.Name}`;
-        }
+        const titleElements = viewnode.querySelectorAll(
+            '.videoOsdBottom .videoOsdParentTitleContainer .videoOsdParentTitle'
+        );
 
+        titleElements.forEach(el => {
+            el.textContent = `trailer: ${parentItem.Name}`;
+        });
+
+        updateParentItems(parentItem, item);
     }
 
     /*
@@ -266,11 +348,16 @@
         }, 500);
     }
 
-    async function handleStreamInfoChange() {
+    function handleStreamInfoChange() {
         item = viewnode.controller.osdController.currentItem || viewnode.controller.currentPlayer.streamInfo.item;
         if (item.Type === 'Trailer') {
-            await getParentItem();
-            updateTitle();
+            const parentItem = getParentItemLite(item);
+            if (parentItem) {
+                updateTitle(parentItem);
+            } else {
+                getParentItem(item).then(updateTitle);
+            }
+     
             /*
             if (parentImages.length > 0) { 
                 setTimeout(() => {
@@ -279,23 +366,26 @@
             }
             */
         } else {
-            parentItem = item;
+            if (!(item.Id in parentItems)) {
+                parentItems[item.Id] = item;
+            }
             paly_mutation1?.disconnect();
             //paly_mutation2?.disconnect();   
         }
     }
 
+    /*
     function fetchItem() {
         setTimeout(() => {
             updateAttribute();
         }, 500);
 
         return Promise.resolve({
-            Items: [parentItem],
+            Items: [parentItems[item.Id]],
             TotalRecordCount: 1
         });
     }
-    /*
+
     function fetchPeople(query) {
         var itemThis = parentItem
             , serverId = itemThis.ServerId
