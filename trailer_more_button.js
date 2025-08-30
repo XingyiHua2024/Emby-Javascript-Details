@@ -38,24 +38,22 @@
             //parentItem = parentItems[itemThis.Id];
             //if (parentItem) return parentItem;
 
-            if (!itemThis.Name.includes('trailer')) {
-                parentItem = itemThis;
-            } else {
-                if (itemThis.ParentId || itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId) {
-                    parentItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemThis.ParentId || itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId);
+            if (itemThis.ParentId || itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId) {
+                parentItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemThis.ParentId || itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId);
                     
-                } else {
-                    const userId = ApiClient.getCurrentUserId();
-                    itemThis = await ApiClient.getItem(userId, itemThis.Id);
-                    parentItem = await ApiClient.getItem(userId, itemThis.ParentId);
-                    (itemThis.Id === item.Id) && (item = itemThis);
-                } 
-            }
+            } else {
+                const userId = ApiClient.getCurrentUserId();
+                itemThis = await ApiClient.getItem(userId, itemThis.Id);
+                parentItem = await ApiClient.getItem(userId, itemThis.ParentId);
+                (itemThis.Id === item.Id) && (item = itemThis);
+            } 
         } else if (itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId) {
             //parentItem = parentItems[itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId];
             //if (parentItem) return parentItem;
             parentItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemThis.ParentThumbItemId || itemThis.ParentBackdropItemId);
         }
+
+        (parentItem?.Type === 'Folder') && (parentItem = itemThis);
         return parentItem;
     }
 
@@ -123,7 +121,9 @@
                 if (itemsContainer) {
                     paly_mutation1.disconnect();
                     itemsContainer.fetchData = function () {
-                        let parentItem = getParentItemLite(item);
+                        let parentItem;
+
+                        parentItem = getParentItemLite(item);
                         if (!parentItem) parentItem = item;
 
                         // schedule updateAttribute() to run later
@@ -145,45 +145,42 @@
             fetchPlaylist().then(playlist => {
                 if (playlist?.TotalRecordCount > 1) {
                     updateParentItemsFromPlaylist(playlist.Items);
+                    updateImageUrls(playlist.Items).then(parentImages => {
+                        if (parentImages?.length > 0) {
+                            paly_mutation2 = new MutationObserver(function () {
+                                let itemsContainer = videoosdTab3.querySelector('.itemsContainer');
+                                if (itemsContainer) {
+                                    paly_mutation2.disconnect();          
 
-                    paly_mutation2 = new MutationObserver(function () {
-                        let itemsContainer = videoosdTab3.querySelector('.itemsContainer');
-                        if (itemsContainer && itemsContainer._itemSource && itemsContainer._itemSource.length > 0) {
-                            paly_mutation2.disconnect();
-                            updateImageUrls(itemsContainer).then(parentImages => {
-                                if (parentImages) {
+                                    if (!itemsContainer._fetchDataWrapped) {
+                                        itemsContainer._fetchDataWrapped = true;
 
-                                    if (parentImages.length > 0) {
+                                        const originalOnDataFetched = itemsContainer.bound_onDataFetched;
 
-                                        updateNextImage(itemsContainer, parentImages);
+                                        itemsContainer.bound_onDataFetched = function (result) {
+                                            // Call the original function first
+                                            const promise = originalOnDataFetched.call(this, result);
 
-
-                                        if (!itemsContainer._fetchDataWrapped) {
-                                            itemsContainer._fetchDataWrapped = true;
-
-                                            const originalOnDataFetched = itemsContainer.bound_onDataFetched;
-
-                                            itemsContainer.bound_onDataFetched = function (result) {
-                                                // Call the original function first
-                                                const promise = originalOnDataFetched.call(this, result);
-
-                                                // Attach our own follow-up
-                                                return Promise.resolve(promise).then(() => {
-                                                    updateNextImage(itemsContainer, parentImages);
-                                                });
-                                            };
-                                        }
+                                            // Attach our own follow-up
+                                            return Promise.resolve(promise).then(() => {
+                                                updateNextImage(itemsContainer, parentImages, playlist.Items);
+                                            });
+                                        };
                                     }
+
+                                    updateNextImage(itemsContainer, parentImages, playlist.Items);
+                                                   
                                 }
+                            });
+
+                            paly_mutation2.observe(videoosdTab3, {
+                                childList: true,
+                                characterData: true,
+                                subtree: true,
                             });
                         }
                     });
 
-                    paly_mutation2.observe(videoosdTab3, {
-                        childList: true,
-                        characterData: true,
-                        subtree: true,
-                    });
                 } else {
                     paly_mutation2?.disconnect();
                 }
@@ -210,13 +207,14 @@
         }
     }
 
-    async function updateImageUrls(itemsContainer) {
+    async function updateImageUrls(items) {
         if (isUpdatingImageUrls) return null; // Already running — skip
         isUpdatingImageUrls = true;
 
         let parentImages = [];
 
-        const trailerItems = itemsContainer._itemSource.filter(thisItem => (thisItem.Type === "Trailer"));
+        const trailerItems = items.filter(thisItem => (thisItem.Type === "Trailer"));
+        const preferThumb = (trailerItems.length === items.length);
 
         for (const trailerItem of trailerItems) {
             let parentItem = getParentItemLite(trailerItem);
@@ -225,8 +223,8 @@
                 updateParentItems(parentItem, trailerItem);
             }
            
-            const imageUrl = getImageUrl(parentItem);
-            if (imageUrl && !parentImages.includes(imageUrl)) {
+            const imageUrl = getImageUrl(parentItem, preferThumb);
+            if (imageUrl) {
                 parentImages.push(imageUrl);
             }
         }
@@ -247,24 +245,45 @@
     }
     */
 
-    function getImageUrl(pItem) {
+    function getImageUrl(pItem, preferThumb) {
         if (!pItem) return null;
-        return ApiClient.getImageUrl(pItem.Id, { type: "Primary", tag: pItem.ImageTags.Primary, maxHeight: 330, maxWidth: 220 });
+
+        return preferThumb
+            ? ApiClient.getImageUrl(pItem.Id, {
+                type: "Thumb",
+                tag: pItem.ImageTags.Thumb,
+                maxHeight: 360,
+                maxWidth: 640
+            })
+            : ApiClient.getImageUrl(pItem.Id, {
+                type: "Primary",
+                tag: pItem.ImageTags.Primary,
+                maxHeight: 330,
+                maxWidth: 220
+            });
     }
 
-    function updateNextImage(itemsContainer, parentImages) {
+    function updateNextImage(itemsContainer, parentImages, items) {
 
         let runCount = 0;
 
         function runUpdate() {
-            const trailerCards = Array.from(itemsContainer.querySelectorAll('.cardBox'))
-                .filter((cardBox, i) => itemsContainer._itemSource[i]?.Type === "Trailer");
 
-            const count = trailerCards.length;
+            const allCards = Array.from(itemsContainer.querySelectorAll('.cardBox'));
 
+            // Build a mapping so each trailer card keeps its original item (and index)
+            const trailerMap = allCards.reduce((acc, cardBox, idx) => {
+                if (items[idx]?.Type === "Trailer") {
+                    acc.push({ cardBox, itemThis: items[idx], idx });
+                }
+                return acc;
+            }, []);
+
+            const count = trailerMap.length;
+            
             if (count === parentImages.length) {
                 for (let i = 0; i < count; i++) {
-                    const cardBox = trailerCards[i];
+                    const { cardBox, itemThis } = trailerMap[i];
                     const imageUrl = parentImages[i];
 
                     const icon = cardBox.querySelector('.cardImageIcon');
@@ -276,8 +295,16 @@
                     }
                     const title = cardBox.querySelector('.cardText-first');
                     if (title) {
-                        const parentItem = getParentItemLite(itemsContainer._itemSource[i]);
-                        title.textContent = 'trailer: ' + parentItem.Name;
+                        const text = title.textContent.toLowerCase();
+
+                        if (!text.includes('trailer')) {
+                            title.textContent = 'trailer: ' + title.textContent;
+                        } else if (!text.startsWith('trailer: ')) {
+                            const parentItem = getParentItemLite(itemThis);
+                            if (!parentItem.Name.toLowerCase().includes('trailer')) {
+                                title.textContent = 'trailer: ' + parentItem.Name;
+                            }
+                        }
                     }
                 }
             }
