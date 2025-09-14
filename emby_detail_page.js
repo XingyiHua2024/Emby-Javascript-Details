@@ -412,7 +412,19 @@
         }
 
         function handleMediaInfo(container, newLinks) {
-            const mediaInfoItem = container.querySelector('.mediaInfoItem[style="white-space:normal;"]');
+            // Look for an existing mediaInfoItem with white-space: normal
+            let mediaInfoItem = container.querySelector('.mediaInfoItem[style="white-space:normal;"]');
+
+            if (!mediaInfoItem) {
+                // Create a new one
+                mediaInfoItem = document.createElement("div");
+                mediaInfoItem.className = "mediaInfoItem";
+                mediaInfoItem.style.whiteSpace = "normal";
+
+                container.appendChild(mediaInfoItem);
+            }
+
+            // Now apply functions on it
             if (mediaInfoItem) {
                 addNewLinks(mediaInfoItem, newLinks);
                 mediaInfoStyle(mediaInfoItem);
@@ -3133,5 +3145,6 @@
     }
 
 })();
+
 
 
