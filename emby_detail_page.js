@@ -1,4 +1,4 @@
-(async function () {
+(function () {
     "use strict";
 
     /******************** user config ********************/
@@ -17,56 +17,59 @@
     var prefixDic = {}, mountMatch = {}, deviceProfile = {};
     //var adminUserId = ''; //Emby User ID
 
-    await loadConfig();
+    
 
     var isResizeListenerAdded = false, isFanartResizeListenerAdded = false;
     
 
     const OS_current = getOS();
 
-    const embyDetailCss = `.has-trailer{position:relative;box-shadow:0 0 10px 3px rgb(255 255 255 / .8);transition:box-shadow 0.3s ease-in-out;border-radius:8px}.has-trailer:hover{box-shadow:0 0 10px 3px rgb(255 0 150 / .3);transition:box-shadow 0.2s ease-in-out}.injectJavdb{opacity:1;transition:color 0.3s,transform 0.3s,box-shadow 0.3s,filter 0.3s}.injectJavdb:hover{transform:scale(1.05);background:linear-gradient(135deg,rgb(255 0 150 / .3),rgb(0 150 255 / .3));box-shadow:0 4px 15px rgb(0 0 0 / .2),0 0 10px rgb(0 150 255 / .5)}.injectJavdb .button-text,.injectJavdb .button-icon{color:pink;transition:color 0.3s,filter 0.3s}.injectJavdb:hover .button-text,.injectJavdb:hover .button-icon{color:black!important}.injectJavbus .button-text,.injectJavbus .button-icon{color:#ff8181!important}.noUncensored{opacity:1;transition:color 0.3s,transform 0.3s,box-shadow 0.3s,filter 0.3s}.noUncensored .button-text,.noUncensored .button-icon{color:grey!important}.melt-away{animation:sandMeltAnimation 1s ease-out forwards}@keyframes sandMeltAnimation{0%{opacity:1}100%{opacity:0}}.my-fanart-image{display:inline-block;margin:8px 10px 8px 10px;vertical-align:top;border-radius:8px;height:27vh;transition:transform 0.3s ease,filter 0.3s ease;min-height:180px}.my-fanart-image-slider{height:20vh!important}.my-fanart-image:hover{transform:scale(1.03);filter:brightness(80%)}.modal{display:none;position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;overflow:hidden;background-color:rgb(0 0 0 / .8);justify-content:center;align-items:center}.modal-content{margin:auto;max-width:70%;max-height:70%;overflow:hidden;opacity:0}@media (max-width:768px){.modal-content{max-width:80%;max-height:80%}}.modal-closing .modal-content{animation-name:shrinkAndRotate;animation-duration:0.3s;animation-timing-function:ease-out}.close{color:#fff;position:absolute;width:45px;height:45px;display:flex;justify-content:center;align-items:center;top:30px;right:30px;font-size:30px;font-weight:700;cursor:pointer;transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:0;background-color:rgb(0 0 0 / .5);user-select:none;caret-color:#fff0}.prev,.next{position:absolute;width:40px;height:40px;line-height:40px;justify-content:center;align-items:center;display:flex;top:50%;background-color:rgb(0 0 0 / .5);color:#fff;border:none;cursor:pointer;font-size:35px;font-weight:700;transform:translateY(-50%) translateX(-50%);transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:35px}.prev{left:80px}.next{right:20px}.prev:hover,.next:hover{background-color:rgb(255 255 255 / .3);padding:35px}.close:hover{background-color:rgb(255 255 255 / .3);padding:10px}@keyframes shrinkAndRotate{0%{transform:scale(1)}100%{transform:scale(0)}}.click-smaller{transform:scale(.9) translate(-50%,-50%);transition:transform 0.2s}.prev.disabled,.next.disabled{color:grey!important;cursor:default}@keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-10px)}50%{transform:translateX(10px)}75%{transform:translateX(-10px)}100%{transform:translateX(0)}}.modal-caption{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);text-align:center;font-size:16px;color:#fff;background-color:rgb(0 0 0 / .6);padding:5px 10px;border-radius:5px}@media screen and (max-width:480px){.modal-caption{bottom:100px}}.video-element{position:absolute;width:100%;height:100%;object-fit:contain;z-index:3;pointer-events:auto;transition:opacity 0.5s ease}.copy-link{color:lightblue;cursor:pointer;display:inline-block;transition:transform 0.1s ease}.copy-link:active{transform:scale(.95)}.media-info-item{display:block;width:100%;margin-top:10px;text-align:left}.media-info-item a{padding:5px 10px;background:rgb(255 255 255 / .15);margin-bottom:5px;margin-right:5px;-webkit-backdrop-filter:blur(5em);backdrop-filter:blur(5em);font-weight:600;font-family:'Poppins',sans-serif;transition:transform 0.2s ease,background-color 0.3s ease,box-shadow 0.3s ease,color 0.3s ease;text-decoration:none;color:#fff}.media-info-item a:hover{transform:scale(1.05);background:linear-gradient(135deg,rgb(255 0 150 / .3),rgb(0 150 255 / .3));box-shadow:0 4px 15px rgb(0 0 0 / .2),0 0 10px rgb(0 150 255 / .5)}.pageButton{cursor:pointer;padding:6px 16px;background:rgb(255 255 255 / 15%);border-radius:5px;box-shadow:0 2px 4px rgb(0 0 0 / .2);transition:background-color 0.3s ease,box-shadow 0.3s ease}.pageButton:hover{background:rgb(255 255 255 / 85%);color:#000;box-shadow:0 4px 8px rgb(0 0 0 / .4)}#pageInput-actorPage::-webkit-inner-spin-button,#pageInput-actorPage::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}#pageInput-actorPage{-moz-appearance:textfield;appearance:none;height:auto;text-align:center;padding:5px;font-family:inherit;font-size:inherit;font-weight:inherit;line-height:inherit}#filterDropdown{width:auto;backdrop-filter:blur(5px);color:#fff;transition:background-color 0.3s ease,box-shadow 0.3s ease;margin-left:20px;font-family:inherit;padding:6px 16px;font-weight:inherit;line-height:inherit;border:none}#filterDropdown:hover{background:rgb(255 255 255 / 85%);color:#000;box-shadow:0 4px 8px rgb(0 0 0 / .4)}#filterDropdown:focus{outline:none;box-shadow:0 0 4px 2px rgb(255 255 255 / .8)}#filterDropdown option{font-family:inherit;color:#000;background:#fff;border:none;padding:5px;font-weight:inherit}#filterDropdown option:hover{background:#c8c8c8}.myCardImage{transition:filter 0.2s ease}.myCardImage:hover{filter:brightness(70%)}#toggleFanart{padding:10px 20px;font-size:18px;background:rgb(255 255 255 / .15);margin-top:15px;margin-bottom:15px;border:none;border-radius:8px;font-weight:700;font-family:'Poppins',sans-serif;color:#fff;text-decoration:none;cursor:pointer;display:block;margin-left:auto;margin-right:auto;-webkit-backdrop-filter:blur(5em);backdrop-filter:blur(5em);transition:transform 0.2s ease,background-color 0.3s ease,box-shadow 0.3s ease,color 0.3s ease}#toggleFanart:hover{transform:scale(1.1);background:linear-gradient(135deg,rgb(255 0 150 / .4),rgb(0 150 255 / .4));box-shadow:0 6px 20px rgb(0 0 0 / .3),0 0 15px rgb(0 150 255 / .6);color:#fff}#toggleFanart:active{transform:scale(.95);box-shadow:0 3px 12px rgb(0 0 0 / .3)}.bg-style{background:linear-gradient(to right top,rgb(0 0 0 / .98),rgb(0 0 0 / .2)),url(https://assets.nflxext.com/ffe/siteui/vlv3/058eee37-6c24-403a-95bd-7d85d3260ae1/5030300f-ed0c-473a-9795-a5123d1dd81d/US-en-20240422-POP_SIGNUP_TWO_WEEKS-perspective_WEB_0941c399-f3c4-4352-8c6d-0a3281e37aa0_large.jpg);background-attachment:fixed;background-repeat:no-repeat;background-position:center;background-size:cover}@media (max-width:50em){.swiper-thumbs{display:none!important}}`;
+    const embyDetailCss = `.has-trailer{position:relative;box-shadow:0 0 10px 3px rgb(255 255 255 / .8);transition:box-shadow 0.3s ease-in-out;border-radius:8px}.has-trailer:hover{box-shadow:0 0 10px 3px rgb(255 0 150 / .3);transition:box-shadow 0.2s ease-in-out}.injectJavdb{opacity:1;transition:color 0.3s,transform 0.3s,box-shadow 0.3s,filter 0.3s}.injectJavdb:hover{transform:scale(1.05);background:linear-gradient(135deg,rgb(255 0 150 / .3),rgb(0 150 255 / .3));box-shadow:0 4px 15px rgb(0 0 0 / .2),0 0 10px rgb(0 150 255 / .5)}.injectJavdb .button-text,.injectJavdb .button-icon{color:pink;transition:color 0.3s,filter 0.3s}.injectJavdb:hover .button-text,.injectJavdb:hover .button-icon{color:black!important}.injectJavbus .button-text,.injectJavbus .button-icon{color:#ff8181!important}.noUncensored{opacity:1;transition:color 0.3s,transform 0.3s,box-shadow 0.3s,filter 0.3s}.noUncensored .button-text,.noUncensored .button-icon{color:grey!important}.melt-away{animation:sandMeltAnimation 1s ease-out forwards}@keyframes sandMeltAnimation{0%{opacity:1}100%{opacity:0}}.my-fanart-image{display:inline-block;margin:8px 10px 20px 10px;vertical-align:top;border-radius:8px;height:27vh;transition:transform 0.3s ease,filter 0.3s ease;min-height:180px}.my-fanart-image-slider{height:20vh!important}.my-fanart-image:hover{transform:scale(1.03);filter:brightness(80%)}.modal{display:none;position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;overflow:hidden;background-color:rgb(0 0 0 / .8);justify-content:center;align-items:center}.modal-content{margin:auto;max-width:70%;max-height:70%;overflow:hidden;opacity:0}@media (max-width:768px){.modal-content{max-width:80%;max-height:80%}}.modal-closing .modal-content{animation-name:shrinkAndRotate;animation-duration:0.3s;animation-timing-function:ease-out}.close{color:#fff;position:absolute;width:45px;height:45px;display:flex;justify-content:center;align-items:center;top:30px;right:30px;font-size:30px;font-weight:700;cursor:pointer;transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:0;background-color:rgb(0 0 0 / .5);user-select:none;caret-color:#fff0}.prev,.next{position:absolute;width:40px;height:40px;line-height:40px;justify-content:center;align-items:center;display:flex;top:50%;background-color:rgb(0 0 0 / .5);color:#fff;border:none;cursor:pointer;font-size:35px;font-weight:700;transform:translateY(-50%) translateX(-50%);transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:35px}.prev{left:80px}.next{right:20px}.prev:hover,.next:hover{background-color:rgb(255 255 255 / .3);padding:35px}.close:hover{background-color:rgb(255 255 255 / .3);padding:10px}@keyframes shrinkAndRotate{0%{transform:scale(1)}100%{transform:scale(0)}}.click-smaller{transform:scale(.9) translate(-50%,-50%);transition:transform 0.2s}.prev.disabled,.next.disabled{color:grey!important;cursor:default}@keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-10px)}50%{transform:translateX(10px)}75%{transform:translateX(-10px)}100%{transform:translateX(0)}}.modal-caption{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);text-align:center;font-size:16px;color:#fff;background-color:rgb(0 0 0 / .6);padding:5px 10px;border-radius:5px}@media screen and (max-width:480px){.modal-caption{bottom:100px}}.video-element{position:absolute;width:100%;height:100%;object-fit:contain;z-index:3;pointer-events:auto;transition:opacity 0.5s ease}.copy-link{color:lightblue;cursor:pointer;display:inline-block;transition:transform 0.1s ease}.copy-link:active{transform:scale(.95)}.media-info-item{display:block;width:100%;margin-top:10px;text-align:left}.media-info-item a{padding:5px 10px;background:rgb(255 255 255 / .15);margin-bottom:5px;margin-right:5px;-webkit-backdrop-filter:blur(5em);backdrop-filter:blur(5em);font-weight:600;font-family:'Poppins',sans-serif;transition:transform 0.2s ease,background-color 0.3s ease,box-shadow 0.3s ease,color 0.3s ease;text-decoration:none;color:#fff;border-radius: 20px}.media-info-item a:hover{transform:scale(1.05);background:linear-gradient(135deg,rgb(255 0 150 / .3),rgb(0 150 255 / .3));box-shadow:0 4px 15px rgb(0 0 0 / .2),0 0 10px rgb(0 150 255 / .5)}.pageButton{cursor:pointer;padding:6px 16px;background:rgb(255 255 255 / 15%);border-radius:5px;box-shadow:0 2px 4px rgb(0 0 0 / .2);transition:background-color 0.3s ease,box-shadow 0.3s ease}.pageButton:hover{background:rgb(255 255 255 / 85%);color:#000;box-shadow:0 4px 8px rgb(0 0 0 / .4)}#pageInput-actorPage::-webkit-inner-spin-button,#pageInput-actorPage::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}#pageInput-actorPage{-moz-appearance:textfield;appearance:none;height:auto;text-align:center;padding:5px;font-family:inherit;font-size:inherit;font-weight:inherit;line-height:inherit}#filterDropdown{width:auto;backdrop-filter:blur(5px);color:#fff;transition:background-color 0.3s ease,box-shadow 0.3s ease;margin-left:20px;font-family:inherit;padding:6px 16px;font-weight:inherit;line-height:inherit;border:none}#filterDropdown:hover{background:rgb(255 255 255 / 85%);color:#000;box-shadow:0 4px 8px rgb(0 0 0 / .4)}#filterDropdown:focus{outline:none;box-shadow:0 0 4px 2px rgb(255 255 255 / .8)}#filterDropdown option{font-family:inherit;color:#000;background:#fff;border:none;padding:5px;font-weight:inherit}#filterDropdown option:hover{background:#c8c8c8}.myCardImage{transition:filter 0.2s ease}.myCardImage:hover{filter:brightness(70%)}#toggleFanart{padding:10px 20px;font-size:18px;background:rgb(255 255 255 / .15);margin-top:15px;margin-bottom:15px;border:none;border-radius:8px;font-weight:700;font-family:'Poppins',sans-serif;color:#fff;text-decoration:none;cursor:pointer;display:block;margin-left:auto;margin-right:auto;-webkit-backdrop-filter:blur(5em);backdrop-filter:blur(5em);transition:transform 0.2s ease,background-color 0.3s ease,box-shadow 0.3s ease,color 0.3s ease}#toggleFanart:hover{transform:scale(1.1);background:linear-gradient(135deg,rgb(255 0 150 / .4),rgb(0 150 255 / .4));box-shadow:0 6px 20px rgb(0 0 0 / .3),0 0 15px rgb(0 150 255 / .6);color:#fff}#toggleFanart:active{transform:scale(.95);box-shadow:0 3px 12px rgb(0 0 0 / .3)}.bg-style{background:linear-gradient(to right top,rgb(0 0 0 / .98),rgb(0 0 0 / .2)),url(https://assets.nflxext.com/ffe/siteui/vlv3/058eee37-6c24-403a-95bd-7d85d3260ae1/5030300f-ed0c-473a-9795-a5123d1dd81d/US-en-20240422-POP_SIGNUP_TWO_WEEKS-perspective_WEB_0941c399-f3c4-4352-8c6d-0a3281e37aa0_large.jpg);background-attachment:fixed;background-repeat:no-repeat;background-position:center;background-size:cover}@media (max-width:50em){.swiper-thumbs{display:none!important}}`;
 
-    // monitor dom changements
-    document.addEventListener("viewbeforeshow", function (e) {
-        if (e.detail.contextPath.startsWith("/item?id=")) {
-            if (!e.detail.isRestored) {
-                !document.getElementById("embyDetailCss") && loadExtraStyle(embyDetailCss, 'embyDetailCss');
-                const mutation = new MutationObserver(function () {
-                    viewnode = e.target;
-                    item = viewnode.controller?.currentItem;
-                    if (item) {
-                        mutation.disconnect();
-                        if (showFlag()) {
+    loadConfig().then(() => {
+        // monitor dom changements
+        document.addEventListener("viewbeforeshow", function (e) {
+            if (e.detail.contextPath.startsWith("/item?id=")) {
+                if (!e.detail.isRestored) {
+                    !document.getElementById("embyDetailCss") && loadExtraStyle(embyDetailCss, 'embyDetailCss');
+                    const mutation = new MutationObserver(function () {
+                        viewnode = e.target;
+                        item = viewnode.controller?.currentItem;
+                        if (item) {
+                            mutation.disconnect();
+                            if (showFlag()) {
 
-                            if (item.Type === 'BoxSet') {  
-                                boxSetInit();
-                            } else {
-                                init();
+                                if (item.Type === 'BoxSet') {
+                                    boxSetInit();
+                                } else {
+                                    init();
+                                }
                             }
                         }
+                    });
+                    mutation.observe(document.body, {
+                        childList: true,
+                        characterData: true,
+                        subtree: true,
+                    });
+                } else {
+                    viewnode = e.target;
+                    item = viewnode.controller.currentItem;
+                    if (item && showFlag() && item.Type != 'BoxSet' && item.Type != "Person") {
+                        actorName = getActorName();
+                        directorName = getActorName(true);
+                        setTimeout(() => {
+                            injectLinks();
+                            javdbTitle();
+                            adjustCardOffsets();
+                            adjustSliderWidth();
+                        }, 1000);
                     }
-                });
-                mutation.observe(document.body, {
-                    childList: true,
-                    characterData: true,
-                    subtree: true,
-                });
-            } else {
-                viewnode = e.target;
-                item = viewnode.controller.currentItem;
-                if (item && showFlag() && item.Type != 'BoxSet' && item.Type != "Person") {
-                    actorName = getActorName();
-                    directorName = getActorName(true);
-                    setTimeout(() => {
-                        injectLinks();
-                        javdbTitle();
-                        adjustCardOffsets();
-                        adjustSliderWidth();
-                    }, 1000);
                 }
             }
-        }
+        });
     });
+    
 
     function clearExpiredCache() {
         const CACHE_PREFIX = "trailerUrl";
@@ -124,6 +127,7 @@
         injectLinks();
         javdbTitle();
         buttonInit();
+        
         reviewButtonInit();
 
         previewInject().then(modalInject);
@@ -132,6 +136,8 @@
 
         translateInject();
         javdbButtonInit();
+        embyButtonInit();
+        //VRButtonInit();
     }
 
     function boxSetInit() {
@@ -288,6 +294,40 @@
         }
     }
 
+    /*
+    async function actorMoreInjectNew(isDirector = false, excludeIds = []) {
+        if (item.Type === 'Person') return [];
+        let name = getActorName(isDirector);
+
+        if (name.length === 0) return [];
+
+        isDirector ? (directorName = name) : (actorName = name);
+
+
+        const aboutSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .aboutSection");
+
+
+        if (aboutSection) {
+
+
+            if (!(isDirector && moreItems.length === 1)) {
+                const title = slider.querySelector(".sectionTitleTextButton");
+                title.title = "刷新数据";
+                title.addEventListener('click', () => {
+                    view.fetchData()
+                        .then(view.bound_onDataFetchedInitial, view.bound_onGetItemsFailed)
+                        .then(() => addHoverEffect());
+                });
+            }
+
+            return moreItems.map(moreItem => moreItem.Id);
+
+        }
+        
+        return [];
+    }
+    */
+
     function addBoxsetTrailer() {
         if (isTouchDevice()) return
         const targetNode = viewnode; // The parent element to observe
@@ -346,6 +386,8 @@
 
     function javdbTitle() {
         if (!isJP18() || !fetchJavDbFlag || item.Type === 'BoxSet' || item.Type === 'Person') return
+
+        //const topContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .topDetailsContainer");
 
         const detailMainContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailMainContainerParent");
 
@@ -469,14 +511,14 @@
                 const modifyCode = (noNumCode.startsWith("DSVR") && /^\D+-\d{1,3}$/.test(code)) ? "3" + code : code;
                 newLinks.push(createNewLinkElement('搜索 jvrlibrary.com', 'lightyellow', `https://jvrlibrary.com/jvr?id=` + modifyCode, 'jvrlibrary'));
             } else {
-                newLinks.push(createNewLinkElement('搜索 7mmtv.sx', 'rgb(225, 125, 190)', `https://7mmtv.sx/zh/searchform_search/all/index.html?search_keyword=${code}&search_type=searchall&op=search`, '7mmtv'));
+                //newLinks.push(createNewLinkElement('搜索 7mmtv.sx', 'rgb(225, 125, 190)', `https://7mmtv.sx/zh/searchform_search/all/index.html?search_keyword=${code}&search_type=searchall&op=search`, '7mmtv'));
                 newLinks.push(createNewLinkElement('搜索 missav.ws', 'rgb(238, 152, 215)', `https://missav.ws/cn/search/${code}`, 'missav'));
-                newLinks.push(createNewLinkElement('搜索 tktube.com', 'blue', `https://tktube.com/search/${code.replace(/-/g, "--")}/`, 'tktube'));
+                //newLinks.push(createNewLinkElement('搜索 tktube.com', 'blue', `https://tktube.com/search/${code.replace(/-/g, "--")}/`, 'tktube'));
                 newLinks.push(createNewLinkElement('搜索 dmm.co.jp', 'red', 'https://www.dmm.co.jp/mono/-/search/=/searchstr=' + code.toLowerCase() + '/', 'dmm'));
                 if (noNumCode != code) {
                     newLinks.push(createNewLinkElement('搜索 mgstage.com', 'red', `https://www.mgstage.com/search/cSearch.php?search_word=${code}&x=0&y=0&search_shop_id=&type=top`, 'prestige'));
                 }
-                newLinks.push(createNewLinkElement('搜索 javsubtitled.com', 'rgb(149, 221, 49)', 'https://javsubtitled.com/zh/search?keywords=' + code, 'javsubtitled'));
+                //newLinks.push(createNewLinkElement('搜索 javsubtitled.com', 'rgb(149, 221, 49)', 'https://javsubtitled.com/zh/search?keywords=' + code, 'javsubtitled'));
             }
 
             if (!viewnode.querySelector("div[is='emby-scroller']:not(.hide) .btnPlayTrailer:not(.hide)")) {
@@ -548,30 +590,54 @@
                 if (trimmedText === 'JP-18+' || trimmedText === 'NC-17') {
                     mediaItem.style.fontWeight = 'bold';
                     mediaItem.style.fontFamily = "'Georgia', serif";
-                } else if (timeRegexWithHoursAndMinutes.test(trimmedText)) {
-                    const match = trimmedText.match(timeRegexWithHoursAndMinutes);
-                    const hours = match[1];
-                    const minutes = match[2];
+                } else if (timeRegexWithHoursAndMinutes.test(trimmedText) || timeRegexHoursOnly.test(trimmedText) || timeRegexMinutesOnly.test(trimmedText)) {
+                    const ticks = item.RunTimeTicks;
 
-                    // Change the text to the desired format with hours and minutes
-                    mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时${minutes}分  •`;
-                    //mediaItem.classList.add('mediaInfoItem-border');
+                    if (ticks) {
+                        // convert ticks → seconds
+                        const totalSeconds = Math.floor(ticks / 10000000);
 
-                } else if (timeRegexHoursOnly.test(trimmedText)) {
-                    const match = trimmedText.match(timeRegexHoursOnly);
-                    const hours = match[1];
+                        const hours = Math.floor(totalSeconds / 3600);
+                        const minutes = Math.floor((totalSeconds % 3600) / 60);
 
-                    // Change the text to the desired format with only hours
-                    mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时  •`;
-                    //mediaItem.classList.add('mediaInfoItem-border');
+                        if (hours > 0 && minutes > 0) {
+                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时${minutes}分 •`;
+                        } else if (hours > 0) {
+                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时 •`;
+                        } else {
+                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${minutes}分 •`;
+                        }
 
-                } else if (timeRegexMinutesOnly.test(trimmedText)) {
-                    const match = trimmedText.match(timeRegexMinutesOnly);
-                    const minutes = match[1];
+                        // optionally add a border
+                        // mediaItem.classList.add('mediaInfoItem-border');
+                    } else {
+                        if (timeRegexWithHoursAndMinutes.test(trimmedText)) {
+                            const match = trimmedText.match(timeRegexWithHoursAndMinutes);
+                            const hours = match[1];
+                            const minutes = match[2];
 
-                    // Change the text to the desired format with only minutes
-                    mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${minutes}分  •`;
-                    //mediaItem.classList.add('mediaInfoItem-border');
+                            // Change the text to the desired format with hours and minutes
+                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时${minutes}分  •`;
+                            //mediaItem.classList.add('mediaInfoItem-border');
+
+                        } else if (timeRegexHoursOnly.test(trimmedText)) {
+                            const match = trimmedText.match(timeRegexHoursOnly);
+                            const hours = match[1];
+
+                            // Change the text to the desired format with only hours
+                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时  •`;
+                            //mediaItem.classList.add('mediaInfoItem-border');
+
+                        } else if (timeRegexMinutesOnly.test(trimmedText)) {
+                            const match = trimmedText.match(timeRegexMinutesOnly);
+                            const minutes = match[1];
+
+                            // Change the text to the desired format with only minutes
+                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${minutes}分  •`;
+                            //mediaItem.classList.add('mediaInfoItem-border');
+                        }
+                    }
+
                 } else if (['endsAt', 'mediaInfoCriticRating'].some(className => mediaItem.classList.contains(className))) {
                     mediaItem.style.display = 'none';
                 } else if (/^\d{4}$/.test(trimmedText)) {
@@ -749,6 +815,45 @@
                 text: "路径复制成功",
                 icon: "\uf0c5",
                 secondaryText: itemFolderPath
+            });
+        }
+    }
+
+    function embyButtonInit() {
+        if (OS_current != 'ipad' || item.Type != 'Movie') return;
+        const url = `emby://items?serverId=${ApiClient.serverId() }&itemId=${item.Id}`;
+        const embyIcon = `<img height="24" src="${ApiClient._serverAddress}/favicon.ico" />`;
+        const buttonhtml = createButtonHtml('jumpEmby', '跳转Emby', embyIcon, 'Emby');
+        const mainDetailButtons = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .mainDetailButtons");
+
+        mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml);
+
+        const embyButton = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #jumpEmby");
+        if (embyButton) {
+            embyButton.addEventListener("click", function () {
+                // This will attempt to open the Emby app on iPad
+                window.location.href = url;
+            });
+        }
+    }
+
+    function VRButtonInit() {
+        if (item.Type != 'Movie') return;
+
+        const streamUrl = `${ApiClient._serverAddress}/emby/videos/${item.Id}/original.${item.MediaSources[0].Container}?api_key=${ApiClient.accessToken()}`;
+        const url = 'moonplayer://video?url=' + streamUrl;
+        const VRIcon = `<span class="material-symbols-outlined">play_circle</span>`;
+        const buttonhtml = createButtonHtml('jumpMoon', '跳转MoonPlayer', VRIcon, 'MoonPlayer');
+        const mainDetailButtons = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .mainDetailButtons");
+
+        mainDetailButtons.insertAdjacentHTML('beforeend', buttonhtml);
+
+        const VRButton = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #jumpMoon");
+        if (VRButton) {
+            VRButton.addEventListener("click", function () {
+                // This will attempt to open the Emby app on iPad
+                copyTextToClipboard(streamUrl);
+                window.location.href = url;           
             });
         }
     }
@@ -1663,6 +1768,8 @@
                 closeButton.addEventListener('click', closeModal);
                 modalImg.addEventListener('wheel', handleWheelZoom);
             }
+
+            window.addEventListener('popstate', closeModal);
         }
 
         function handleTouchSwipe() {
@@ -1804,7 +1911,9 @@
     async function actorMoreInject(isDirector = false, excludeIds = []) {
         if (item.Type === 'Person') return [];
         let name = getActorName(isDirector);
+
         if (name.length === 0) return [];
+
         isDirector ? (directorName = name) : (actorName = name);
 
         let moreItems = await getActorMovies(name, excludeIds);
@@ -1902,6 +2011,8 @@
         };
         return imgHtml;
     }
+
+
 
     function dbActorMoreHtml(moreItems) {
         let imgHtml = '';
@@ -2053,46 +2164,7 @@
             if (localTrailers && localTrailers.length > 0) {
                 let trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
 
-                if (Object.keys(deviceProfile).length === 0) {
-                    deviceProfile = await getDeviceProfile(trailerItem);
-                }
-
-                if (!deviceProfile || Object.keys(deviceProfile).length === 0) {
-                    deviceProfile = { "MaxStaticBitrate": 140000000, "MaxStreamingBitrate": 140000000, "MusicStreamingTranscodingBitrate": 192000, "DirectPlayProfiles": [{ "Container": "mp4,m4v", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "mkv", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "flv", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "aac,mp3" }, { "Container": "mov", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "opus", "Type": "Audio" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3" }, { "Container": "mp2,mp3", "Type": "Audio", "AudioCodec": "mp2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac" }, { "Container": "m4a", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "mp4", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "flac", "Type": "Audio" }, { "Container": "webma,webm", "Type": "Audio" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "PCM_S16LE,PCM_S24LE" }, { "Container": "ogg", "Type": "Audio" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis,opus", "VideoCodec": "av1,VP8,VP9" }], "TranscodingProfiles": [{ "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mkv", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "Context": "Static", "MaxAudioChannels": "2", "CopyTimestamps": true }, { "Container": "m4s,ts", "Type": "Video", "AudioCodec": "ac3,mp3,aac", "VideoCodec": "h264,h265,hevc", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true, "ManifestSubtitles": "vtt" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis", "VideoCodec": "vpx", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp4", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264", "Context": "Static", "Protocol": "http" }], "ContainerProfiles": [], "CodecProfiles": [{ "Type": "VideoAudio", "Codec": "aac", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "VideoAudio", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "Video", "Codec": "h264", "Conditions": [{ "Condition": "EqualsAny", "Property": "VideoProfile", "Value": "high|main|baseline|constrained baseline|high 10", "IsRequired": false }, { "Condition": "LessThanEqual", "Property": "VideoLevel", "Value": "62", "IsRequired": false }] }, { "Type": "Video", "Codec": "hevc", "Conditions": [] }], "SubtitleProfiles": [{ "Format": "vtt", "Method": "Hls" }, { "Format": "eia_608", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "eia_708", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "vtt", "Method": "External" }, { "Format": "ass", "Method": "External" }, { "Format": "ssa", "Method": "External" }], "ResponseProfiles": [{ "Type": "Video", "Container": "m4v", "MimeType": "video/mp4" }] };
-                }
-
-                const trailerurls = await ApiClient.getPlaybackInfo(trailerItem.Id, {}, deviceProfile);
-
-                let trailerurl = trailerurls.MediaSources.find(ms => ms.Protocol === "File");
-
-                if (!trailerurl) {
-                    trailerurl = trailerurls.MediaSources.find(ms => ms.Protocol === "Http");
-                }
-
-                if (!trailerurl) {
-                    console.warn("No valid MediaSource found.");
-                    return null;
-                }
-
-                if (trailerurl.Protocol === "File") {
-                    /*
-                    if (OS_current === 'windows') {
-                        videourl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
-                    } else {
-                        videourl = `${ApiClient.serverAddress()}/emby${trailerurl.DirectStreamUrl}`;
-                    }
-                    */
-
-                    videourl = `${ApiClient.serverAddress()}/emby${trailerurl.DirectStreamUrl}`;
-                    if (videourl.includes('.m3u8') && OS_current === 'windows') {
-                        //videourl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
-                        videourl = `${ApiClient._serverAddress}/emby/videos/${trailerItem.Id}/original.${trailerItem.MediaSources[0].Container}?DeviceId=${ApiClient._deviceId}&MediaSourceId=${trailerItem.MediaSources[0].Id}&PlaySessionId=${trailerurls.PlaySessionId}&api_key=${ApiClient.accessToken()}`;
-                    }
-
-                    //videourl = `${ApiClient._serverAddress}/emby/videos/${trailerItem.Id}/original.${trailerItem.MediaSources[0].Container}?DeviceId=${ApiClient._deviceId}&MediaSourceId=${trailerItem.MediaSources[0].Id}&PlaySessionId=${trailerurls.PlaySessionId}&api_key=${ApiClient.accessToken()}`;
-                } else if (trailerurl.Protocol === "Http") {
-                    videourl = trailerurl.Path;
-                }
+                videourl = await getStreamUrl(trailerItem);
 
                 try {
                     localStorage.setItem(cacheKey, videourl);
@@ -2104,6 +2176,51 @@
 
         return videourl;
     }
+
+    async function getStreamUrl(thisItem = item) {
+
+        let videourl = null;
+
+        if (Object.keys(deviceProfile).length === 0) {
+            deviceProfile = await getDeviceProfile(thisItem);
+        }
+
+        if (!deviceProfile || Object.keys(deviceProfile).length === 0) {
+            deviceProfile = { "MaxStaticBitrate": 140000000, "MaxStreamingBitrate": 140000000, "MusicStreamingTranscodingBitrate": 192000, "DirectPlayProfiles": [{ "Container": "mp4,m4v", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "mkv", "Type": "Video", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "flv", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "aac,mp3" }, { "Container": "mov", "Type": "Video", "VideoCodec": "h264", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis" }, { "Container": "opus", "Type": "Audio" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3" }, { "Container": "mp2,mp3", "Type": "Audio", "AudioCodec": "mp2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac" }, { "Container": "m4a", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "mp4", "AudioCodec": "aac", "Type": "Audio" }, { "Container": "flac", "Type": "Audio" }, { "Container": "webma,webm", "Type": "Audio" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "PCM_S16LE,PCM_S24LE" }, { "Container": "ogg", "Type": "Audio" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis,opus", "VideoCodec": "av1,VP8,VP9" }], "TranscodingProfiles": [{ "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp3", "Type": "Audio", "AudioCodec": "mp3", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "aac", "Type": "Audio", "AudioCodec": "aac", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "wav", "Type": "Audio", "AudioCodec": "wav", "Context": "Static", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mkv", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264,h265,hevc,av1,vp8,vp9", "Context": "Static", "MaxAudioChannels": "2", "CopyTimestamps": true }, { "Container": "m4s,ts", "Type": "Video", "AudioCodec": "ac3,mp3,aac", "VideoCodec": "h264,h265,hevc", "Context": "Streaming", "Protocol": "hls", "MaxAudioChannels": "2", "MinSegments": "1", "BreakOnNonKeyFrames": true, "ManifestSubtitles": "vtt" }, { "Container": "webm", "Type": "Video", "AudioCodec": "vorbis", "VideoCodec": "vpx", "Context": "Streaming", "Protocol": "http", "MaxAudioChannels": "2" }, { "Container": "mp4", "Type": "Video", "AudioCodec": "ac3,eac3,mp3,aac,opus,flac,vorbis", "VideoCodec": "h264", "Context": "Static", "Protocol": "http" }], "ContainerProfiles": [], "CodecProfiles": [{ "Type": "VideoAudio", "Codec": "aac", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "VideoAudio", "Conditions": [{ "Condition": "Equals", "Property": "IsSecondaryAudio", "Value": "false", "IsRequired": "false" }] }, { "Type": "Video", "Codec": "h264", "Conditions": [{ "Condition": "EqualsAny", "Property": "VideoProfile", "Value": "high|main|baseline|constrained baseline|high 10", "IsRequired": false }, { "Condition": "LessThanEqual", "Property": "VideoLevel", "Value": "62", "IsRequired": false }] }, { "Type": "Video", "Codec": "hevc", "Conditions": [] }], "SubtitleProfiles": [{ "Format": "vtt", "Method": "Hls" }, { "Format": "eia_608", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "eia_708", "Method": "VideoSideData", "Protocol": "hls" }, { "Format": "vtt", "Method": "External" }, { "Format": "ass", "Method": "External" }, { "Format": "ssa", "Method": "External" }], "ResponseProfiles": [{ "Type": "Video", "Container": "m4v", "MimeType": "video/mp4" }] };
+        }
+
+        const streamUrls = await ApiClient.getPlaybackInfo(thisItem.Id, {}, deviceProfile);
+        let streamUrl = streamUrls.MediaSources.find(ms => ms.Protocol === "File");
+        if (!streamUrl) {
+            streamUrl = streamUrls.MediaSources.find(ms => ms.Protocol === "Http");
+        }
+
+        if (!streamUrl) {
+            console.warn("No valid MediaSource found.");
+            return null;
+        }
+        if (streamUrl.Protocol === "File") {
+            /*
+            if (OS_current === 'windows') {
+                videourl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
+            } else {
+                videourl = `${ApiClient.serverAddress()}/emby${trailerurl.DirectStreamUrl}`;
+            }
+            */
+
+            videourl = `${ApiClient.serverAddress()}/emby${streamUrl.DirectStreamUrl}`;
+            if (videourl.includes('.m3u8') && OS_current === 'windows') {
+                //videourl = await ApiClient.getItemDownloadUrl(trailerItem.Id, trailerItem.MediaSources[0].Id, trailerItem.serverId);
+                videourl = `${ApiClient._serverAddress}/emby/videos/${thisItem.Id}/original.${thisItem.MediaSources[0].Container}?DeviceId=${ApiClient._deviceId}&MediaSourceId=${thisItem.MediaSources[0].Id}&PlaySessionId=${streamUrls.PlaySessionId}&api_key=${ApiClient.accessToken()}`;
+            }
+            //videourl = `${ApiClient._serverAddress}/emby/videos/${thisItem.Id}/original.${thisItem.MediaSources[0].Container}?DeviceId=${ApiClient._deviceId}&MediaSourceId=${thisItem.MediaSources[0].Id}&PlaySessionId=${streamUrls.PlaySessionId}&api_key=${ApiClient.accessToken()}`;
+            //videourl = `${ApiClient._serverAddress}/emby/videos/${trailerItem.Id}/original.${trailerItem.MediaSources[0].Container}?DeviceId=${ApiClient._deviceId}&MediaSourceId=${trailerItem.MediaSources[0].Id}&PlaySessionId=${trailerurls.PlaySessionId}&api_key=${ApiClient.accessToken()}`;
+        } else if (streamUrl.Protocol === "Http") {
+            videourl = streamUrl.Path;
+        }
+        return videourl;
+    }
+
 
     async function getDeviceProfile(trailerItem) {
         const playbackManager = await Emby.importModule("./modules/common/playback/playbackmanager.js");
@@ -2449,7 +2566,7 @@
             ApiClient.getCurrentUserId(),
             {
                 Recursive: true,
-                IncludeItemTypes: 'Movie',
+                IncludeItemTypes: 'Movie, Trailer, Series',
                 Fields: 'ProductionYear,LocalTrailerCount,RemoteTrailers',
                 Person: name,
             }
@@ -2547,6 +2664,8 @@
             return 'android'
         } else if (u.match(/Ubuntu/i)) {
             return 'Ubuntu'
+        } else if (u.match(/Vision/i) || u.match(/visionOS/i)) {
+            return 'visionOS'
         } else {
             return 'other'
         }
@@ -3145,6 +3264,3 @@
     }
 
 })();
-
-
-
