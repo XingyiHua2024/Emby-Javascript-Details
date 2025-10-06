@@ -1333,7 +1333,7 @@
         if (!isJP18() || isTouchDevice() || window.innerHeight > window.innerWidth || isSlider) addSlider = true;
 
 
-        if (item.BackdropImageTags.length === 0) return;
+        if (item.BackdropImageTags.length === 0 || viewnode.querySelector("#myFanart")) return;
 
         const images = await ApiClient.getItemImageInfos(item.Id);
         const backdrops = images.filter(image => image.ImageType === "Backdrop");
@@ -3264,3 +3264,4 @@
     }
 
 })();
+
