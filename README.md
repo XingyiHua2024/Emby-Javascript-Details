@@ -43,7 +43,7 @@ Add some features for Emby detail page
 
 ### emby-swiper-trailer.js
    1. 来自：https://github.com/newday-life/emby-web-mod/blob/main/emby-swiper/emby-swiper-trailer
-   2. 将Youtube trailer修改为本地trailer
+   2. 适配新版本Emby
 
 ### config.json
    1. save configs. 必须放在index.html同级目录中
