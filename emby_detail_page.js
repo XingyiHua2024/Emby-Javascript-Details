@@ -14,12 +14,12 @@
     // put language to translate from (ja for Japanese) to Chinese. Leave '' to support any language
 
     var item, actorName, directorName, viewnode;
-    var prefixDic = {}, mountMatch = {}, deviceProfile = {};
+    var prefixDic = {}, mountMatch = {}, deviceProfile = {}, dmm_proxy = "https://cc3001.dmm.co.jp";
     //var adminUserId = ''; //Emby User ID
 
     
 
-    var isResizeListenerAdded = false, isFanartResizeListenerAdded = false;
+    var isResizeListenerAdded = false, isFanartResizeListenerAdded = false, videoVolume = 0.5;
     
 
     const OS_current = getOS();
@@ -110,6 +110,7 @@
             nameMap = config.nameMap || nameMap;
             prefixDic = config.prefixDic || prefixDic;
             mountMatch = config.mountMatch || mountMatch;
+            dmm_proxy = config.dmm_proxy || dmm_proxy;
         }
     }
 
@@ -203,22 +204,8 @@
                     */
                     if (mutation.type === 'childList' && (mutation.addedNodes.length || mutation.removedNodes.length)  && typeof view.updateElement === 'function') {
                         observer.disconnect(); 
-                        
-                        const originalUpdateElement = view.updateElement;
-
-                        view.updateElement = function (...args) {
-                            const result = originalUpdateElement.apply(this, args);
-
-                            // If original is sync, wrap it into a Promise
-                            return Promise.resolve(result).then(() => {
-                                addHoverEffect();
-                            });
-                        };
-
-                        setTimeout(() => {
-                            addHoverEffect();
-                        }, 1000);
-
+                        updateView();
+                        addHoverEffect();
                         break;
                     }
                 }
@@ -267,7 +254,8 @@
         title.addEventListener('click', () => {
             view.fetchData()
                 .then(view.bound_onDataFetchedInitial, view.bound_onGetItemsFailed)
-                .then(() => addHoverEffect());
+                .then(() => addHoverEffect())
+                .then(() => updateView());
         });
 
         function updateH2(oldH2) {
@@ -291,6 +279,23 @@
             // Replace old h2 with the new wrapper
             oldH2.replaceWith(wrapper);
             return wrapper;
+        }
+
+        function updateView() {
+            // Prevent wrapping the function more than once
+            //if (view._updateElementPatched) return;
+            //view._updateElementPatched = true;
+
+            const originalUpdateElement = view.updateElement;
+
+            view.updateElement = function (...args) {
+                const result = originalUpdateElement.apply(this, args);
+
+                // If original is sync, wrap it in a Promise
+                return Promise.resolve(result).then(() => {
+                    addHoverEffect();
+                });
+            };
         }
     }
 
@@ -640,7 +645,7 @@
 
                 } else if (['endsAt', 'mediaInfoCriticRating'].some(className => mediaItem.classList.contains(className))) {
                     mediaItem.style.display = 'none';
-                } else if (/^\d{4}$/.test(trimmedText)) {
+                } else if (/^\d{4}$/.test(trimmedText) && item.Height) {
                     let resolutionLabel;
 
                     if (item.Height >= 4096) {
@@ -837,6 +842,7 @@
         }
     }
 
+    /*
     function VRButtonInit() {
         if (item.Type != 'Movie') return;
 
@@ -857,6 +863,7 @@
             });
         }
     }
+    */
 
     function javdbButtonInit() {
         if (!isJP18() || !fetchJavDbFlag || item.Type === 'Person') return;
@@ -1144,7 +1151,6 @@
         if (addSlider) {
             banner = `
 		    <div class="verticalSection verticalSection-cards emby-scrollbuttons-scroller">
-              
 			    <h2 class="sectionTitle sectionTitle-cards padded-left padded-left-page padded-right">${text}</h2>
                 <div is="emby-scroller" class="emby-scroller padded-top-focusscale padded-bottom-focusscale padded-left padded-left-page padded-right scrollX hiddenScrollX scrollFrameX" data-mousewheel="false" data-focusscroll="true" data-horizontal="true" bis_skin_checked="1">
 			        ${html}
@@ -1237,7 +1243,7 @@
         let name = itemInfo.Name;
 
         const itemContainer = `
-            <div data-id="${itemInfo.Id}" data-localtrailer-count="${itemInfo.LocalTrailerCount || 0}" class="virtualScrollItem card ${typeWord}Card card-horiz ${typeWord}Card-horiz card-hoverable card-autoactive" tabindex="0" draggable="false" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
+            <div data-id="${itemInfo.Id}" data-localtrailer-count="${itemInfo.LocalTrailerCount || 0}" data-remotetrailer-count="${itemInfo.RemoteTrailers?.length || 0}" class="virtualScrollItem card ${typeWord}Card card-horiz ${typeWord}Card-horiz card-hoverable card-autoactive" tabindex="0" draggable="false" bis_skin_checked="1" style="inset: 0px auto auto ${distance * increment}px;">
                 <div class="cardBox cardBox-touchzoom cardBox-bottompadded" bis_skin_checked="1">
                     <button onclick="Emby.Page.showItem('${itemInfo.Id}')" tabindex="-1" class="itemAction cardContent-button cardContent cardImageContainer cardContent-background cardContent-bxsborder-fv coveredImage coveredImage-noScale cardPadder-${typeWord} myCardImage">
                         <img draggable="false" alt=" " class="cardImage cardImage-bxsborder-fv coveredImage coveredImage-noScale" loading="lazy" decoding="async" src="${imgUrl}">
@@ -1716,22 +1722,7 @@
             }, 300); // Adjust the delay to match the animation duration
         }
 
-        function fadeIn(element, duration) {
-            let opacity = 0;
-            const startTime = performance.now();
 
-            function animate(currentTime) {
-                const elapsed = currentTime - startTime;
-                opacity = Math.min(elapsed / duration, 1);
-                element.style.opacity = opacity;
-
-                if (opacity < 1) {
-                    requestAnimationFrame(animate);
-                }
-            }
-
-            requestAnimationFrame(animate);
-        }
 
 
         function setButtonSize(button, isSmaller) {
@@ -1872,13 +1863,30 @@
         }
     }
 
+    function fadeIn(element, duration) {
+        let opacity = 0;
+        const startTime = performance.now();
+
+        function animate(currentTime) {
+            const elapsed = currentTime - startTime;
+            opacity = Math.min(elapsed / duration, 1);
+            element.style.opacity = opacity;
+
+            if (opacity < 1) {
+                requestAnimationFrame(animate);
+            }
+        }
+
+        requestAnimationFrame(animate);
+    }
+
     function createModal() {
         const modalHTML = `
-        <span class="close">&#10006;</span>
-        <img class="modal-content" id="modalImg">
-        <div class="modal-caption" id="modalCaption">example.jpg (1/10)</div>
-        <button class="prev">&#10094;</button>
-        <button class="next">&#10095;</button>
+            <span class="close">&#10006;</span>
+            <img class="modal-content" id="modalImg">
+            <div class="modal-caption" id="modalCaption">example.jpg (1/10)</div>
+            <button class="prev">&#10094;</button>
+            <button class="next">&#10095;</button>
         `;
 
         const modal = document.createElement('div');
@@ -1889,6 +1897,126 @@
         document.body.appendChild(modal);
 
         return modal;
+    }
+
+    function createVideoModal() {
+        const modalHTML = `
+             <span class="close">&#10006;</span>
+             <video class="modal-content" id="modalVideo"></video>
+             <iframe class="modal-content" frameborder="0" allowfullscreen allow="autoplay; encrypted-media" id="modalYT"></iframe>
+             <div class="modal-caption" id="modalVideoCaption">title</div>
+        `;
+
+        const modal = document.createElement('div');
+        modal.id = 'myVideoModal';
+        modal.classList.add('modal');
+        modal.innerHTML = modalHTML;
+
+        document.body.appendChild(modal);
+
+        const closeBtn = modal.querySelector(".close");
+        const modalVideo = modal.querySelector("#modalVideo");
+        const modalYT = modal.querySelector("#modalYT");
+        modalVideo.style.opacity = '0';
+        modalYT.style.opacity = '0';
+
+        function closeVideoModal() {
+            modal.classList.add("modal-closing");
+            // Save volume if video
+            if (modalVideo.style.display !== "none") {
+                videoVolume = modalVideo.volume;
+                modalVideo.style.opacity = '0';
+                modalVideo.pause();
+                modalVideo.src = "";
+            }
+
+            // Stop YouTube iframe by removing src
+            if (modalYT.style.display !== "none") {
+                modalYT.style.opacity = '0';
+                modalYT.src = "";
+            }
+
+            setTimeout(() => {
+                modal.style.display = "none";
+                document.body.style.overflow = "auto";
+            }, 200);
+        }
+
+        closeBtn.addEventListener('click', closeVideoModal);
+        window.addEventListener('popstate', closeVideoModal);
+
+        return modal;
+    }
+
+    function openVideoInModal(videoSrc, title) {
+        let modal = document.getElementById("myVideoModal");
+        if (!modal) {
+            modal = createVideoModal();
+        }
+
+        const modalVideo = modal.querySelector("#modalVideo");
+        //const closeBtn = modal.querySelector(".close");
+        const modalYT = modal.querySelector("#modalYT");
+        const modalCaption = modal.querySelector("#modalVideoCaption");
+
+        modalCaption.textContent = title;
+
+        // Detect YouTube URLs
+        const isYouTube = videoSrc.includes("youtube.com");
+
+        if (isYouTube) {
+            // Hide video element
+            modalVideo.style.display = "none";
+
+            // Show iframe
+            modalYT.style.display = "block";
+            //modalYT.style.position = "absolute";
+            modalYT.style.width = "100%";
+            modalYT.style.height = "100%";
+            modalYT.src = getFullscreenYTUrl(videoSrc);
+            fadeIn(modalYT, 300);
+        } else {
+            // Hide iframe
+            modalYT.style.display = "none";
+
+            // Show video element
+            modalVideo.style.display = "block";
+            modalVideo.src = videoSrc;
+            modalVideo.controls = true;
+            modalVideo.autoplay = true;
+            modalVideo.muted = false;
+            modalVideo.volume = videoVolume;
+            modalVideo.style.width = "100%";
+            modalVideo.style.height = "100%";
+            fadeIn(modalVideo, 300);
+        }
+
+
+        // Show modal
+        modal.style.display = "flex";
+        document.body.style.overflow = "hidden";
+        modal.classList.remove("modal-closing");
+    }
+
+    function getFullscreenYTUrl(videoSrc) {
+        const url = new URL(videoSrc);
+
+        // Ensure autoplay
+        url.searchParams.set("autoplay", "1");
+
+        // Unmute
+        url.searchParams.set("mute", "0");
+
+        // Show controls
+        url.searchParams.set("controls", "1");
+
+        // Plays inline off is okay; fullscreen will use modal size
+        url.searchParams.set("playsinline", "0");
+
+        // Optional: modest branding
+        url.searchParams.set("modestbranding", "1");
+
+        return url.toString();
     }
 
 
@@ -2052,10 +2180,11 @@
             }
             */
 
-            //let remoteTrailers = getRemoteTrailer(card._dataItemIndex, slider._itemSource);
+            let remoteTrailers = getRemoteTrailer(card._dataItemIndex, slider._itemSource);
 
             if (localTrailerCount === 0
-                && getItemType(card._dataItemIndex, slider._itemSource) != 'Trailer') {
+                && getItemType(card._dataItemIndex, slider._itemSource) != 'Trailer'
+                && !remoteTrailers && Number(card.dataset.remotetrailerCount || 0) === 0) {
                 continue;
             }
 
@@ -2084,13 +2213,20 @@
             
                 // Async fetch the trailer URL and insert the video when ready
                 getTrailerUrl(itemId).then(trailerUrl => {
-                    if (!isHovered) return; // Exit if hover already ended
+                    if (!isHovered || !trailerUrl) return; // Exit if hover already ended
             
                     videoElement = createVideoElement(trailerUrl);
+                    const expandBtn = createExpandBtn();
                     (cardOverlay || imageContainer).appendChild(videoElement);
+                    (cardOverlay || imageContainer).appendChild(expandBtn);
             
                     if (isHovered) {
                         videoElement.style.opacity = '1';
+                        setTimeout(() => {
+                            if (isHovered) {
+                                expandBtn.style.opacity = '1';
+                            }
+                        }, 300);
                     }
                 });
             });
@@ -2100,8 +2236,10 @@
                 if (!isHovered) return;
                 isHovered = false;
                 img.style.filter = ''; // Remove blur effect
-                const allVideos = imageContainer.querySelectorAll('video');
-                allVideos.forEach(video => video.remove());
+                // Remove both video and iframe elements
+                const allPreviewElements = (cardOverlay || imageContainer).querySelectorAll('.video-element');
+                allPreviewElements.forEach(el => el.remove());
+                (cardOverlay || imageContainer).querySelector('.jv-expand-btn')?.remove();
             });
         }
     }
@@ -2119,7 +2257,8 @@
             return null;
         }
 
-        return items[index].RemoteTrailers;
+        const trailers = items[index]?.RemoteTrailers;
+        return Array.isArray(trailers) && trailers.length > 0 ? trailers : null;
     }
 
     function getItemType(index, items) {
@@ -2152,28 +2291,32 @@
 
         //let videourl = localStorage.getItem(cacheKey);
         let videourl = getTrailerFromCache? localStorage.getItem(cacheKey) : null;
-        if (!videourl) {
-            let localTrailers = await ApiClient.getLocalTrailers(ApiClient.getCurrentUserId(), itemId);
-            if (localTrailers && localTrailers.length === 0) {
-                const thisItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemId);
-                if (thisItem.Type === 'Trailer') {
-                    localTrailers = [thisItem];
-                } 
-            }
-
-            if (localTrailers && localTrailers.length > 0) {
-                let trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
-
+        if (!videourl || videourl === 'null') {
+            const thisItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemId);
+            if (thisItem.LocalTrailerCount > 0) {
+                const localTrailers = await ApiClient.getLocalTrailers(ApiClient.getCurrentUserId(), itemId);
+                const trailerItem = await ApiClient.getItem(ApiClient.getCurrentUserId(), localTrailers[0].Id);
                 videourl = await getStreamUrl(trailerItem);
-
+            } else if (thisItem.Type === 'Trailer') {
+                videourl = await getStreamUrl(thisItem);
+            } else if (thisItem.RemoteTrailers && thisItem.RemoteTrailers.length > 0) {
+                videourl = thisItem.RemoteTrailers[0].Url;
+            }
+            if (videourl && videourl != 'null' && videourl != '') {
                 try {
                     localStorage.setItem(cacheKey, videourl);
                 } catch (e) {
                     console.warn("Failed to cache", e);
                 }
-            }
+            }        
         }
 
+        if (videourl?.includes('https://cc3001.dmm.co.jp')) {
+            videourl = videourl.replace(
+                "https://cc3001.dmm.co.jp",
+                dmm_proxy
+            );
+        }
         return videourl;
     }
 
@@ -2230,20 +2373,105 @@
     }
 
     function createVideoElement(trailerUrl) {
-        let videoElement = document.createElement('video');
-        videoElement.src = trailerUrl; // Video URL
-        videoElement.controls = false; // Show controls like play/pause
-        videoElement.autoplay = true; // Ensure video plays automatically
-        videoElement.muted = true; // Mute the video (to avoid autoplay restrictions)
+        // --- 1. Check if it's a YouTube URL ---
+        const isYouTube =
+            trailerUrl.includes('youtube.com') ||
+            trailerUrl.includes('youtu.be');
 
-        // Add the CSS class to the video element
+        if (isYouTube) {
+            // Extract YouTube video ID safely
+            let videoId = null;
+
+            if (trailerUrl.includes('watch')) {
+                videoId = new URL(trailerUrl).searchParams.get('v');
+            } else {
+                const parts = trailerUrl.split('/');
+                videoId = parts[parts.length - 1] || parts[parts.length - 2];
+            }
+
+            // --- 2. Create iframe for YouTube ---
+            const iframe = document.createElement('iframe');
+            iframe.classList.add('video-element');
+            iframe.style.pointerEvents = 'none';
+            iframe.style.opacity = '0';
+
+            iframe.src =
+                `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1`;
+
+            iframe.allow = "autoplay; encrypted-media";
+            iframe.frameBorder = "0";
+
+            return iframe;
+        }
+
+        // --- 3. Non-YouTube → create <video> element ---
+        const videoElement = document.createElement('video');
+        videoElement.src = trailerUrl;
+        videoElement.controls = false;
+        videoElement.autoplay = true;
+        videoElement.muted = true;
+
         videoElement.classList.add('video-element');
         videoElement.style.pointerEvents = 'none';
-        videoElement.style.opacity = '0'; // Initially hidden
+        videoElement.style.opacity = '0';
 
         return videoElement;
     }
 
+    function createExpandBtn() {
+        const expandBtn = document.createElement('button');
+        expandBtn.className = 'jv-expand-btn';
+        expandBtn.innerHTML = `
+						<svg viewBox="0 0 24 24" width="20" height="20" fill="white">
+							<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+						</svg>
+					`;
+        expandBtn.style.cssText = `
+						position: absolute;
+						top: 8px;
+						right: 8px;
+						width: 32px;
+						height: 32px;
+						background: rgba(0, 0, 0, 0.6);
+						border: 1px solid rgba(255, 255, 255, 0.3);
+						border-radius: 4px;
+						cursor: pointer;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						z-index: 100;
+						opacity: 0;
+						transition: all 0.2s ease;
+						backdrop-filter: blur(4px);
+					`;
+        expandBtn.title = '全屏播放';
+
+        expandBtn.onmouseenter = () => {
+            expandBtn.style.background = 'rgba(0, 0, 0, 0.8)';
+            expandBtn.style.transform = 'scale(1.1)';
+        };
+
+        expandBtn.onmouseleave = () => {
+            expandBtn.style.background = 'rgba(0, 0, 0, 0.6)';
+            expandBtn.style.transform = 'scale(1)';
+        };
+
+        expandBtn.onclick = async (e) => {
+            e.stopPropagation();
+
+            const parent = expandBtn.parentElement;
+            if (!parent) return;
+
+            // Find closest <video> in same container
+            const video = parent.querySelector('video') || parent.querySelector('iframe');
+            if (!video) return;
+
+            const title = parent.parentElement?.querySelector('.cardText-first span')?.title || '';
+            openVideoInModal(video.src, title);
+
+        };
+        return expandBtn
+    }
 
     async function javdbActorInject(isDirector = false) {
         const personName = isDirector ? directorName : actorName;
@@ -2910,6 +3138,9 @@
         const linksSection = aboutSection.querySelector(".linksSection");
         if (!linksSection) return
         const itemLinks = linksSection.querySelector('.itemLinks');
+        const existingKeys = Array.from(itemLinks.children).map(a =>
+            a.textContent.trim().toLowerCase()
+        );
         const links = extractLinks(item.Overview || '', '===== 外部链接 =====');
         if (Object.keys(links).length === 0) return
         const linkKeys = Object.keys(links);
@@ -2917,9 +3148,10 @@
         linksSection.classList.remove('hide');
         linkKeys.forEach(function (key, index) {
             var value = links[key];
+            const keyLower = key.toLowerCase();
 
             // Check if key is 'TheMovieDb' and if itemLinks already contains 'MovieDb'
-            if (key === 'TheMovieDb' && Array.from(itemLinks.children).some(a => a.textContent.trim() === 'MovieDb')) {
+            if (existingKeys.some(existing => existing.includes(keyLower) || keyLower.includes(existing))) {
                 return; // Skip inserting 'TheMovieDb'
             }
 
@@ -2947,6 +3179,7 @@
 
             // Split the text into lines
             var lines = text.trim().split('<br>');
+            lines = lines.filter(line => (line.includes(':') || line.includes(startLine)));
 
             // Object to store the links
             var links = {};
@@ -3264,4 +3497,3 @@
     }
 
 })();
-
