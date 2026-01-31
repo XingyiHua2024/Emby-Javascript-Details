@@ -2,7 +2,7 @@
     "use strict";
 
     /******************** user config ********************/
-    var googleApiKey = ''; //Google API Key
+    var googleApiKey = '', openaiApiKey = ''; //Google API Key
     var nameMap = {};
     var fetchJavDbFlag = true; //enable javdb scrap 
     var getTrailerFromCache = true; //enable reading from cache
@@ -24,21 +24,111 @@
 
     const OS_current = getOS();
 
-    const embyDetailCss = `.has-trailer{position:relative;box-shadow:0 0 10px 3px rgb(255 255 255 / .8);transition:box-shadow 0.3s ease-in-out;border-radius:8px}.has-trailer:hover{box-shadow:0 0 10px 3px rgb(255 0 150 / .3);transition:box-shadow 0.2s ease-in-out}.injectJavdb{opacity:1;transition:color 0.3s,transform 0.3s,box-shadow 0.3s,filter 0.3s}.injectJavdb:hover{transform:scale(1.05);background:linear-gradient(135deg,rgb(255 0 150 / .3),rgb(0 150 255 / .3));box-shadow:0 4px 15px rgb(0 0 0 / .2),0 0 10px rgb(0 150 255 / .5)}.injectJavdb .button-text,.injectJavdb .button-icon{color:pink;transition:color 0.3s,filter 0.3s}.injectJavdb:hover .button-text,.injectJavdb:hover .button-icon{color:black!important}.injectJavbus .button-text,.injectJavbus .button-icon{color:#ff8181!important}.noUncensored{opacity:1;transition:color 0.3s,transform 0.3s,box-shadow 0.3s,filter 0.3s}.noUncensored .button-text,.noUncensored .button-icon{color:grey!important}.melt-away{animation:sandMeltAnimation 1s ease-out forwards}@keyframes sandMeltAnimation{0%{opacity:1}100%{opacity:0}}.my-fanart-image{display:inline-block;margin:8px 10px 20px 10px;vertical-align:top;border-radius:8px;height:27vh;transition:transform 0.3s ease,filter 0.3s ease;min-height:180px}.my-fanart-image-slider{height:20vh!important}.my-fanart-image:hover{transform:scale(1.03);filter:brightness(80%)}.modal{display:none;position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;overflow:hidden;background-color:rgb(0 0 0 / .8);justify-content:center;align-items:center}.modal-content{margin:auto;max-width:70%;max-height:70%;overflow:hidden;opacity:0}@media (max-width:768px){.modal-content{max-width:80%;max-height:80%}}.modal-closing .modal-content{animation-name:shrinkAndRotate;animation-duration:0.3s;animation-timing-function:ease-out}.close{color:#fff;position:absolute;width:45px;height:45px;display:flex;justify-content:center;align-items:center;top:30px;right:30px;font-size:30px;font-weight:700;cursor:pointer;transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:0;background-color:rgb(0 0 0 / .5);user-select:none;caret-color:#fff0}.prev,.next{position:absolute;width:40px;height:40px;line-height:40px;justify-content:center;align-items:center;display:flex;top:50%;background-color:rgb(0 0 0 / .5);color:#fff;border:none;cursor:pointer;font-size:35px;font-weight:700;transform:translateY(-50%) translateX(-50%);transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:35px}.prev{left:80px}.next{right:20px}.prev:hover,.next:hover{background-color:rgb(255 255 255 / .3);padding:35px}.close:hover{background-color:rgb(255 255 255 / .3);padding:10px}@keyframes shrinkAndRotate{0%{transform:scale(1)}100%{transform:scale(0)}}.click-smaller{transform:scale(.9) translate(-50%,-50%);transition:transform 0.2s}.prev.disabled,.next.disabled{color:grey!important;cursor:default}@keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-10px)}50%{transform:translateX(10px)}75%{transform:translateX(-10px)}100%{transform:translateX(0)}}.modal-caption{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);text-align:center;font-size:16px;color:#fff;background-color:rgb(0 0 0 / .6);padding:5px 10px;border-radius:5px}@media screen and (max-width:480px){.modal-caption{bottom:100px}}.video-element{position:absolute;width:100%;height:100%;object-fit:contain;z-index:3;pointer-events:auto;transition:opacity 0.5s ease}.copy-link{color:lightblue;cursor:pointer;display:inline-block;transition:transform 0.1s ease}.copy-link:active{transform:scale(.95)}.media-info-item{display:block;width:100%;margin-top:10px;text-align:left}.media-info-item a{padding:5px 10px;background:rgb(255 255 255 / .15);margin-bottom:5px;margin-right:5px;-webkit-backdrop-filter:blur(5em);backdrop-filter:blur(5em);font-weight:600;font-family:'Poppins',sans-serif;transition:transform 0.2s ease,background-color 0.3s ease,box-shadow 0.3s ease,color 0.3s ease;text-decoration:none;color:#fff;border-radius: 20px}.media-info-item a:hover{transform:scale(1.05);background:linear-gradient(135deg,rgb(255 0 150 / .3),rgb(0 150 255 / .3));box-shadow:0 4px 15px rgb(0 0 0 / .2),0 0 10px rgb(0 150 255 / .5)}.pageButton{cursor:pointer;padding:6px 16px;background:rgb(255 255 255 / 15%);border-radius:5px;box-shadow:0 2px 4px rgb(0 0 0 / .2);transition:background-color 0.3s ease,box-shadow 0.3s ease}.pageButton:hover{background:rgb(255 255 255 / 85%);color:#000;box-shadow:0 4px 8px rgb(0 0 0 / .4)}#pageInput-actorPage::-webkit-inner-spin-button,#pageInput-actorPage::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}#pageInput-actorPage{-moz-appearance:textfield;appearance:none;height:auto;text-align:center;padding:5px;font-family:inherit;font-size:inherit;font-weight:inherit;line-height:inherit}#filterDropdown{width:auto;backdrop-filter:blur(5px);color:#fff;transition:background-color 0.3s ease,box-shadow 0.3s ease;margin-left:20px;font-family:inherit;padding:6px 16px;font-weight:inherit;line-height:inherit;border:none}#filterDropdown:hover{background:rgb(255 255 255 / 85%);color:#000;box-shadow:0 4px 8px rgb(0 0 0 / .4)}#filterDropdown:focus{outline:none;box-shadow:0 0 4px 2px rgb(255 255 255 / .8)}#filterDropdown option{font-family:inherit;color:#000;background:#fff;border:none;padding:5px;font-weight:inherit}#filterDropdown option:hover{background:#c8c8c8}.myCardImage{transition:filter 0.2s ease}.myCardImage:hover{filter:brightness(70%)}#toggleFanart{padding:10px 20px;font-size:18px;background:rgb(255 255 255 / .15);margin-top:15px;margin-bottom:15px;border:none;border-radius:8px;font-weight:700;font-family:'Poppins',sans-serif;color:#fff;text-decoration:none;cursor:pointer;display:block;margin-left:auto;margin-right:auto;-webkit-backdrop-filter:blur(5em);backdrop-filter:blur(5em);transition:transform 0.2s ease,background-color 0.3s ease,box-shadow 0.3s ease,color 0.3s ease}#toggleFanart:hover{transform:scale(1.1);background:linear-gradient(135deg,rgb(255 0 150 / .4),rgb(0 150 255 / .4));box-shadow:0 6px 20px rgb(0 0 0 / .3),0 0 15px rgb(0 150 255 / .6);color:#fff}#toggleFanart:active{transform:scale(.95);box-shadow:0 3px 12px rgb(0 0 0 / .3)}.bg-style{background:linear-gradient(to right top,rgb(0 0 0 / .98),rgb(0 0 0 / .2)),url(https://assets.nflxext.com/ffe/siteui/vlv3/058eee37-6c24-403a-95bd-7d85d3260ae1/5030300f-ed0c-473a-9795-a5123d1dd81d/US-en-20240422-POP_SIGNUP_TWO_WEEKS-perspective_WEB_0941c399-f3c4-4352-8c6d-0a3281e37aa0_large.jpg);background-attachment:fixed;background-repeat:no-repeat;background-position:center;background-size:cover}@media (max-width:50em){.swiper-thumbs{display:none!important}}`;
+    // Observer管理器：统一管理所有MutationObserver的生命周期
+    const observerManager = {
+        observers: new Map(),
+        timeouts: new Map(),
+
+        cleanup() {
+            this.observers.forEach(obs => obs.disconnect());
+            this.observers.clear();
+            this.timeouts.forEach(t => clearTimeout(t));
+            this.timeouts.clear();
+        },
+
+        waitForElement(name, root, selector, callback, timeout = 10000) {
+            if (!root) return;
+            const existing = root.querySelector(selector);
+            if (existing) {
+                callback(existing);
+                return;
+            }
+
+            const observer = new MutationObserver(() => {
+                const el = root.querySelector(selector);
+                if (el) {
+                    this.remove(name);
+                    callback(el);
+                }
+            });
+
+            this.observers.set(name, observer);
+            observer.observe(root, { childList: true, subtree: true });
+
+            if (timeout > 0) {
+                const timer = setTimeout(() => this.remove(name), timeout);
+                this.timeouts.set(name, timer);
+            }
+        },
+
+        waitForCondition(name, root, conditionFn, callback, options = {}) {
+            if (!root) return;
+
+            const observer = new MutationObserver(() => {
+                const result = conditionFn();
+                if (result) {
+                    this.remove(name);
+                    callback(result);
+                }
+            });
+
+            this.observers.set(name, observer);
+            observer.observe(root, { childList: true, subtree: true, characterData: true, ...options });
+        },
+
+        watchChanges(name, root, callback, options = {}) {
+            if (!root) return;
+
+            const observer = new MutationObserver((mutations) => {
+                callback(mutations, () => this.remove(name));
+            });
+
+            this.observers.set(name, observer);
+            observer.observe(root, { childList: true, subtree: false, ...options });
+        },
+
+        remove(name) {
+            this.observers.get(name)?.disconnect();
+            this.observers.delete(name);
+            const timer = this.timeouts.get(name);
+            if (timer) clearTimeout(timer);
+            this.timeouts.delete(name);
+        }
+    };
+
+    const embyDetailCss = `
+/* ===== 1. 播放按钮区域优化 ===== */
+.mainDetailButtons .btnPlay.detailButton-primary{background:linear-gradient(135deg,#8b5cf6,#6d28d9)!important;box-shadow:0 4px 15px rgba(139,92,246,0.4),0 0 20px rgba(139,92,246,0.2);border:none!important;transition:all 0.3s ease}.mainDetailButtons .btnPlay.detailButton-primary:hover{transform:scale(1.05);box-shadow:0 6px 25px rgba(139,92,246,0.5),0 0 30px rgba(139,92,246,0.3)}.mainDetailButtons .btnPlayTrailer{background:rgba(139,92,246,0.15)!important;backdrop-filter:blur(10px);border:1px solid rgba(139,92,246,0.3)!important;transition:all 0.3s ease}.mainDetailButtons .btnPlayTrailer:hover{background:rgba(139,92,246,0.25)!important;transform:scale(1.03)}.mainDetailButtons .detailButton:not(.btnPlay):not(.btnPlayTrailer){background:rgba(139,92,246,0.08)!important;backdrop-filter:blur(8px);border:1px solid rgba(139,92,246,0.15)!important;transition:all 0.3s ease}.mainDetailButtons .detailButton:not(.btnPlay):not(.btnPlayTrailer):hover{background:rgba(139,92,246,0.18)!important;transform:translateY(-2px)}
+
+/* ===== 3. 评分区域优化 ===== */
+.starRatingContainer{background:linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,180,0,0.1))!important;padding:6px 12px!important;border-radius:20px!important;border:1px solid rgba(255,215,0,0.3)!important}.starRatingContainer .starIcon{color:#ffd700!important;text-shadow:0 0 8px rgba(255,215,0,0.5)}.mediaInfoCriticRating{background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(109,40,217,0.1))!important;padding:6px 12px!important;border-radius:20px!important;border:1px solid rgba(139,92,246,0.3)!important}.mediaInfoCriticRatingFresh{filter:drop-shadow(0 0 4px rgba(139,92,246,0.5))}
+
+/* ===== 4. 信息布局优化 ===== */
+.detail-mediaInfoPrimary .mediaInfoItem{padding:4px 12px!important;border-radius:15px!important;background:rgba(139,92,246,0.08)!important;margin:3px!important;transition:all 0.2s ease}.detail-mediaInfoPrimary .mediaInfoItem:hover{background:rgba(139,92,246,0.18)!important;transform:scale(1.02)}.detail-mediaInfoPrimary .mediaInfoItem-border{border:1px solid rgba(139,92,246,0.25)!important;background:rgba(139,92,246,0.1)!important}
+
+/* ===== 原有样式 ===== */
+.has-trailer{position:relative;box-shadow:0 0 10px 3px rgb(255 255 255 / .8);transition:box-shadow 0.3s ease-in-out;border-radius:8px}.has-trailer:hover{box-shadow:0 0 10px 3px rgb(255 0 150 / .3);transition:box-shadow 0.2s ease-in-out}.injectJavdb{opacity:1;transition:color 0.3s,transform 0.3s,box-shadow 0.3s,filter 0.3s}.injectJavdb:hover{transform:scale(1.05);background:linear-gradient(135deg,rgb(255 0 150 / .3),rgb(0 150 255 / .3));box-shadow:0 4px 15px rgb(0 0 0 / .2),0 0 10px rgb(0 150 255 / .5)}.injectJavdb .button-text,.injectJavdb .button-icon{color:pink;transition:color 0.3s,filter 0.3s}.injectJavdb:hover .button-text,.injectJavdb:hover .button-icon{color:black!important}.injectJavbus .button-text,.injectJavbus .button-icon{color:#ff8181!important}.noUncensored{opacity:1;transition:color 0.3s,transform 0.3s,box-shadow 0.3s,filter 0.3s}.noUncensored .button-text,.noUncensored .button-icon{color:grey!important}.melt-away{animation:sandMeltAnimation 1s ease-out forwards}@keyframes sandMeltAnimation{0%{opacity:1}100%{opacity:0}}.my-fanart-image{display:inline-block;margin:8px 10px 20px 10px;vertical-align:top;border-radius:8px;height:27vh;transition:transform 0.3s ease,filter 0.3s ease;min-height:180px}.my-fanart-image-slider{height:20vh!important}.my-fanart-image:hover{transform:scale(1.03);filter:brightness(80%)}.modal{display:none;position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;overflow:hidden;background-color:rgb(0 0 0 / .8);justify-content:center;align-items:center}.modal-content{margin:auto;max-width:70%;max-height:70%;overflow:hidden;opacity:0}@media (max-width:768px){.modal-content{max-width:80%;max-height:80%}}.modal-closing .modal-content{animation-name:shrinkAndRotate;animation-duration:0.3s;animation-timing-function:ease-out}.close{color:#fff;position:absolute;width:45px;height:45px;display:flex;justify-content:center;align-items:center;top:30px;right:30px;font-size:30px;font-weight:700;cursor:pointer;transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:0;background-color:rgb(0 0 0 / .5);user-select:none;caret-color:#fff0}.prev,.next{position:absolute;width:40px;height:40px;line-height:40px;justify-content:center;align-items:center;display:flex;top:50%;background-color:rgb(0 0 0 / .5);color:#fff;border:none;cursor:pointer;font-size:35px;font-weight:700;transform:translateY(-50%) translateX(-50%);transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:35px}.prev{left:80px}.next{right:20px}.prev:hover,.next:hover{background-color:rgb(255 255 255 / .3);padding:35px}.close:hover{background-color:rgb(255 255 255 / .3);padding:10px}@keyframes shrinkAndRotate{0%{transform:scale(1)}100%{transform:scale(0)}}.click-smaller{transform:scale(.9) translate(-50%,-50%);transition:transform 0.2s}.prev.disabled,.next.disabled{color:grey!important;cursor:default}@keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-10px)}50%{transform:translateX(10px)}75%{transform:translateX(-10px)}100%{transform:translateX(0)}}.modal-caption{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);text-align:center;font-size:16px;color:#fff;background-color:rgb(0 0 0 / .6);padding:5px 10px;border-radius:5px}@media screen and (max-width:480px){.modal-caption{bottom:100px}}.video-element{position:absolute;width:100%;height:100%;object-fit:contain;z-index:3;pointer-events:auto;transition:opacity 0.5s ease}.copy-link{color:lightblue;cursor:pointer;display:inline-block;transition:transform 0.1s ease}.copy-link:active{transform:scale(.95)}.media-info-item{display:block;width:100%;margin-top:10px;text-align:left}.media-info-item a{padding:5px 10px;background:rgb(255 255 255 / .15);margin-bottom:5px;margin-right:5px;-webkit-backdrop-filter:blur(5em);backdrop-filter:blur(5em);font-weight:600;font-family:'Poppins',sans-serif;transition:transform 0.2s ease,background-color 0.3s ease,box-shadow 0.3s ease,color 0.3s ease;text-decoration:none;color:#fff;border-radius: 20px}.media-info-item a:hover{transform:scale(1.05);background:linear-gradient(135deg,rgb(255 0 150 / .3),rgb(0 150 255 / .3));box-shadow:0 4px 15px rgb(0 0 0 / .2),0 0 10px rgb(0 150 255 / .5)}.pageButton{cursor:pointer;padding:6px 14px;background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(109,40,217,0.15));border-radius:15px;box-shadow:0 2px 6px rgba(0,0,0,0.2);transition:all 0.3s ease;backdrop-filter:blur(10px);border:1px solid rgba(139,92,246,0.3)}.pageButton:hover{background:linear-gradient(135deg,rgba(139,92,246,0.5),rgba(109,40,217,0.4));box-shadow:0 4px 12px rgba(139,92,246,0.4);transform:scale(1.03)}#pageInput-actorPage::-webkit-inner-spin-button,#pageInput-actorPage::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}#pageInput-actorPage{-moz-appearance:textfield;appearance:none;height:auto;text-align:center;padding:6px 10px;font-family:inherit;font-size:inherit;font-weight:inherit;line-height:inherit;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:10px;color:#fff;width:50px;transition:all 0.3s ease}#pageInput-actorPage:focus{outline:none;border-color:rgba(139,92,246,0.6);box-shadow:0 0 8px rgba(139,92,246,0.4)}#filterDropdown{width:auto;backdrop-filter:blur(10px);color:#fff;transition:all 0.3s ease;margin-left:10px;font-family:inherit;padding:6px 12px;font-weight:inherit;line-height:inherit;border:1px solid rgba(139,92,246,0.3);background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(109,40,217,0.15));border-radius:15px}#filterDropdown:hover{background:linear-gradient(135deg,rgba(139,92,246,0.5),rgba(109,40,217,0.4));box-shadow:0 4px 15px rgba(139,92,246,0.4)}#filterDropdown:focus{outline:none;box-shadow:0 0 8px 3px rgba(139,92,246,0.5)}#filterDropdown option{font-family:inherit;color:#000;background:#fff;border:none;padding:5px;font-weight:inherit}#filterDropdown option:hover{background:#c8c8c8}.myCardImage{transition:filter 0.2s ease}.myCardImage:hover{filter:brightness(70%)}#toggleFanart{padding:10px 20px;font-size:18px;background:rgb(255 255 255 / .15);margin-top:15px;margin-bottom:15px;border:none;border-radius:8px;font-weight:700;font-family:'Poppins',sans-serif;color:#fff;text-decoration:none;cursor:pointer;display:block;margin-left:auto;margin-right:auto;-webkit-backdrop-filter:blur(5em);backdrop-filter:blur(5em);transition:transform 0.2s ease,background-color 0.3s ease,box-shadow 0.3s ease,color 0.3s ease}#toggleFanart:hover{transform:scale(1.1);background:linear-gradient(135deg,rgb(255 0 150 / .4),rgb(0 150 255 / .4));box-shadow:0 6px 20px rgb(0 0 0 / .3),0 0 15px rgb(0 150 255 / .6);color:#fff}#toggleFanart:active{transform:scale(.95);box-shadow:0 3px 12px rgb(0 0 0 / .3)}.bg-style{background:linear-gradient(to right top,rgb(0 0 0 / .98),rgb(0 0 0 / .2)),url(https://assets.nflxext.com/ffe/siteui/vlv3/058eee37-6c24-403a-95bd-7d85d3260ae1/5030300f-ed0c-473a-9795-a5123d1dd81d/US-en-20240422-POP_SIGNUP_TWO_WEEKS-perspective_WEB_0941c399-f3c4-4352-8c6d-0a3281e37aa0_large.jpg);background-attachment:fixed;background-repeat:no-repeat;background-position:center;background-size:cover}@media (max-width:50em){.swiper-thumbs{display:none!important}}`;
 
     loadConfig().then(() => {
         // monitor dom changements
         document.addEventListener("viewbeforeshow", function (e) {
+            // 清理之前页面的所有observer
+            observerManager.cleanup();
+
             if (e.detail.contextPath.startsWith("/item?id=")) {
                 if (!e.detail.isRestored) {
                     !document.getElementById("embyDetailCss") && loadExtraStyle(embyDetailCss, 'embyDetailCss');
-                    const mutation = new MutationObserver(function () {
-                        viewnode = e.target;
-                        item = viewnode.controller?.currentItem;
-                        if (item) {
-                            mutation.disconnect();
-                            if (showFlag()) {
 
+                    observerManager.waitForCondition(
+                        'itemReady',
+                        document.body,
+                        () => {
+                            viewnode = e.target;
+                            item = viewnode.controller?.currentItem;
+                            return item;
+                        },
+                        () => {
+                            if (showFlag()) {
                                 if (item.Type === 'BoxSet') {
                                     boxSetInit();
                                 } else {
@@ -46,12 +136,7 @@
                                 }
                             }
                         }
-                    });
-                    mutation.observe(document.body, {
-                        childList: true,
-                        characterData: true,
-                        subtree: true,
-                    });
+                    );
                 } else {
                     viewnode = e.target;
                     item = viewnode.controller.currentItem;
@@ -61,6 +146,7 @@
                         setTimeout(() => {
                             injectLinks();
                             javdbTitle();
+                            remoteTrailerInject();
                             adjustCardOffsets();
                             adjustSliderWidth();
                         }, 1000);
@@ -107,6 +193,7 @@
         if (config) {
             //adminUserId = config.adminUserId || adminUserId;
             googleApiKey = config.googleApiKey || googleApiKey;
+            openaiApiKey = config.openaiApiKey || openaiApiKey;
             nameMap = config.nameMap || nameMap;
             prefixDic = config.prefixDic || prefixDic;
             mountMatch = config.mountMatch || mountMatch;
@@ -138,6 +225,7 @@
         translateInject();
         javdbButtonInit();
         embyButtonInit();
+        remoteTrailerInject();
         //VRButtonInit();
     }
 
@@ -189,31 +277,19 @@
             changePreferThumb(view);
         }
 
-        if (!isTouchDevice() && item.Type === 'Movie') {
+        if (OS_current != "iphone" && item.Type === 'Movie') {
+            let debounceTimer = null;
 
-            const observer = new MutationObserver((mutationsList) => {
+            observerManager.watchChanges('similarSection', view, (mutationsList) => {
                 for (const mutation of mutationsList) {
-                    /*
-                    if (mutation.type === 'childList' && (mutation.addedNodes.length || mutation.removedNodes.length)) {
-                        //view.updateElement();
-                        addHoverEffect();
-                        (view.children.length === 12) && observer.disconnect(); 
-                        //observer.disconnect(); 
-                        break; // Only need to run once per mutation batch
-                    }
-                    */
-                    if (mutation.type === 'childList' && (mutation.addedNodes.length || mutation.removedNodes.length)  && typeof view.updateElement === 'function') {
-                        observer.disconnect(); 
-                        updateView();
-                        addHoverEffect();
+                    if (mutation.type === 'childList' && mutation.addedNodes.length) {
+                        clearTimeout(debounceTimer);
+                        debounceTimer = setTimeout(() => {
+                            addHoverEffect();
+                        }, 150);
                         break;
                     }
                 }
-            });
-
-            observer.observe(view, {
-                childList: true,   // Watch for additions
-                subtree: false     // Only watch direct children of slider
             });
         }
 
@@ -253,9 +329,8 @@
 
         title.addEventListener('click', () => {
             view.fetchData()
-                .then(view.bound_onDataFetchedInitial, view.bound_onGetItemsFailed)
-                .then(() => addHoverEffect())
-                .then(() => updateView());
+                .then(view.bound_onDataFetchedInitial, view.bound_onGetItemsFailed);
+            // addHoverEffect 由 similarSection observer 自动触发
         });
 
         function updateH2(oldH2) {
@@ -281,22 +356,6 @@
             return wrapper;
         }
 
-        function updateView() {
-            // Prevent wrapping the function more than once
-            //if (view._updateElementPatched) return;
-            //view._updateElementPatched = true;
-
-            const originalUpdateElement = view.updateElement;
-
-            view.updateElement = function (...args) {
-                const result = originalUpdateElement.apply(this, args);
-
-                // If original is sync, wrap it in a Promise
-                return Promise.resolve(result).then(() => {
-                    addHoverEffect();
-                });
-            };
-        }
     }
 
     /*
@@ -334,58 +393,40 @@
     */
 
     function addBoxsetTrailer() {
-        if (isTouchDevice()) return
-        const targetNode = viewnode; // The parent element to observe
+        if (isTouchDevice()) return;
 
-        const observer = new MutationObserver((mutationsList, observer) => {
-            const slider = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .linkedItems .itemsContainer");
+        const sliderSelector = "div[is='emby-scroller']:not(.hide) .linkedItems .itemsContainer";
 
-            if (slider) {
-                //console.log("Slider found:", slider);
-                observer.disconnect(); // Stop observing once found
+        observerManager.waitForElement('boxsetSlider', viewnode, sliderSelector, (slider) => {
+            changePreferThumb(slider);
 
-                changePreferThumb(slider);
-
-                slider.fetchData = () => {
-                    const query = {
-                        "ParentId": item.Id,
-                        "ImageTypeLimit": 1,
-                        "Fields": "BasicSyncInfo,CanDelete,PrimaryImageAspectRatio,ProductionYear,Status,EndDate,localTrailerCount",
-                        "EnableTotalRecordCount": false,
-                        "sortBy": "DisplayOrder",
-                        "sortOrder": "Ascending",
-                        "IncludeItemTypes": "Movie"
-                    };
-
-                    return ApiClient.getItems(ApiClient.getCurrentUserId(), query).then(function (result) {
-                        for (var i = 0, length = result.Items.length; i < length; i++)
-                            result.Items[i].CollectionId = item.Id;
-                        return result
-                    })
+            slider.fetchData = () => {
+                const query = {
+                    "ParentId": item.Id,
+                    "ImageTypeLimit": 1,
+                    "Fields": "BasicSyncInfo,CanDelete,PrimaryImageAspectRatio,ProductionYear,Status,EndDate,localTrailerCount",
+                    "EnableTotalRecordCount": false,
+                    "sortBy": "DisplayOrder",
+                    "sortOrder": "Ascending",
+                    "IncludeItemTypes": "Movie"
                 };
 
-                const observerSlider = new MutationObserver((mutationsList) => {
-                    for (const mutation of mutationsList) {
-                        if (mutation.type === 'childList' && mutation.addedNodes.length) {
-                            addHoverEffect(slider);
-                            observerSlider.disconnect();
+                return ApiClient.getItems(ApiClient.getCurrentUserId(), query).then(function (result) {
+                    for (var i = 0, length = result.Items.length; i < length; i++)
+                        result.Items[i].CollectionId = item.Id;
+                    return result
+                })
+            };
 
-                            break; // Only need to run once per mutation batch
-                        }
+            observerManager.watchChanges('boxsetSliderItems', slider, (mutationsList, disconnect) => {
+                for (const mutation of mutationsList) {
+                    if (mutation.type === 'childList' && mutation.addedNodes.length) {
+                        addHoverEffect(slider);
+                        disconnect();
+                        break;
                     }
-                });
-
-                observerSlider.observe(slider, {
-                    childList: true,   // Watch for additions
-                    subtree: false     // Only watch direct children of slider
-                });
-            }
-        });
-
-        // Configure the observer to watch for child elements being added or removed
-        observer.observe(targetNode, {
-            childList: true,
-            subtree: true
+                }
+            });
         });
     }
 
@@ -395,11 +436,16 @@
         //const topContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .topDetailsContainer");
 
         const detailMainContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailMainContainerParent");
+        if (!detailMainContainer) return;
 
         const titleElement = detailMainContainer.querySelector(".itemName-primary");
+        if (!titleElement) return;
+
+        // 如果已经修改过，跳过
+        if (titleElement.querySelector('.copy-link')) return;
+
         const titleText = titleElement.textContent;
         const code = getPartBefore(titleText, ' ');
-
 
         // Create the copy element with the copy-to-clipboard functionality
         const link = createCopyElement(code, '复制番号');
@@ -411,6 +457,16 @@
         titleElement.innerHTML = ''; // Clear current content
         titleElement.appendChild(link);
         titleElement.appendChild(document.createTextNode(remainingText));
+
+        // 监听标题区域变化，当被重置时重新应用
+        observerManager.remove('javdbTitle'); // 移除旧的监听器
+        observerManager.watchChanges('javdbTitle', titleElement, (mutations, stop) => {
+            // 检查是否被重置（copy-link 消失了）
+            if (!titleElement.querySelector('.copy-link')) {
+                stop(); // 停止当前监听
+                setTimeout(() => javdbTitle(), 100); // 重新应用
+            }
+        }, { childList: true, subtree: true });
 
         function createCopyElement(text, title) {
             const link = document.createElement("a");
@@ -442,20 +498,13 @@
         if (itemsContainer) {
             handleMediaInfo(itemsContainer, newLinks);
         } else {
-            let playMutation = new MutationObserver((mutations, observer) => {
-                let updatedContainer = detailMainContainer.querySelector(".detailTextContainer .mediaInfoItems:not(.hide)");
-
-                if (updatedContainer) {
-                    observer.disconnect();
-                    handleMediaInfo(updatedContainer, newLinks);
-                }
-            });
-
-            playMutation.observe(viewnode.querySelector(".detailTextContainer"), {
-                childList: true,
-                subtree: true,
-                characterData: true,
-            });
+            const detailTextContainer = viewnode.querySelector(".detailTextContainer");
+            observerManager.waitForElement(
+                'mediaInfoItems',
+                detailTextContainer,
+                '.mediaInfoItems:not(.hide)',
+                (updatedContainer) => handleMediaInfo(updatedContainer, newLinks)
+            );
         }
 
         function handleMediaInfo(container, newLinks) {
@@ -473,15 +522,16 @@
 
             // Now apply functions on it
             if (mediaInfoItem) {
-                addNewLinks(mediaInfoItem, newLinks);
                 mediaInfoStyle(mediaInfoItem);
                 timeLength();
                 tagInsert(mediaInfoItem);
+                addNewLinks(mediaInfoItem, newLinks);
                 moveTopDown();
             }
         }
 
         function createLinks(code) {
+            const code_lower = code.toLowerCase();
             const noNumCode = code.replace(/^\d+(?=[A-Za-z])/, '');
             const baseCode = getPartBefore(noNumCode, '-');
 
@@ -494,32 +544,35 @@
             if (item.Genres.includes("无码")) {
                 newLinks.push(createNewLinkElement('搜索 7mmtv.sx', 'rgb(225, 125, 190)', `https://7mmtv.sx/zh/searchform_search/all/index.html?search_keyword=${code}&search_type=searchall&op=search`, '7mmtv'));
                 newLinks.push(createNewLinkElement('搜索 missav.ws', 'rgb(238, 152, 215)', `https://missav.ws/cn/search/${code}`, 'missav'));
-                if (/^n\d{4}$/.test(code)) {
-                    newLinks.push(createNewLinkElement('搜索 tokyohot', 'red', 'https://my.tokyo-hot.com/product/?q=' + code.toLowerCase() + '&x=0&y=0', 'tokyohot'));
+                if (/^n\d{4}$/.test(code_lower)) {
+                    newLinks.push(createNewLinkElement('搜索 tokyohot', 'red', 'https://my.tokyo-hot.com/product/?q=' + code_lower + '&x=0&y=0', 'tokyohot'));
                 } else if (/^\d+-\d+$/.test(code)) {
-                    newLinks.push(createNewLinkElement('搜索 caribbean', 'green', 'https://www.caribbeancom.com/moviepages/' + code.toLowerCase() + '/index.html', 'caribbean'));
+                    newLinks.push(createNewLinkElement('搜索 caribbean', 'green', 'https://www.caribbeancom.com/moviepages/' + code_lower + '/index.html', 'caribbean'));
                 } else if (/^\d+_\d+$/.test(code)) {
                     if (item.ProviderIds?.MetaTube?.includes('CaribbeancomPR')) {
-                        newLinks.push(createNewLinkElement('搜索 caribbeancompr', 'orange', 'https://www.caribbeancompr.com/moviepages/' + code.toLowerCase() + '/index.html', 'caribbeancompr'));
+                        newLinks.push(createNewLinkElement('搜索 caribbeancompr', 'orange', 'https://www.caribbeancompr.com/moviepages/' + code_lower + '/index.html', 'caribbeancompr'));
                     } else {
-                        newLinks.push(createNewLinkElement('搜索 1pondo', 'rgb(230, 95, 167)', 'https://www.1pondo.tv/movies/' + code.toLowerCase() + '/', '1pondo'));
+                        newLinks.push(createNewLinkElement('搜索 1pondo', 'rgb(230, 95, 167)', 'https://www.1pondo.tv/movies/' + code_lower + '/', '1pondo'));
                     }
-                } else if (code.toLowerCase().includes('heyzo')) {
+                } else if (code_lower.includes('heyzo')) {
                     const heyzoNum = getPartAfter(code, "-");
                     newLinks.push(createNewLinkElement('搜索 heyzo', 'pink', 'https://www.heyzo.com/moviepages/' + heyzoNum + '/index.html', 'heyzo'));
                 } else {
-                    newLinks.push(createNewLinkElement('搜索 ave', 'red', 'https://www.aventertainments.com/search_Products.aspx?languageID=1&dept_id=29&keyword=' + code + '&searchby=keyword', 'ave'));
+                    newLinks.push(createNewLinkElement('搜索 ave', 'red', 'https://www.aventertainments.com/ppv/search?lang=2&v=1&culture=ja-JP&keyword=' + code + '&searchby=keyword', 'ave'));
                 }
 
             } else if (item.Genres.includes("VR")) {
                 newLinks.push(createNewLinkElement('搜索 dmm.co.jp', 'red', 'https://www.dmm.co.jp/digital/videoa/-/list/search/=/device=vr/?searchstr=' + updateCode(noNumCode), 'dmm'));
                 const modifyCode = (noNumCode.startsWith("DSVR") && /^\D+-\d{1,3}$/.test(code)) ? "3" + code : code;
                 newLinks.push(createNewLinkElement('搜索 jvrlibrary.com', 'lightyellow', `https://jvrlibrary.com/jvr?id=` + modifyCode, 'jvrlibrary'));
+                if (code_lower.includes('prvrss')) {
+                    newLinks.push(createNewLinkElement('搜索 mgstage.com', 'red', `https://www.mgstage.com/product/product_detail/${code}`, 'prestige'));
+                }
             } else {
                 //newLinks.push(createNewLinkElement('搜索 7mmtv.sx', 'rgb(225, 125, 190)', `https://7mmtv.sx/zh/searchform_search/all/index.html?search_keyword=${code}&search_type=searchall&op=search`, '7mmtv'));
                 newLinks.push(createNewLinkElement('搜索 missav.ws', 'rgb(238, 152, 215)', `https://missav.ws/cn/search/${code}`, 'missav'));
                 //newLinks.push(createNewLinkElement('搜索 tktube.com', 'blue', `https://tktube.com/search/${code.replace(/-/g, "--")}/`, 'tktube'));
-                newLinks.push(createNewLinkElement('搜索 dmm.co.jp', 'red', 'https://www.dmm.co.jp/mono/-/search/=/searchstr=' + code.toLowerCase() + '/', 'dmm'));
+                newLinks.push(createNewLinkElement('搜索 dmm.co.jp', 'red', 'https://www.dmm.co.jp/mono/-/search/=/searchstr=' + code_lower + '/', 'dmm'));
                 if (noNumCode != code) {
                     newLinks.push(createNewLinkElement('搜索 mgstage.com', 'red', `https://www.mgstage.com/search/cSearch.php?search_word=${code}&x=0&y=0&search_shop_id=&type=top`, 'prestige'));
                 }
@@ -561,17 +614,36 @@
 
         function tagInsert(mediaInfoItem) {
             const tagItems = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .itemTags");
+            if (!tagItems) return;
             const tagClones = tagItems.cloneNode(true);
             // Remove the existing classes
             tagClones.className = 'mediaInfoItem';
             tagClones.style.marginTop = '';
             tagClones.style.marginBottom = '';
+            // Tag 添加淡色背景
+            tagClones.style.background = 'rgba(100,200,255,0.08)';
+            tagClones.style.padding = '4px 8px';
+            tagClones.style.borderRadius = '6px';
 
+            // 添加 "标签: " 前缀
+            const label = document.createElement('span');
+            label.textContent = '标签: ';
+            label.style.cssText = 'font-weight: 600; margin-right: 4px; color: rgba(255,255,255,0.7);';
+            tagClones.insertBefore(label, tagClones.firstChild);
 
             // Set the desired inline styles
             //tagClones.style.whiteSpace = 'normal';
             mediaInfoItem.insertAdjacentElement('afterend', tagClones);
             mediaInfoStyle(tagClones);
+
+            // Genre 添加 "类型: " 前缀
+            if (!mediaInfoItem.querySelector('.genre-label')) {
+                const genreLabel = document.createElement('span');
+                genreLabel.className = 'genre-label';
+                genreLabel.textContent = '类型: ';
+                genreLabel.style.cssText = 'font-weight: 600; margin-right: 4px; color: rgba(255,255,255,0.7);';
+                mediaInfoItem.insertBefore(genreLabel, mediaInfoItem.firstChild);
+            }
         }
 
         function timeLength() {
@@ -606,11 +678,11 @@
                         const minutes = Math.floor((totalSeconds % 3600) / 60);
 
                         if (hours > 0 && minutes > 0) {
-                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时${minutes}分 •`;
+                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时${minutes}分`;
                         } else if (hours > 0) {
-                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时 •`;
+                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时`;
                         } else {
-                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${minutes}分 •`;
+                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${minutes}分`;
                         }
 
                         // optionally add a border
@@ -622,7 +694,7 @@
                             const minutes = match[2];
 
                             // Change the text to the desired format with hours and minutes
-                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时${minutes}分  •`;
+                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时${minutes}分`;
                             //mediaItem.classList.add('mediaInfoItem-border');
 
                         } else if (timeRegexHoursOnly.test(trimmedText)) {
@@ -630,7 +702,7 @@
                             const hours = match[1];
 
                             // Change the text to the desired format with only hours
-                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时  •`;
+                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${hours}小时`;
                             //mediaItem.classList.add('mediaInfoItem-border');
 
                         } else if (timeRegexMinutesOnly.test(trimmedText)) {
@@ -638,7 +710,7 @@
                             const minutes = match[1];
 
                             // Change the text to the desired format with only minutes
-                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${minutes}分  •`;
+                            mediaItem.innerHTML = `<span style="font-weight: bold;">时长</span>: ${minutes}分`;
                             //mediaItem.classList.add('mediaInfoItem-border');
                         }
                     }
@@ -692,19 +764,29 @@
                             rating = rating / 2;
                         }
 
-                        // Ensure the number of stars does not exceed 5
+                        // Calculate full stars and half star
                         let fullStars = Math.min(Math.floor(rating), 5);
+                        let decimal = rating - Math.floor(rating);
+                        let hasHalfStar = decimal >= 0.25 && decimal < 0.75 && fullStars < 5;
+                        // If decimal >= 0.75, round up to full star
+                        if (decimal >= 0.75 && fullStars < 5) {
+                            fullStars++;
+                        }
 
                         // Generate the stars with reduced space
                         let starsHTML = '';
+                        let totalStars = fullStars + (hasHalfStar ? 1 : 0);
                         for (let i = 0; i < fullStars; i++) {
-                            // Apply negative margin-right only to stars that are not the last one
-                            let margin = (i < fullStars - 1) ? '-5px' : '0';
+                            let margin = (i < totalStars - 1) ? '-5px' : '0';
                             starsHTML += `<i class="md-icon md-icon-fill starIcon" style="margin-right: ${margin};"></i>`;
+                        }
+                        // Add half star if needed
+                        if (hasHalfStar) {
+                            starsHTML += `<i class="md-icon starIcon" style="margin-right: 0;">star_half</i>`;
                         }
 
                         // Replace the content with the new format
-                        mediaItem.innerHTML = `<span style="font-weight: bold;">评分</span>:${starsHTML} ${rating}分  •`;
+                        mediaItem.innerHTML = `<span style="font-weight: bold;">评分</span>:${starsHTML} ${rating}分`;
                     } else {
                         console.warn('No valid rating number found in the mediaItem.');
                     }
@@ -764,10 +846,32 @@
 
     function addNewLinks(mediaInfoItem, newLinks) {
         if (item.Type === 'BoxSet') return;
+        if (newLinks.length === 0) return;
+
+        // Create a new container for external links
+        const externalLinksItem = document.createElement('div');
+        externalLinksItem.className = 'mediaInfoItem media-info-item';
+        externalLinksItem.style.cssText = 'white-space: normal; background: rgba(255,182,193,0.08); padding: 4px 8px; border-radius: 6px;';
+
+        // Add "外部链接: " label
+        const label = document.createElement('span');
+        label.textContent = '外部链接: ';
+        label.style.cssText = 'font-weight: 600; margin-right: 4px; color: rgba(255,255,255,0.7);';
+        externalLinksItem.appendChild(label);
+
+        // Add all links
         newLinks.forEach((link, index) => {
-            mediaInfoItem.appendChild(document.createTextNode(', '));
-            mediaInfoItem.appendChild(link);
+            if (index > 0) {
+                externalLinksItem.appendChild(document.createTextNode(', '));
+            }
+            externalLinksItem.appendChild(link);
         });
+
+        // Insert at the end of container (after all existing mediaInfoItems including tags)
+        const container = mediaInfoItem.parentNode;
+        container.appendChild(externalLinksItem);
+
+        mediaInfoStyle(externalLinksItem);
     }
 
     function createNewLinkElement(title, color, url, text) {
@@ -826,7 +930,7 @@
 
     function embyButtonInit() {
         if (OS_current != 'ipad' || item.Type != 'Movie') return;
-        const url = `emby://items?serverId=${ApiClient.serverId() }&itemId=${item.Id}`;
+        const url = `emby://items?serverId=${ApiClient.serverId()}&itemId=${item.Id}`;
         const embyIcon = `<img height="24" src="${ApiClient._serverAddress}/favicon.ico" />`;
         const buttonhtml = createButtonHtml('jumpEmby', '跳转Emby', embyIcon, 'Emby');
         const mainDetailButtons = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .mainDetailButtons");
@@ -927,11 +1031,13 @@
                 reviewButton.style.display = 'none';
             }, 1000);
 
-            const reviews = await fetchDbReviews();
-            addReviews(reviews);
+            const result = await fetchDbReviews();
+            if (result) {
+                addReviews(result.reviews, result.reviewUrl);
+            }
         }
 
-        function addReviews(reviews) {
+        function addReviews(reviews, reviewUrl) {
             if (reviews.length === 0) {
                 showToast({
                     text: `暂无短评`,
@@ -939,35 +1045,50 @@
                 });
                 return;
             }
-            const detailContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailMainContainer .detailTextContainer");
 
-            const reviewhtml = `<div class="verticalFieldItem">
-                                    <h3 class="readOnlyContent">短评（来自JavDB）</h3>
-                                    ${createReviewContent(reviews)}
-                                </div>`;
+            // 移除已存在的短评区域
+            const existingReview = viewnode.querySelector('#javdb-review-section');
+            if (existingReview) existingReview.remove();
 
-            detailContainer.insertAdjacentHTML('beforeend', reviewhtml);
+            // HTML 转义
+            const escapeHtml = (str) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-            function createReviewContent(reviews) {
-                return reviews.map(review =>
-                    `<h4 class="secondaryText readOnlyContent">- ${review}</h4>`
-                ).join('');
+            // 构建短评 HTML
+            const reviewHtml = `
+                <div id="javdb-review-section" class="verticalFieldItem detail-lineItem" style="margin-top: 15px; padding: 12px 15px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span class="readOnlyContent" style="font-weight: 600;">短评（来自JavDB，共${reviews.length}条）</span>
+                        <a href="javascript:void(0)" id="javdb-review-more" class="button-link secondaryText" style="font-size: 0.9em;">在JavDB查看更多</a>
+                    </div>
+                    <div class="secondaryText readOnlyContent" style="line-height: 1.5; max-height: 300px; overflow-y: auto;">
+                        ${reviews.map((review, i) => `<div style="padding: 6px 8px; background: ${i % 2 === 0 ? 'rgba(0,0,0,0.15)' : 'transparent'}; border-radius: 4px; overflow-wrap: break-word; word-break: break-word;">${escapeHtml(review)}</div>`).join('')}
+                    </div>
+                </div>
+            `;
+
+            // 插入到 detailTextContainer 最下方
+            const detailTextContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailTextContainer");
+            if (detailTextContainer) {
+                detailTextContainer.insertAdjacentHTML('beforeend', reviewHtml);
+
+                // 绑定"查看更多"点击事件
+                const moreLink = viewnode.querySelector('#javdb-review-more');
+                if (moreLink) {
+                    moreLink.onclick = () => openReviewWindow(reviewUrl);
+                }
             }
         }
 
+        function openReviewWindow(url) {
+            const width = 500;
+            const height = 700;
+            const left = (screen.width - width) / 2;
+            const top = (screen.height - height) / 2;
+            window.open(url, 'javdb_reviews', `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`);
+        }
+
         async function fetchDbReviews() {
-            const cacheKey = `reviews_${item.Id}`;
-            const cachedData = localStorage.getItem(cacheKey);
-            const urlCacheKey = `movieUrl_${item.Id}`;
-            let movieUrl = localStorage.getItem(urlCacheKey);
-
-
-            if (cachedData && movieUrl) {
-                fetchDbMore(movieUrl);
-                return JSON.parse(cachedData);
-            }
-
-            movieUrl = getUrl(item.Overview, "===== 外部链接 =====", "JavDb");
+            let movieUrl = getUrl(item.Overview, "===== 外部链接 =====", "JavDb");
 
             if (!movieUrl) {
                 const code = getPartBefore(item.Name, " ");
@@ -976,29 +1097,22 @@
                 const url = `${HOST}/search?q=${noNumCode}&f=all`;
 
                 let searchData = await request(url);
-                if (searchData.length === 0) return [];
+                if (searchData.length === 0) return null;
 
                 const parser = new DOMParser();
-
                 let parsedHtml = parser.parseFromString(searchData, 'text/html');
                 const firstItem = parsedHtml.querySelector(".movie-list .item");
 
-                if (!firstItem) return [];
+                if (!firstItem) return null;
 
-                const href = firstItem.querySelector("a.box")?.getAttribute("href"); // Get href attribute
+                const href = firstItem.querySelector("a.box")?.getAttribute("href");
+                const titleElement = firstItem.querySelector(".video-title strong");
+                const title = titleElement ? titleElement.textContent.trim().toLowerCase() : null;
 
-                const titleElement = firstItem.querySelector(".video-title strong"); // Get the strong tag inside video-title
-                const title = titleElement ? titleElement.textContent.trim().toLowerCase() : null; // Extract text content
-                if (title.includes(noNumCode) || noNumCode.includes(title)) {
+                if (title && (title.includes(noNumCode) || noNumCode.includes(title))) {
                     movieUrl = `${HOST}${href}`;
                     addLink(item.Overview || '', "===== 外部链接 =====", "JavDb", movieUrl);
-                    /*
-                    try {
-                        localStorage.setItem(urlCacheKey, JSON.stringify(movieUrl));
-                    } catch (e) {
-                        console.warn("Failed to cache", e);
-                    }
-                    */
+
                     const tagElement = firstItem.querySelector(".tags .tag");
                     const tagText = tagElement ? tagElement.textContent.trim() : null;
                     if (tagText === '含中字磁鏈' || tagText === 'CnSub DL' && !item.Genres.includes("中文字幕")) {
@@ -1024,20 +1138,17 @@
                         reviews.push(p.textContent.trim());
                     });
 
-                    // Save the result in localStorage
-                    //localStorage.setItem(cacheKey, JSON.stringify(reviews));
-
-                    return reviews;
+                    return { reviews, reviewUrl };
                 } catch (error) {
                     console.error("Error fetching reviews:", error);
-                    return [];
+                    return null;
                 }
             } else {
                 showToast({
                     text: `短评加载失败`,
                     icon: `<span class="material-symbols-outlined">search_off</span>`,
                 });
-                return [];
+                return null;
             }
         }
     }
@@ -1095,6 +1206,8 @@
             const sliderElement = createSlider(`更多类似（来自JavDB，共${moreItems.length}部）`, imgHtml);
             const sliderId = "mySimilarSlider";
             sliderElement.id = sliderId;
+            // javdb section 添加悬浮背景
+            sliderElement.style.cssText = 'background: linear-gradient(145deg, rgba(255,182,193,0.1), rgba(255,105,180,0.05)); border-radius: 12px; margin: 15px 0; padding: 15px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1); border: 1px solid rgba(255,182,193,0.15);';
             const similarSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .similarSection");
             similarSection.insertAdjacentElement('beforebegin', sliderElement);
 
@@ -1949,6 +2062,9 @@
     }
 
     function openVideoInModal(videoSrc, title) {
+        // Detect YouTube URLs
+        const isYouTube = videoSrc.includes("youtube.com");
+
         let modal = document.getElementById("myVideoModal");
         if (!modal) {
             modal = createVideoModal();
@@ -1960,9 +2076,6 @@
         const modalCaption = modal.querySelector("#modalVideoCaption");
 
         modalCaption.textContent = title;
-
-        // Detect YouTube URLs
-        const isYouTube = videoSrc.includes("youtube.com");
 
         if (isYouTube) {
             // Hide video element
@@ -2157,7 +2270,7 @@
 
     function addHoverEffect(slider = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .similarItemsContainer")) {
 
-        if (isTouchDevice() || !slider) return;
+        if (OS_current === 'iphone' || !slider) return;
 
         const portraitCards = slider.children;
         if (portraitCards.length === 0) return;
@@ -2189,7 +2302,7 @@
             }
 
             
-            const cardOverlay = card.querySelector('.cardOverlayContainer');
+            const cardOverlay = OS_current === 'ipad'? null : card.querySelector('.cardOverlayContainer');
             imageContainer.classList.remove('myCardImage');
             const img = imageContainer.querySelector('.cardImage');
 
@@ -2462,15 +2575,110 @@
             const parent = expandBtn.parentElement;
             if (!parent) return;
 
+            const grandParent = parent.parentElement;
+            if (!grandParent) return;
+
             // Find closest <video> in same container
             const video = parent.querySelector('video') || parent.querySelector('iframe');
             if (!video) return;
 
-            const title = parent.parentElement?.querySelector('.cardText-first span')?.title || '';
+            const title = grandParent.querySelector('.cardText-first span')?.title || grandParent.querySelector('.cardText-first button')?.title || '';
             openVideoInModal(video.src, title);
 
         };
         return expandBtn
+    }
+
+    function remoteTrailerInject() {
+        if (!item.RemoteTrailers || item.RemoteTrailers.length === 0) return
+        const detailImageContainer = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .detailMainContainer .detailImageContainer");
+        if (!detailImageContainer) return
+
+        if (detailImageContainer.querySelector("#myRemoteTrailerBtn")) return
+
+        let cardOverlay = detailImageContainer.querySelector(".cardOverlayContainer");
+
+        if (!cardOverlay) {
+            observerManager.waitForElement(
+                'remoteTrailer',
+                detailImageContainer,
+                '.cardOverlayContainer',
+                remoteTrailerInit,
+                10000
+            );
+        } else {
+            remoteTrailerInit(cardOverlay);
+        }
+
+        function remoteTrailerInit(card) {
+            const btn = card.querySelector("button");
+            if (!btn || btn.dataset.action === "none") return
+            btn.dataset.action = "none";
+            btn.style.display = 'none';
+            const videoUrl = normalizeTrailerUrl(item.RemoteTrailers[0].Url);
+            const btnNew = createPlayOverlayButton();
+            btnNew.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();   // prevent Emby default play behavior
+
+                openVideoInModal(videoUrl, item.Name);
+            });
+            detailImageContainer.appendChild(btnNew);
+        }
+
+        function createPlayOverlayButton() {
+            const btn = document.createElement("button");
+
+            btn.type = "button";
+
+            btn.className =
+                "fab cardOverlayButton-fab buttonItems-item " +
+                "cardOverlayFab-primary button-hoveraccent md-icon " +
+                "md-icon-fill autortl emby-button button-hoverable";
+
+            btn.dataset.action = "none";
+            btn.title = "播放预告片";
+            btn.id = "myRemoteTrailerBtn"
+            // Icon content (Emby uses special unicode)
+            btn.textContent = ""; 
+
+            return btn;
+        }
+    }
+    function normalizeTrailerUrl(videoUrl) {
+
+        if (!videoUrl) return null
+        let url = videoUrl.trim();
+
+        // --- 1. Handle DMM domain ---
+        if (url.includes("https://cc3001.dmm.co.jp")) {
+            url = url.replace("https://cc3001.dmm.co.jp", dmm_proxy);
+            return url;
+        }
+
+        // --- 2. Handle YouTube ---
+        if (url.includes("youtube.com") || url.includes("youtu.be")) {
+            let videoId = "";
+
+            // Case A: youtu.be/VIDEOID
+            const shortMatch = url.match(/youtu\.be\/([^?&]+)/);
+            if (shortMatch) {
+                videoId = shortMatch[1];
+            }
+
+            // Case B: youtube.com/watch?v=VIDEOID
+            const longMatch = url.match(/[?&]v=([^&]+)/);
+            if (longMatch) {
+                videoId = longMatch[1];
+            }
+
+            if (videoId) {
+                return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=1&modestbranding=1&playsinline=1`;
+            }
+        }
+
+        // Otherwise return original
+        return url;
     }
 
     async function javdbActorInject(isDirector = false) {
@@ -2506,6 +2714,8 @@
                 const sliderElement2 = createSliderLarge(`${personName}${directorText} 更多作品（来自JavDB，共${javDbMovies.length}部）`, imgHtml2, actorUrl);
                 const sectionId = isDirector ? 'myDbDirectorSlider' : 'myDbActorSlider'
                 sliderElement2.id = sectionId;
+                // javdb section 添加悬浮背景
+                sliderElement2.style.cssText = 'background: linear-gradient(145deg, rgba(255,182,193,0.1), rgba(255,105,180,0.05)); border-radius: 12px; margin: 15px 0; padding: 15px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1); border: 1px solid rgba(255,182,193,0.15);';
                 insertSection.insertAdjacentElement('beforebegin', sliderElement2);
 
                 adjustCardOffset(`#${sectionId}`, '.itemsContainer', '.backdropCard');
@@ -2581,7 +2791,7 @@
     }
 
     async function seriesInject() {
-        if (!fetchJavDbFlag || !isJP18()) return;
+        if (!fetchJavDbFlag || (item.Type != 'BoxSet' && !isJP18())) return;
         let seriesName, tagMovies, tagMovieIds, series;
         if (item.Type != 'BoxSet') {
             if (!isJP18()) return;
@@ -2689,6 +2899,8 @@
 
         const sliderElement2 = createSliderLarge(`系列: ${seriesName} （${seriesName_trans}） 更多作品（来自JavDB，共${javDbMovies.length}部）`, imgHtml2, seriesUrl);
         sliderElement2.id = 'myDbSeriesSlider';
+        // javdb section 添加悬浮背景
+        sliderElement2.style.cssText = 'background: linear-gradient(145deg, rgba(255,182,193,0.1), rgba(255,105,180,0.05)); border-radius: 12px; margin: 15px 0; padding: 15px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1); border: 1px solid rgba(255,182,193,0.15);';
 
         let insertSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .aboutSection");
         //!insertSection && (insertSection = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myActorMoreSlider"));
@@ -3360,7 +3572,7 @@
     }
 
     async function translateInject() {
-        if ((OS_current === 'iphone') || (OS_current === 'android') || (googleApiKey.length === 0) || item.Type === 'Person') return;
+        if ((OS_current === 'iphone') || (googleApiKey.length === 0 && openaiApiKey.length === 0) || item.Type === 'Person') return;
 
         // Select the element using document.querySelector
         const titleElement = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .itemName-primary");
@@ -3418,22 +3630,59 @@
         } else {
             throw new Error('Translation failed');
         }
-
     }
+
+    async function translateOnlyWithOpenAI(text) {
+        if (!openaiApiKey || openaiApiKey.length === 0) {
+            return text;
+        }
+
+        const prompt = `你是一位专业的日本成人影片翻译专员，非常擅长将日本AV的日文标题或简介翻译成中文AV圈最色情、最地道的表达，熟悉各个AV演员的中文名字及AV专有名词的翻译方法。翻译及处理要求如下：
+                1. 翻译原则：先理解语境，再优化表达并完成翻译。不能机械的直译，不能篡改寓意，不能大范围删改译后内容。确保语法流畅、符合中文阅读习惯，不故意隐去敏感词，翻译风格自然流畅，避免机械翻译或日式断句。英文部分（例如“SEX”）可保留。
+                2. 输出要求：不进行解释或说明，回答必须有且仅有翻译后的中文文本本身。
+                3. 目标受众：中文AV网站用户
+                4. 风格：露骨、下流、直接，允许意译和增强色情张力
+                5. 演员名也要翻译，包括昵称也翻译成中文昵称。
+                请翻译以下内容：
+            ${text}`;
+
+        const response = await fetch("https://api.openai.com/v1/responses", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${openaiApiKey}`
+            },
+            body: JSON.stringify({
+                model: "gpt-4.1-mini",
+                temperature: 0.2,
+                input: prompt
+            })
+        });
+
+        const data = await response.json();
+
+        try {
+            return data.output[0].content[0].text;
+        } catch (e) {
+            throw new Error("OpenAI translation failed");
+        }
+    }
+
 
     async function translateJapaneseToChinese() {
         const titleElement = viewnode.querySelector("div[is='emby-scroller']:not(.hide) .itemName-primary");
         if (!titleElement) return
         // Get the text content of the element
         let text = item.Name;
+        const [code, titleText = ""] = text.split(/ (.+)/);
 
-        const translatedText = await translateOnly(text);
+        const translatedText = await translateOnlyWithOpenAI(titleText);
         if (translatedText.length > 0) {
             titleElement.textContent = translatedText; // Replace titleElement text with translated text
-            item.Name = translatedText;
+            item.Name = `${code} ${translatedText}`.trim();
             (item.Type != 'BoxSet') && ApiClient.updateItem(item);
             showToast({
-                text: '翻译成功',
+                text: 'OpenAI翻译成功',
                 icon: `<span class="material-symbols-outlined">fact_check</span>`
             });
 
@@ -3454,14 +3703,14 @@
         if (!divElement) return
         let text = item.Overview;
 
-        const translatedText = await translateOnly(text);
+        const translatedText = await translateOnlyWithOpenAI(text);
 
         if (translatedText.length > 0) {
             divElement.textContent = translatedText; // Replace titleElement text with translated text
             item.Overview = translatedText;
             ApiClient.updateItem(item);
             showToast({
-                text: '翻译成功',
+                text: 'OpenAI翻译成功',
                 icon: `<span class="material-symbols-outlined">fact_check</span>`
             });
             const myTranslate = viewnode.querySelector("div[is='emby-scroller']:not(.hide) #myTranslate2");
