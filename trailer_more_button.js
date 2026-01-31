@@ -1,27 +1,78 @@
 (function () {
     "use strict";
-    var item, viewnode, paly_mutation1, isUpdatingImageUrls = false, parentItems = {};
-    var paly_mutation2;
+    var item, viewnode, isUpdatingImageUrls = false, parentItems = {};
+
+    // Observer管理器：统一管理所有MutationObserver
+    const observerManager = {
+        observers: new Map(),
+
+        cleanup() {
+            this.observers.forEach(obs => obs.disconnect());
+            this.observers.clear();
+        },
+
+        add(name, observer) {
+            this.observers.set(name, observer);
+        },
+
+        remove(name) {
+            this.observers.get(name)?.disconnect();
+            this.observers.delete(name);
+        },
+
+        waitForElement(name, root, selector, callback) {
+            if (!root) return;
+            const existing = root.querySelector(selector);
+            if (existing) {
+                callback(existing);
+                return;
+            }
+
+            const observer = new MutationObserver(() => {
+                const el = root.querySelector(selector);
+                if (el) {
+                    this.remove(name);
+                    callback(el);
+                }
+            });
+
+            this.add(name, observer);
+            observer.observe(root, { childList: true, subtree: true, characterData: true });
+        },
+
+        waitForCondition(name, root, conditionFn, callback) {
+            if (!root) return;
+
+            const observer = new MutationObserver(() => {
+                const result = conditionFn();
+                if (result) {
+                    this.remove(name);
+                    callback(result);
+                }
+            });
+
+            this.add(name, observer);
+            observer.observe(root, { childList: true, subtree: true, characterData: true });
+        }
+    };
+
     document.addEventListener("viewbeforeshow", function (e) {
-        
+        // 清理之前页面的所有observer
+        observerManager.cleanup();
+
         if (e.detail.type === "video-osd") {
             viewnode = e.target;
             if (!e.detail.isRestored) {
-                const mutation = new MutationObserver(async function () {
-                    item = viewnode.controller?.osdController?.currentItem || viewnode.controller?.currentPlayer?.streamInfo?.item;
-                    if (item) {
+                observerManager.waitForCondition(
+                    'itemReady',
+                    document.body,
+                    () => viewnode.controller?.osdController?.currentItem || viewnode.controller?.currentPlayer?.streamInfo?.item,
+                    (foundItem) => {
+                        item = foundItem;
                         isUpdatingImageUrls = false;
                         (item.Type === 'Trailer') && insertMoreButton();
-                        mutation.disconnect();
-                        paly_mutation1?.disconnect();
-                        paly_mutation2?.disconnect();
                     }
-                });
-                mutation.observe(document.body, {
-                    childList: true,
-                    characterData: true,
-                    subtree: true,
-                });
+                );
             }
             else {
                 item = viewnode.controller?.osdController?.currentItem;
@@ -116,30 +167,21 @@
             const videoosdTab0 = tabContainers.querySelector('[data-index="0"].videoosd-tab');
             const videoosdTab3 = tabContainers.querySelector('[data-index="3"].videoosd-tab');
 
-            paly_mutation1 = new MutationObserver(function () {
-                let itemsContainer = videoosdTab0.querySelector('.itemsContainer');
-                if (itemsContainer) {
-                    paly_mutation1.disconnect();
-                    itemsContainer.fetchData = function () {
-                        let parentItem;
+            observerManager.waitForElement('tab0ItemsContainer', videoosdTab0, '.itemsContainer', (itemsContainer) => {
+                itemsContainer.fetchData = function () {
+                    let parentItem;
 
-                        parentItem = getParentItemLite(item);
-                        if (!parentItem) parentItem = item;
+                    parentItem = getParentItemLite(item);
+                    if (!parentItem) parentItem = item;
 
-                        // schedule updateAttribute() to run later
-                        Promise.resolve().then(() => updateAttribute());
+                    // schedule updateAttribute() to run later
+                    Promise.resolve().then(() => updateAttribute());
 
-                        return Promise.resolve({
-                            Items: [parentItem],
-                            TotalRecordCount: 1
-                        });
-                    };
-                }
-            });
-            paly_mutation1.observe(videoosdTab0, {
-                childList: true,
-                characterData: true,
-                subtree: true,
+                    return Promise.resolve({
+                        Items: [parentItem],
+                        TotalRecordCount: 1
+                    });
+                };
             });
 
             fetchPlaylist().then(playlist => {
@@ -147,42 +189,30 @@
                     updateParentItemsFromPlaylist(playlist.Items);
                     updateImageUrls(playlist.Items).then(parentImages => {
                         if (parentImages?.length > 0) {
-                            paly_mutation2 = new MutationObserver(function () {
-                                let itemsContainer = videoosdTab3.querySelector('.itemsContainer');
-                                if (itemsContainer) {
-                                    paly_mutation2.disconnect();          
+                            observerManager.waitForElement('tab3ItemsContainer', videoosdTab3, '.itemsContainer', (itemsContainer) => {
+                                if (!itemsContainer._fetchDataWrapped) {
+                                    itemsContainer._fetchDataWrapped = true;
 
-                                    if (!itemsContainer._fetchDataWrapped) {
-                                        itemsContainer._fetchDataWrapped = true;
+                                    const originalOnDataFetched = itemsContainer.bound_onDataFetched;
 
-                                        const originalOnDataFetched = itemsContainer.bound_onDataFetched;
+                                    itemsContainer.bound_onDataFetched = function (result) {
+                                        // Call the original function first
+                                        const promise = originalOnDataFetched.call(this, result);
 
-                                        itemsContainer.bound_onDataFetched = function (result) {
-                                            // Call the original function first
-                                            const promise = originalOnDataFetched.call(this, result);
-
-                                            // Attach our own follow-up
-                                            return Promise.resolve(promise).then(() => {
-                                                updateNextImage(itemsContainer, parentImages, playlist.Items);
-                                            });
-                                        };
-                                    }
-
-                                    updateNextImage(itemsContainer, parentImages, playlist.Items);
-                                                   
+                                        // Attach our own follow-up
+                                        return Promise.resolve(promise).then(() => {
+                                            updateNextImage(itemsContainer, parentImages, playlist.Items);
+                                        });
+                                    };
                                 }
-                            });
 
-                            paly_mutation2.observe(videoosdTab3, {
-                                childList: true,
-                                characterData: true,
-                                subtree: true,
+                                updateNextImage(itemsContainer, parentImages, playlist.Items);
                             });
                         }
                     });
 
                 } else {
-                    paly_mutation2?.disconnect();
+                    observerManager.remove('tab3ItemsContainer');
                 }
             });      
         });
@@ -396,8 +426,8 @@
             if (!(item.Id in parentItems)) {
                 parentItems[item.Id] = item;
             }
-            paly_mutation1?.disconnect();
-            //paly_mutation2?.disconnect();   
+            observerManager.remove('tab0ItemsContainer');
+            //observerManager.remove('tab3ItemsContainer');   
         }
     }
 
