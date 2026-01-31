@@ -94,146 +94,140 @@
                                                                         **步骤：**
 
                                                                         1. **下载脚本文件**：将项目中的所有 `.js` 文件下载到本地
-                                                                       
-                                                                        2. 2. **配置脚本**
-                                                                           3.    - 根据需要在各脚本文件顶部修改 user config
-                                                                                 -    - 如需翻译功能，添加 Google API Key 到 `config.json`
-                                                                                  
-                                                                                      - 3. **注入到 Emby 页面**：在 Emby 的 `index.html` 文件末尾 `</body>` 标签前插入：
-                                                                                       
-                                                                                        4. ```html
-                                                                                           <script type="text/javascript" src="trailer_more_button.js"></script>
-                                                                                           <script type="text/javascript" src="emby_detail_page.js"></script>
-                                                                                           <script type="text/javascript" src="list_page_trailer.js"></script>
-                                                                                           <script type="text/javascript" src="actor_page.js"></script>
-                                                                                           ```
+                                                                        2. 2. **配置脚本**：根据需要在各脚本文件顶部修改 user config，如需翻译功能，添加 Google API Key 到 `config.json`
+                                                                           3. 3. **注入到 Emby 页面**：在 Emby 的 `index.html` 文件末尾 `</body>` 标签前插入：
+                                                                             
+                                                                              4. ```html
+                                                                                 <script type="text/javascript" src="trailer_more_button.js"></script>
+                                                                                 <script type="text/javascript" src="emby_detail_page.js"></script>
+                                                                                 <script type="text/javascript" src="list_page_trailer.js"></script>
+                                                                                 <script type="text/javascript" src="actor_page.js"></script>
+                                                                                 ```
 
-                                                                                           4. **文件位置**：将下载的文件放在 `index.html` 同级目录中
-                                                                                           5.    - 非 Windows 系统需授予可读权限
-                                                                                             
-                                                                                                 - 5. **配置文件**：将修改后的 `config.json` 放在 `index.html` 同级目录中
-                                                                                                  
-                                                                                                   6. #### 方式 2️⃣：配合自定义 JS/CSS 项目（推荐）
-                                                                                                  
-                                                                                                   7. 使用 [Emby.CustomCssJS](https://github.com/Shurelol/Emby.CustomCssJS) 项目来管理脚本，更便于维护和版本管理。
-                                                                                                  
-                                                                                                   8. #### 方式 3️⃣：Docker 一键部署（最简单）✨
-                                                                                                  
-                                                                                                   9. **前提条件：**
-                                                                                                   10. - Docker 容器正在运行
-                                                                                                       - - 记住容器名称（默认：`linuxserver_emby`）
-                                                                                                        
-                                                                                                         - **基础命令（推荐）：**
-                                                                                                        
-                                                                                                         - ```bash
-                                                                                                           bash <(curl -s https://raw.githubusercontent.com/XingyiHua2024/Emby-Javascript-Details/main/install/patch.sh)
-                                                                                                           ```
-                                                                                                           
-                                                                                                           脚本会自动检测并配置默认参数。
-                                                                                                           
-                                                                                                           **自定义参数命令：**
-                                                                                                           
-                                                                                                           如果上述命令失败，或你需要自定义配置，使用以下命令并修改相应参数：
-                                                                                                           
-                                                                                                           ```bash
-                                                                                                           CONTAINER_NAME=linuxserver_emby \
-                                                                                                           CONTAINER_WEB_FOLDER=/app/emby/system/dashboard-ui \
-                                                                                                           JS_FILES="emby_detail_page.js list_page_trailer.js actor_page.js trailer_more_button.js" \
-                                                                                                           CONFIG_FILE=./my_config.json \
-                                                                                                           bash <(curl -s https://raw.githubusercontent.com/XingyiHua2024/Emby-Javascript-Details/main/install/patch.sh)
-                                                                                                           ```
-                                                                                                           
-                                                                                                           **参数说明：**
-                                                                                                           - `CONTAINER_NAME`: Docker 容器名称
-                                                                                                           - - `CONTAINER_WEB_FOLDER`: 容器内 Emby web 页面的路径
-                                                                                                             - - `JS_FILES`: 要安装的 JS 脚本列表（空格分隔）
-                                                                                                               - - `CONFIG_FILE`: 配置文件路径
+                                                                                 4. **文件位置**：将下载的文件放在 `index.html` 同级目录中。非 Windows 系统需授予可读权限
+                                                                                 5. 5. **配置文件**：将修改后的 `config.json` 放在 `index.html` 同级目录中
+                                                                                   
+                                                                                    6. #### 方式 2️⃣：配合自定义 JS/CSS 项目（推荐）
+                                                                                   
+                                                                                    7. 使用 [Emby.CustomCssJS](https://github.com/Shurelol/Emby.CustomCssJS) 项目来管理脚本，更便于维护和版本管理。
+                                                                                   
+                                                                                    8. #### 方式 3️⃣：Docker 一键部署（最简单）✨
+                                                                                   
+                                                                                    9. **前提条件：**
+                                                                                    10. - Docker 容器正在运行
+                                                                                        - - 记住容器名称（默认：`linuxserver_emby`）
+                                                                                         
+                                                                                          - **基础命令（推荐）：**
+                                                                                         
+                                                                                          - ```bash
+                                                                                            bash <(curl -s https://raw.githubusercontent.com/XingyiHua2024/Emby-Javascript-Details/main/install/patch.sh)
+                                                                                            ```
+
+                                                                                            脚本会自动检测并配置默认参数。
+
+                                                                                            **自定义参数命令：**
+
+                                                                                            如果上述命令失败，或你需要自定义配置，使用以下命令并修改相应参数：
+
+                                                                                            ```bash
+                                                                                            CONTAINER_NAME=linuxserver_emby \
+                                                                                            CONTAINER_WEB_FOLDER=/app/emby/system/dashboard-ui \
+                                                                                            JS_FILES="emby_detail_page.js list_page_trailer.js actor_page.js trailer_more_button.js" \
+                                                                                            CONFIG_FILE=./my_config.json \
+                                                                                            bash <(curl -s https://raw.githubusercontent.com/XingyiHua2024/Emby-Javascript-Details/main/install/patch.sh)
+                                                                                            ```
+
+                                                                                            **参数说明：**
+                                                                                            - `CONTAINER_NAME`: Docker 容器名称
+                                                                                            - - `CONTAINER_WEB_FOLDER`: 容器内 Emby web 页面的路径
+                                                                                              - - `JS_FILES`: 要安装的 JS 脚本列表（空格分隔）
+                                                                                                - - `CONFIG_FILE`: 配置文件路径
+                                                                                                 
+                                                                                                  - ---
+
+                                                                                                  ### ⚙️ 配置说明
+
+                                                                                                  #### 通用配置方法
+
+                                                                                                  每个脚本的顶部都有 `user config` 注释块，你可以直接修改这些配置：
+
+                                                                                                  ```javascript
+                                                                                                  // ==================== user config ====================
+                                                                                                  var googleApiKey = ""; // 你的 Google API Key
+                                                                                                  var nameMap = {}; // 名称映射
+                                                                                                  var fetchJavdbImg = true; // 是否加载 Javdb 图片
+                                                                                                  // ====================================================
+                                                                                                  ```
+
+                                                                                                  #### Google API Key 配置（翻译功能）
+
+                                                                                                  1. 访问 [Google Cloud Console](https://console.cloud.google.com/)
+                                                                                                  2. 2. 创建项目并启用 Translate API
+                                                                                                     3. 3. 生成 API Key
+                                                                                                        4. 4. 将 Key 添加到脚本配置中
+                                                                                                          
+                                                                                                           5. #### config.json 配置
+                                                                                                          
+                                                                                                           6. ```json
+                                                                                                              {
+                                                                                                                "googleApiKey": "",
+                                                                                                                "nameMap": {},
+                                                                                                                "prefixDic": {}
+                                                                                                              }
+                                                                                                              ```
+                                                                                                              
+                                                                                                              ---
+                                                                                                              
+                                                                                                              ### 📸 功能展示
+                                                                                                              
+                                                                                                              **剧照展示：** ![fanart](images/fanart_new.png)
+                                                                                                              
+                                                                                                              **详情模态框：** ![modal](images/modal.png)
+                                                                                                              
+                                                                                                              **演员作品展示：** ![actorMore](images/actorMore_new.png)
+                                                                                                              
+                                                                                                              **Trailer 增强前后对比：**
+                                                                                                              - Before: ![before](images/trailer_before.png)
+                                                                                                              - - After: ![after](images/trailer_after.png)
+                                                                                                               
+                                                                                                                - ---
                                                                                                                 
-                                                                                                                 - ---
-                                                                                                                 
-                                                                                                                 ### ⚙️ 配置说明
-                                                                                                                 
-                                                                                                                 #### 通用配置方法
-                                                                                                                 
-                                                                                                                 每个脚本的顶部都有 `user config` 注释块，你可以直接修改这些配置：
-                                                                                                                 
-                                                                                                                 ```javascript
-                                                                                                                 // ==================== user config ====================
-                                                                                                                 var googleApiKey = ""; // 你的 Google API Key
-                                                                                                                 var nameMap = {}; // 名称映射
-                                                                                                                 var fetchJavdbImg = true; // 是否加载 Javdb 图片
-                                                                                                                 // ====================================================
-                                                                                                                 ```
-                                                                                                                 
-                                                                                                                 #### Google API Key 配置（翻译功能）
-                                                                                                                 
-                                                                                                                 1. 访问 [Google Cloud Console](https://console.cloud.google.com/)
-                                                                                                                 2. 2. 创建项目并启用 Translate API
-                                                                                                                    3. 3. 生成 API Key
-                                                                                                                       4. 4. 将 Key 添加到脚本配置中
-                                                                                                                         
-                                                                                                                          5. #### config.json 配置
-                                                                                                                         
-                                                                                                                          6. ```json
-                                                                                                                             {
-                                                                                                                               "googleApiKey": "",
-                                                                                                                               "nameMap": {},
-                                                                                                                               "prefixDic": {}
-                                                                                                                             }
-                                                                                                                             ```
-                                                                                                                             
-                                                                                                                             ---
-                                                                                                                             
-                                                                                                                             ### 📸 功能展示
-                                                                                                                             
-                                                                                                                             **剧照展示：** ![fanart](images/fanart_new.png)
-                                                                                                                             
-                                                                                                                             **详情模态框：** ![modal](images/modal.png)
-                                                                                                                             
-                                                                                                                             **演员作品展示：** ![actorMore](images/actorMore_new.png)
-                                                                                                                             
-                                                                                                                             **Trailer 增强前后对比：**
-                                                                                                                             - Before: ![before](images/trailer_before.png)
-                                                                                                                             - - After: ![after](images/trailer_after.png)
-                                                                                                                              
-                                                                                                                               - ---
-                                                                                                                               
-                                                                                                                               ### 💡 常见问题
-                                                                                                                               
-                                                                                                                               **Q: 脚本之间有依赖关系吗？**
-                                                                                                                               A: 没有。可以独立使用，也可以全部安装。建议至少安装 `emby_detail_page.js` 以获得最佳体验。
-                                                                                                                               
-                                                                                                                               **Q: 如何禁用某个功能？**
-                                                                                                                               A: 在脚本顶部的 user config 中修改相应参数，或注释掉不需要的脚本。
-                                                                                                                               
-                                                                                                                               **Q: 支持哪些 Emby 版本？**
-                                                                                                                               A: 已测试并支持 Emby 4.9+ 版本。
-                                                                                                                               
-                                                                                                                               **Q: 翻译功能不工作？**
-                                                                                                                               A: 确保已配置有效的 Google API Key，且已启用 Translate API。
-                                                                                                                               
-                                                                                                                               ---
-                                                                                                                               
-                                                                                                                               ### 📝 相关链接
-                                                                                                                               
-                                                                                                                               - [emby-front-end-mod](https://github.com/newday-life/emby-front-end-mod) - 剧照功能参考
-                                                                                                                               - - [emby-web-mod](https://github.com/newday-life/emby-web-mod) - Trailer 轮播参考
-                                                                                                                                 - - [MDCx](https://github.com/sqzw-x/mdcx) - 元数据刮削工具
-                                                                                                                                   - - [Emby.CustomCssJS](https://github.com/Shurelol/Emby.CustomCssJS) - 自定义 CSS/JS 管理
-                                                                                                                                    
-                                                                                                                                     - ---
-                                                                                                                                     
-                                                                                                                                     ### 🤝 贡献和反馈
-                                                                                                                                     
-                                                                                                                                     欢迎 Fork、提交 Issue 和 Pull Request！
-                                                                                                                                     
-                                                                                                                                     ---
-                                                                                                                                     
-                                                                                                                                     ## English
-                                                                                                                                     
-                                                                                                                                     > Coming soon. Welcome to contribute!
-                                                                                                                                     >
-                                                                                                                                     > ---
-                                                                                                                                     >
-                                                                                                                                     > **最后更新：** 2025 年 12 月
-                                                                                                                                     > 
+                                                                                                                ### 💡 常见问题
+                                                                                                                
+                                                                                                                **Q: 脚本之间有依赖关系吗？**
+                                                                                                                A: 没有。可以独立使用，也可以全部安装。建议至少安装 `emby_detail_page.js` 以获得最佳体验。
+                                                                                                                
+                                                                                                                **Q: 如何禁用某个功能？**
+                                                                                                                A: 在脚本顶部的 user config 中修改相应参数，或注释掉不需要的脚本。
+                                                                                                                
+                                                                                                                **Q: 支持哪些 Emby 版本？**
+                                                                                                                A: 已测试并支持 Emby 4.9+ 版本。
+                                                                                                                
+                                                                                                                **Q: 翻译功能不工作？**
+                                                                                                                A: 确保已配置有效的 Google API Key，且已启用 Translate API。
+                                                                                                                
+                                                                                                                ---
+                                                                                                                
+                                                                                                                ### 📝 相关链接
+                                                                                                                
+                                                                                                                - [emby-front-end-mod](https://github.com/newday-life/emby-front-end-mod) - 剧照功能参考
+                                                                                                                - - [emby-web-mod](https://github.com/newday-life/emby-web-mod) - Trailer 轮播参考
+                                                                                                                  - - [MDCx](https://github.com/sqzw-x/mdcx) - 元数据刮削工具
+                                                                                                                    - - [Emby.CustomCssJS](https://github.com/Shurelol/Emby.CustomCssJS) - 自定义 CSS/JS 管理
+                                                                                                                     
+                                                                                                                      - ---
+                                                                                                                      
+                                                                                                                      ### 🤝 贡献和反馈
+                                                                                                                      
+                                                                                                                      欢迎 Fork、提交 Issue 和 Pull Request！
+                                                                                                                      
+                                                                                                                      ---
+                                                                                                                      
+                                                                                                                      ## English
+                                                                                                                      
+                                                                                                                      > Coming soon. Welcome to contribute!
+                                                                                                                      >
+                                                                                                                      > ---
+                                                                                                                      >
+                                                                                                                      > **最后更新：** 2025 年 12 月
+                                                                                                                      > 
