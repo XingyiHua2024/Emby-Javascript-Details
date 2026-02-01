@@ -37,7 +37,7 @@
 - 推荐内容随机化
 - 高清剧照展示
 - 演员 / 导演作品展示
-- 标题翻译
+- 标题/简介翻译
 - Javdb 内容集成
 
 ### 2. trailer_more_button.js
@@ -92,7 +92,7 @@ bash <(curl -s https://raw.githubusercontent.com/XingyiHua2024/Emby-Javascript-D
 
 ```javascript
 // ==================== user config ====================
-var googleApiKey = "";
+var openaiApiKey = "";
 var nameMap = {};
 var fetchJavdbImg = true;
 // ====================================================
@@ -100,7 +100,7 @@ var fetchJavdbImg = true;
 
 ```json
 {
-  "googleApiKey": "",
+  "openaiApiKey": "",
   "nameMap": {},
   "prefixDic": {}
 }
