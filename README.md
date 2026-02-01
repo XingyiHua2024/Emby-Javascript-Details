@@ -50,7 +50,7 @@
 - 演员页增强
   
 ### 5. config.json
-- 配置文件（Google API Key 等）
+- 配置文件（OpenAI API Key 等）
 
 ---
 
