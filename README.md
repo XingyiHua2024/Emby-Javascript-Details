@@ -48,14 +48,8 @@
 
 ### 4. actor_page.js
 - 演员页增强
-
-### 5. emby-swiper-trailer.js
-- 首页 Trailer 轮播
-
-### 6. emby-swiper-localtrailer.js
-- 首页本地 Trailer 轮播
-
-### 7. config.json
+- 
+### 5. config.json
 - 配置文件（Google API Key 等）
 
 ---
