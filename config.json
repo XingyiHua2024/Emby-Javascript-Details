@@ -1,6 +1,7 @@
 {
     "adminUserId": "",
-    "googleApiKey": "",
+    "openaiApiKey": "",
+    "javdbSecretKey": "",
     "nameMap": {
     }
 }
