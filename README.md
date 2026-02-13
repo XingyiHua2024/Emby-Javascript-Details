@@ -39,6 +39,7 @@
 - 演员 / 导演作品展示
 - 标题/简介翻译
 - Javdb 内容集成
+- 合集页增加添加影片功能
 
 ### 2. trailer_more_button.js
 - Trailer 增强显示
