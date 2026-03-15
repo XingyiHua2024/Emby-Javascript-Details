@@ -5,10 +5,12 @@
 
     var adminUserId = '', getTrailerFromCache = true, videoVolume = 0.5;
     var configLoaded = false;
+    var searchPollInterval = null;
 
     const OS_current = getOS();
 
     const VISIBLE_SCROLLER = "div[is='emby-scroller']:not(.hide)";
+    const selectorStr = ".itemsContainer";
 
     var deviceProfile = null;
 
@@ -100,7 +102,9 @@
     };
 
     const lptCss = `
-.lpt-has-trailer{position:relative;box-shadow:0 0 8px 2px rgba(0,200,255,0.4);transition:box-shadow 0.3s ease-in-out;border-radius:8px}.cardBox:hover .lpt-has-trailer,.lpt-has-trailer:hover{box-shadow:0 0 10px 3px rgba(255,0,150,0.5);transition:box-shadow 0.2s ease-in-out}.lpt-modal{display:none;position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;overflow:hidden;background-color:rgb(0 0 0 / .8);justify-content:center;align-items:center}.lpt-modal-content{margin:auto;max-width:70%;max-height:70%;overflow:hidden;opacity:0;transition:opacity 0.3s ease}@media (max-width:768px){.lpt-modal-content{max-width:80%;max-height:80%}}.lpt-modal-closing .lpt-modal-content{animation-name:lptShrinkRotate;animation-duration:0.3s;animation-timing-function:ease-out}.lpt-close{color:#fff;position:absolute;width:45px;height:45px;display:flex;justify-content:center;align-items:center;top:30px;right:30px;font-size:30px;font-weight:700;cursor:pointer;transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:0;background-color:rgb(0 0 0 / .5);user-select:none;caret-color:#fff0}.lpt-close:hover{background-color:rgb(255 255 255 / .3)}@keyframes lptShrinkRotate{0%{transform:scale(1)}100%{transform:scale(0)}}.lpt-modal-caption{position:fixed;bottom:110px;left:50%;transform:translateX(-50%);text-align:center;font-size:16px;color:#fff;background-color:rgb(0 0 0 / .6);padding:5px 10px;border-radius:5px}@media screen and (max-width:480px){.lpt-modal-caption{bottom:160px}}.lpt-video{position:absolute;width:100%;height:100%;object-fit:contain;z-index:1;pointer-events:auto;transition:opacity 0.5s ease}.cardOverlayContainer>.fab,.cardOverlayContainer>.chkItemSelectContainer,.cardOverlayContainer>.cardOverlayButton-br{z-index:2}.bg-style{background:linear-gradient(to right top,rgb(0 0 0 / .98),rgb(0 0 0 / .2)),url(https://assets.nflxext.com/ffe/siteui/vlv3/058eee37-6c24-403a-95bd-7d85d3260ae1/5030300f-ed0c-473a-9795-a5123d1dd81d/US-en-20240422-POP_SIGNUP_TWO_WEEKS-perspective_WEB_0941c399-f3c4-4352-8c6d-0a3281e37aa0_large.jpg);background-attachment:fixed;background-repeat:no-repeat;background-position:center;background-size:cover}`;
+.lpt-has-trailer{position:relative;box-shadow:0 0 8px 2px rgba(59,130,246,0.35);transition:box-shadow 0.3s ease-in-out;border-radius:8px}.cardBox:hover .lpt-has-trailer,.lpt-has-trailer:hover{box-shadow:0 0 10px 3px rgba(96,165,250,0.5);transition:box-shadow 0.2s ease-in-out}.lpt-modal{display:none;position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;overflow:hidden;background-color:rgb(0 0 0 / .8);justify-content:center;align-items:center}.lpt-modal-content{margin:auto;max-width:70%;max-height:70%;overflow:hidden;opacity:0;transition:opacity 0.3s ease}@media (max-width:768px){.lpt-modal-content{max-width:80%;max-height:80%}}.lpt-modal-closing .lpt-modal-content{animation-name:lptShrinkRotate;animation-duration:0.3s;animation-timing-function:ease-out}.lpt-close{color:#fff;position:absolute;width:45px;height:45px;display:flex;justify-content:center;align-items:center;top:30px;right:30px;font-size:30px;font-weight:700;cursor:pointer;transition:background-color 0.3s,transform 0.3s,padding 0.3s;border-radius:50%;padding:0;background-color:rgb(0 0 0 / .5);user-select:none;caret-color:#fff0}.lpt-close:hover{background-color:rgb(255 255 255 / .3)}@keyframes lptShrinkRotate{0%{transform:scale(1)}100%{transform:scale(0)}}.lpt-modal-caption{position:fixed;bottom:110px;left:50%;transform:translateX(-50%);text-align:center;font-size:16px;color:#fff;background-color:rgb(0 0 0 / .6);padding:5px 10px;border-radius:5px}@media screen and (max-width:480px){.lpt-modal-caption{bottom:160px}}.lpt-video{position:absolute;width:100%;height:100%;object-fit:contain;z-index:1;pointer-events:auto;transition:opacity 0.5s ease}.cardOverlayContainer>.fab,.cardOverlayContainer>.chkItemSelectContainer,.cardOverlayContainer>.cardOverlayButton-br{z-index:2}.bg-style{background:linear-gradient(to right top,rgb(0 0 0 / .98),rgb(0 0 0 / .2)),url(https://assets.nflxext.com/ffe/siteui/vlv3/058eee37-6c24-403a-95bd-7d85d3260ae1/5030300f-ed0c-473a-9795-a5123d1dd81d/US-en-20240422-POP_SIGNUP_TWO_WEEKS-perspective_WEB_0941c399-f3c4-4352-8c6d-0a3281e37aa0_large.jpg);background-attachment:fixed;background-repeat:no-repeat;background-position:center;background-size:cover}
+#lpt-search-links-bar a.code-link{display:inline-block;padding:.25em .75em;border-radius:1.5em;border:1px solid currentColor;background:rgba(0,0,0,0.35);backdrop-filter:blur(4px);margin:2px;font-size:.9em;text-decoration:none;cursor:pointer}
+#lpt-search-links-bar a.code-link:hover{background:rgba(255,255,255,0.12)}`;
 
     document.addEventListener("viewbeforeshow", function (e) {
         // Filter specific context paths
@@ -113,18 +117,40 @@
 
         !document.getElementById("lptStyle") && loadExtraStyle(lptCss, 'lptStyle');
 
-        // 清理之前的observer
+        // 清理之前的observer和搜索轮询
         observerManager.cleanup();
+        searchPollInterval?.clear();
+        searchPollInterval = null;
 
         clearExpiredCache();
         applyBackgroundStyle();
 
+        const isSearchPage = path.includes('type=search');
+
+        if (isSearchPage) {
+            let renderTimer = null;
+            let obs = null;
+            const onInput = (input) => {
+                clearTimeout(renderTimer);
+                renderTimer = setTimeout(() => renderSearchLinks(input.value.trim(), input), 1000);
+            };
+            const selector = `${VISIBLE_SCROLLER} input.searchfields-txtSearch`;
+            const bindInput = (input) => input.addEventListener('input', () => onInput(input));
+            const existing = document.querySelector(selector);
+            if (existing) {
+                bindInput(existing);
+            } else {
+                obs = new MutationObserver(() => {
+                    const input = document.querySelector(selector);
+                    if (input) { obs.disconnect(); obs = null; bindInput(input); }
+                });
+                obs.observe(document.body, { childList: true, subtree: true });
+            }
+            searchPollInterval = { clear() { obs?.disconnect(); clearTimeout(renderTimer); } };
+        }
+
         // iPhone/iPad不启用trailer hover
         if (OS_current === 'iphone' || OS_current === 'ipad') return;
-
-        const selectorStr = path.startsWith("/videos?")
-            ? `[data-index="1"].itemsTab .virtualItemsContainer`
-            : `${VISIBLE_SCROLLER} .virtualItemsContainer`;
 
         // 处理可见items的回调
         const processVisibleItems = (itemsContainer) => {
@@ -134,8 +160,9 @@
             for (let node of children) {
                 if (!node.classList.contains('virtualScrollItem')) continue;
 
-                const itemId = itemSource?.[node._dataItemIndex]?.Id;
-                if (!itemId) continue;
+                const item = itemSource?.[node._dataItemIndex];
+                if (!item?.Id || item.Type !== 'Movie') continue;
+                const itemId = item.Id;
 
                 const imgContainer = node.querySelector('.cardBox .cardImageContainer');
                 if (imgContainer?.classList.contains('lpt-has-trailer') ||
@@ -163,6 +190,7 @@
         }
     });
 
+
     function clearExpiredCache() {
         const CACHE_PREFIX = "trailerUrl";
         const EXPIRY_KEY = "trailerUrl_cacheExpiry";
@@ -181,6 +209,110 @@
             const nextExpiry = now + 24 * 60 * 60 * 1000; // 24 hours in ms
             localStorage.setItem(EXPIRY_KEY, nextExpiry.toString());
         }
+    }
+
+    function renderSearchLinks(query, inputEl) {
+        if (!inputEl) return;
+
+        MOVIE_CODE_PATTERN.lastIndex = 0;
+        const match = MOVIE_CODE_PATTERN.exec(query);
+        if (!match) {
+            document.getElementById('lpt-search-links-bar')?.remove();
+            return;
+        }
+        const code = match[0];
+
+        const anchor = inputEl.closest('.searchFields')
+                    ?? inputEl.closest('.searchFieldsInner')
+                    ?? inputEl.parentElement;
+        if (!anchor) return;
+
+        // 找属于当前 anchor 所在 scroller 的 bar，避免操作隐藏页面的 bar
+        let bar = anchor.parentElement?.querySelector('#lpt-search-links-bar')
+                ?? document.querySelector(`${VISIBLE_SCROLLER} #lpt-search-links-bar`);
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = 'lpt-search-links-bar';
+            bar.style.cssText = 'white-space:normal;padding:4px 8px;text-align:center;';
+            anchor.insertAdjacentElement('afterend', bar);
+        }
+
+        const label = document.createElement('span');
+        label.textContent = '外部链接: ';
+        label.style.cssText = 'font-weight:600;margin-right:4px;color:rgba(255,255,255,0.7);';
+        bar.innerHTML = '';
+        bar.appendChild(label);
+
+        buildSearchLinks(code).forEach(link => bar.appendChild(link));
+    }
+
+    const MOVIE_CODE_PATTERN = /\b((?=[A-Za-z\d]*[A-Za-z])[A-Za-z\d]+-[A-Za-z]?\d{2,5}|[A-Za-z]\d{3,5}|\d{4,}[-_]\d{2,})\b/gi;
+
+    const VR_PREFIXES = new Set(["aquco","aqube","cbikmv","averv","gopj","aqubl","dlvss"]);
+
+    function buildSearchLinks(code) {
+        const codeLower = code.toLowerCase();
+        const noNumCode = code.replace(/-?\d+$/, '').toUpperCase();
+        const noNumLower = noNumCode.toLowerCase();
+        const isVR = codeLower.includes('vr') || VR_PREFIXES.has(noNumLower);
+        const links = [];
+
+        function mkLink(title, color, url, text) {
+            const a = document.createElement('a');
+            a.className = 'button-link-color-inherit emby-button code-link';
+            a.style.color = color;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.title = title;
+            a.href = url;
+            a.textContent = text;
+            return a;
+        }
+
+        links.push(mkLink('搜索 javdb.com', 'pink',
+            `https://javdb.com/search?q=${code.toUpperCase()}&f=all`, 'javdb'));
+
+        if (isVR) {
+            links.push(mkLink('搜索 javbus.com', 'red',
+                `https://www.javbus.com/${code}`, 'javbus'));
+            links.push(mkLink('搜索 javlibrary.com', 'rgb(191,96,166)',
+                `https://www.javlibrary.com/cn/vl_searchbyid.php?keyword=${code}`, 'javlibrary'));
+            links.push(mkLink('搜索 jvrlibrary.com', 'lightyellow',
+                `https://jvrlibrary.com/jvr?id=${code}`, 'jvrlibrary'));
+            links.push(mkLink('搜索 dmm.co.jp (VR)', 'red',
+                `https://www.dmm.co.jp/digital/videoa/-/list/search/=/device=vr/?searchstr=${noNumCode}`, 'dmm(VR)'));
+        } else {
+            links.push(mkLink('搜索 javbus.com', 'red',
+                `https://www.javbus.com/${code}`, 'javbus'));
+            links.push(mkLink('搜索 javlibrary.com', 'rgb(191,96,166)',
+                `https://www.javlibrary.com/cn/vl_searchbyid.php?keyword=${code}`, 'javlibrary'));
+            links.push(mkLink('搜索 missav.ws', 'rgb(238,152,215)',
+                `https://missav.ws/cn/search/${code}`, 'missav'));
+            links.push(mkLink('搜索 dmm.co.jp', 'red',
+                `https://www.dmm.co.jp/mono/-/search/=/searchstr=${codeLower}/`, 'dmm'));
+        }
+
+        if (/^n\d{4}$/.test(codeLower)) {
+            links.push(mkLink('搜索 tokyohot', 'red',
+                `https://my.tokyo-hot.com/product/?q=${codeLower}&x=0&y=0`, 'tokyohot'));
+        } else if (/^\d+-\d+$/.test(code)) {
+            links.push(mkLink('搜索 caribbean', 'green',
+                `https://www.caribbeancom.com/moviepages/${codeLower}/index.html`, 'caribbean'));
+        } else if (/^\d+_\d+$/.test(code)) {
+            links.push(mkLink('搜索 1pondo', 'rgb(230,95,167)',
+                `https://www.1pondo.tv/movies/${codeLower}/`, '1pondo'));
+        } else if (codeLower.includes('heyzo')) {
+            const heyzoNum = code.split('-')[1] ?? code;
+            links.push(mkLink('搜索 heyzo', 'pink',
+                `https://www.heyzo.com/moviepages/${heyzoNum}/index.html`, 'heyzo'));
+        }
+
+        links.push(mkLink('搜索 ave', 'red',
+            `https://www.aventertainments.com/ppv/search?lang=2&v=1&culture=ja-JP&keyword=${code}&searchby=keyword`, 'ave'));
+        links.push(mkLink('搜索 subtitlecat.com', 'rgb(255,191,54)',
+            `https://www.subtitlecat.com/index.php?search=${noNumCode}`, 'subtitlecat'));
+
+        return links;
     }
 
     async function loadConfig() {
@@ -269,48 +401,47 @@
 
             if (!trailerUrl || !isHovered) return;
 
-            imgContainer.classList.remove('lpt-has-trailer');
+            img.style.filter = 'blur(5px)';
             const expandBtn = createExpandBtn();
+            let mediaEl;
 
             const youtubeId = parseYouTubeUrl(trailerUrl);
             if (youtubeId) {
-                const iframe = document.createElement('iframe');
-                iframe.classList.add('lpt-video');
-                iframe.src = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1`;
-                iframe.allow = "autoplay; encrypted-media";
-                iframe.frameBorder = "0";
-                imgContainer.appendChild(iframe);
+                mediaEl = document.createElement('iframe');
+                mediaEl.classList.add('lpt-video');
+                mediaEl.style.opacity = '0';
+                mediaEl.style.pointerEvents = 'none';
+                mediaEl.src = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1`;
+                mediaEl.allow = "autoplay; encrypted-media";
+                mediaEl.frameBorder = "0";
+                imgContainer.appendChild(mediaEl);
             } else {
-                const videoElement = document.createElement('video');
-                videoElement.src = trailerUrl;
-                videoElement.autoplay = true;
-                videoElement.muted = true;
-                videoElement.classList.add('lpt-video');
-                cardOverlay.appendChild(videoElement);
-                img.style.filter = 'blur(5px)';
+                mediaEl = document.createElement('video');
+                mediaEl.src = trailerUrl;
+                mediaEl.autoplay = true;
+                mediaEl.muted = true;
+                mediaEl.classList.add('lpt-video');
+                mediaEl.style.opacity = '0';
+                mediaEl.style.pointerEvents = 'none';
+                cardOverlay.appendChild(mediaEl);
             }
 
             cardOverlay.appendChild(expandBtn);
-            setTimeout(() => {
-                if (isHovered) expandBtn.style.opacity = '1';
-            }, 300);
+            if (isHovered) {
+                mediaEl.style.opacity = '1';
+                setTimeout(() => {
+                    if (isHovered) expandBtn.style.opacity = '1';
+                }, 300);
+            }
         };
 
         const mouseleaveHandler = () => {
             if (!isHovered) return;
             isHovered = false;
-
-            if (trailerUrl) {
-                imgContainer.classList.add('lpt-has-trailer');
-            }
             img.style.filter = '';
 
-            const iframe = imgContainer.querySelector('iframe.lpt-video');
-            if (iframe) {
-                iframe.remove();
-            } else {
-                cardOverlay.querySelectorAll('video').forEach(v => v.remove());
-            }
+            imgContainer.querySelector('iframe.lpt-video')?.remove();
+            cardOverlay.querySelectorAll('video.lpt-video').forEach(v => v.remove());
             cardOverlay.querySelector('.jv-expand-btn')?.remove();
         };
 
